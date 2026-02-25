@@ -63,14 +63,14 @@ export interface CategorisedOutputs {
 
 // ---- Category Mapping ----
 
-const STRATEGY_AGENTS: ReadonlySet<AgentType> = new Set([
+const STRATEGY_AGENTS: ReadonlySet<AgentType> = new Set<AgentType>([
   'market_intelligence',
   'country_strategy',
   'competitive_intelligence',
   'revenue_forecasting',
 ]);
 
-const EXECUTION_AGENTS: ReadonlySet<AgentType> = new Set([
+const EXECUTION_AGENTS: ReadonlySet<AgentType> = new Set<AgentType>([
   'paid_ads',
   'organic_social',
   'content_blog',
@@ -80,7 +80,7 @@ const EXECUTION_AGENTS: ReadonlySet<AgentType> = new Set([
   'ab_testing',
 ]);
 
-const ANALYTICS_AGENTS: ReadonlySet<AgentType> = new Set([
+const ANALYTICS_AGENTS: ReadonlySet<AgentType> = new Set<AgentType>([
   'performance_analytics',
   'budget_optimization',
   'conversion_optimization',
@@ -88,7 +88,7 @@ const ANALYTICS_AGENTS: ReadonlySet<AgentType> = new Set([
   'fraud_detection',
 ]);
 
-const COMPLIANCE_AGENTS: ReadonlySet<AgentType> = new Set([
+const COMPLIANCE_AGENTS: ReadonlySet<AgentType> = new Set<AgentType>([
   'compliance',
   'brand_consistency',
   'enterprise_security',
