@@ -8,6 +8,7 @@ import productsRoutes from './products.routes';
 import budgetRoutes from './budget.routes';
 import alertsRoutes from './alerts.routes';
 import settingsRoutes from './settings.routes';
+import agentsRoutes from './agents.routes';
 
 const router = Router();
 
@@ -20,6 +21,7 @@ router.use('/products', productsRoutes);
 router.use('/budget', budgetRoutes);
 router.use('/alerts', alertsRoutes);
 router.use('/settings', settingsRoutes);
+router.use('/agents', agentsRoutes);
 
 // Health check
 router.get('/health', (_req, res) => {
