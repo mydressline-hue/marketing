@@ -176,8 +176,8 @@ const PII_PATTERNS: Array<{ pattern: RegExp; pii_type: PIIField['pii_type'] }> =
   { pattern: /email/i, pii_type: 'email' },
   { pattern: /^(first_?name|last_?name|full_?name|name)$/i, pii_type: 'name' },
   { pattern: /phone|mobile|tel/i, pii_type: 'phone' },
-  { pattern: /address|street|city|zip|postal/i, pii_type: 'address' },
   { pattern: /ip_?address|ip$/i, pii_type: 'ip' },
+  { pattern: /address|street|city|zip|postal/i, pii_type: 'address' },
   { pattern: /card|account|iban|routing|ssn|tax_id/i, pii_type: 'financial' },
 ];
 

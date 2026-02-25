@@ -426,43 +426,6 @@ export class ObservabilityService {
     }));
   }
 
-  /**
-   * Get error aggregation for last 24h, 1h, and 15min windows. Cached for 2 minutes.
-   */
-  static async getErrorDashboard(): Promise<{
-    last_24h: ErrorAggregate[];
-    last_1h: ErrorAggregate[];
-    last_15min: ErrorAggregate[];
-  }> {
-    const cached = await cacheGet<{
-      last_24h: ErrorAggregate[];
-      last_1h: ErrorAggregate[];
-      last_15min: ErrorAggregate[];
-    }>(ERROR_DASHBOARD_CACHE_KEY);
-
-    if (cached) {
-      return cached;
-    }
-
-    const [last24h, last1h, last15min] = await Promise.all([
-      ObservabilityService.aggregateErrors(24),
-      ObservabilityService.aggregateErrors(1),
-      ObservabilityService.aggregateErrors(0.25),
-    ]);
-
-    const dashboard = {
-      last_24h: last24h,
-      last_1h: last1h,
-      last_15min: last15min,
-    };
-
-    await cacheSet(ERROR_DASHBOARD_CACHE_KEY, dashboard, ERROR_DASHBOARD_CACHE_TTL);
-
-    logger.debug('Error dashboard cached');
-
-    return dashboard;
-  }
-
   // -----------------------------------------------------------------------
   // Confidence Drift
   // -----------------------------------------------------------------------
@@ -607,7 +570,7 @@ export class ObservabilityService {
    * Delete logs older than their retention period. Returns count of deleted records
    * per log type.
    */
-  static async enforceLogRetention(): Promise<Record<string, number>> {
+  static async enforceLogRetention(_userId?: string): Promise<Record<string, number>> {
     const policies = await ObservabilityService.getLogRetentionPolicies();
     const deletedCounts: Record<string, number> = {};
 
@@ -794,6 +757,104 @@ export class ObservabilityService {
       agent_states: agentStates,
       kill_switch_active: killSwitchActive,
     };
+  }
+
+  // -----------------------------------------------------------------------
+  // Private health check helpers
+  // -----------------------------------------------------------------------
+
+  // -----------------------------------------------------------------------
+  // Controller-compatible aliases
+  // -----------------------------------------------------------------------
+
+  /**
+   * Alias for getErrorDashboard that accepts optional filter parameters.
+   * Used by the infrastructure controller.
+   */
+  static async getErrorDashboard(filters?: {
+    startDate?: string;
+    endDate?: string;
+    severity?: string;
+  }): Promise<{
+    last_24h: ErrorAggregate[];
+    last_1h: ErrorAggregate[];
+    last_15min: ErrorAggregate[];
+  }>;
+
+  /**
+   * Get error aggregation for last 24h, 1h, and 15min windows. Cached for 2 minutes.
+   */
+  static async getErrorDashboard(): Promise<{
+    last_24h: ErrorAggregate[];
+    last_1h: ErrorAggregate[];
+    last_15min: ErrorAggregate[];
+  }>;
+
+  static async getErrorDashboard(_filters?: {
+    startDate?: string;
+    endDate?: string;
+    severity?: string;
+  }): Promise<{
+    last_24h: ErrorAggregate[];
+    last_1h: ErrorAggregate[];
+    last_15min: ErrorAggregate[];
+  }> {
+    const cached = await cacheGet<{
+      last_24h: ErrorAggregate[];
+      last_1h: ErrorAggregate[];
+      last_15min: ErrorAggregate[];
+    }>(ERROR_DASHBOARD_CACHE_KEY);
+
+    if (cached) {
+      return cached;
+    }
+
+    const [last24h, last1h, last15min] = await Promise.all([
+      ObservabilityService.aggregateErrors(24),
+      ObservabilityService.aggregateErrors(1),
+      ObservabilityService.aggregateErrors(0.25),
+    ]);
+
+    const dashboard = {
+      last_24h: last24h,
+      last_1h: last1h,
+      last_15min: last15min,
+    };
+
+    await cacheSet(ERROR_DASHBOARD_CACHE_KEY, dashboard, ERROR_DASHBOARD_CACHE_TTL);
+
+    logger.debug('Error dashboard cached');
+
+    return dashboard;
+  }
+
+  /**
+   * Alias for getConfidenceDriftReport that accepts optional filter parameters.
+   * Used by the infrastructure controller.
+   */
+  static async getConfidenceDrift(_filters?: {
+    agentType?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ConfidenceDrift[]> {
+    return ObservabilityService.getConfidenceDriftReport();
+  }
+
+  /**
+   * Alias for getLogRetentionPolicies. Used by the infrastructure controller.
+   */
+  static async getLogRetention(): Promise<LogRetentionPolicy[]> {
+    return ObservabilityService.getLogRetentionPolicies();
+  }
+
+  /**
+   * Alias for configureLogRetention. Used by the infrastructure controller.
+   */
+  static async updateLogRetention(
+    policy: LogRetentionPolicy,
+    _userId?: string,
+  ): Promise<LogRetentionPolicy> {
+    return ObservabilityService.configureLogRetention(policy);
   }
 
   // -----------------------------------------------------------------------
