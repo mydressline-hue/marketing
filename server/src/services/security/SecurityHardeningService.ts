@@ -1050,4 +1050,100 @@ export class SecurityHardeningService {
 
     return report;
   }
+
+  // -------------------------------------------------------------------------
+  // Controller-facing Aliases
+  // -------------------------------------------------------------------------
+
+  /**
+   * Alias for rotateAPIKeys used by the infrastructure controller.
+   */
+  static async rotateKeys(
+    params: { services?: string[]; reason?: string },
+    userId: string,
+  ): Promise<KeyRotationResult[]> {
+    await AuditService.log({
+      userId,
+      action: 'security.rotate_keys_requested',
+      resourceType: 'api_key',
+      details: params,
+    });
+    return SecurityHardeningService.rotateAPIKeys(true);
+  }
+
+  /**
+   * Alias for validateEncryption used by the infrastructure controller.
+   */
+  static async getEncryptionStatus(): Promise<EncryptionStatus> {
+    return SecurityHardeningService.validateEncryption();
+  }
+
+  /**
+   * Alias for getIPWhitelist used by the infrastructure controller.
+   */
+  static async getIpWhitelist(): Promise<IPWhitelistEntry[]> {
+    return SecurityHardeningService.getIPWhitelist();
+  }
+
+  /**
+   * Alias for manageIPWhitelist('add', ...) used by the infrastructure controller.
+   */
+  static async addToWhitelist(
+    params: { ip: string; description?: string },
+    userId: string,
+  ): Promise<IPWhitelistEntry> {
+    return SecurityHardeningService.manageIPWhitelist('add', {
+      ip_address: params.ip,
+      description: params.description || '',
+      created_by: userId,
+    });
+  }
+
+  /**
+   * Alias for manageIPWhitelist('remove', ...) used by the infrastructure controller.
+   */
+  static async removeFromWhitelist(
+    id: string,
+    userId: string,
+  ): Promise<IPWhitelistEntry> {
+    await AuditService.log({
+      userId,
+      action: 'security.ip_whitelist_remove_requested',
+      resourceType: 'ip_whitelist',
+      resourceId: id,
+    });
+    return SecurityHardeningService.manageIPWhitelist('remove', { id });
+  }
+
+  /**
+   * Alias for scanForThreats used by the infrastructure controller.
+   */
+  static async runThreatScan(
+    params: { scanType?: string; targets?: string[] },
+    userId: string,
+  ): Promise<ThreatScanResult> {
+    await AuditService.log({
+      userId,
+      action: 'security.threat_scan_requested',
+      resourceType: 'threat_scan',
+      details: params,
+    });
+    return SecurityHardeningService.scanForThreats();
+  }
+
+  /**
+   * Alias for checkSOC2Readiness used by the infrastructure controller.
+   */
+  static async getSoc2Readiness(): Promise<SOC2Control[]> {
+    return SecurityHardeningService.checkSOC2Readiness();
+  }
+
+  /**
+   * Alias for generateSecurityReport used by the infrastructure controller.
+   */
+  static async getSecurityReport(
+    _params?: { startDate?: string; endDate?: string },
+  ): Promise<Record<string, unknown>> {
+    return SecurityHardeningService.generateSecurityReport();
+  }
 }

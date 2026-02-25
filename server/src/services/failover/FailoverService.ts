@@ -792,7 +792,7 @@ export class FailoverService {
       action: 'failover.degradation_configured',
       resourceType: 'failover',
       resourceId: service,
-      details: fullConfig,
+      details: { ...fullConfig } as Record<string, unknown>,
     });
 
     return fullConfig;
@@ -971,7 +971,7 @@ export class FailoverService {
       }
     } while (degradedCursor !== '0');
 
-    for (const serviceName of serviceNames) {
+    for (const serviceName of Array.from(serviceNames)) {
       const cbState =
         await FailoverService.getCircuitBreakerState(serviceName);
 
