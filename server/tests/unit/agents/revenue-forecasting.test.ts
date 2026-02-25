@@ -520,12 +520,14 @@ describe('RevenueForecastingAgent', () => {
 
   describe('trendAnalysis', () => {
     it('should detect upward trend with positive slope', async () => {
+      // fetchMetricTimeSeries uses ORDER BY period DESC then reverses,
+      // so mock rows should be in descending order.
       mockPool.query.mockResolvedValue({
         rows: [
-          { period: '2025-01', value: '1000' },
-          { period: '2025-02', value: '1200' },
-          { period: '2025-03', value: '1400' },
           { period: '2025-04', value: '1600' },
+          { period: '2025-03', value: '1400' },
+          { period: '2025-02', value: '1200' },
+          { period: '2025-01', value: '1000' },
         ],
       });
 
@@ -546,11 +548,12 @@ describe('RevenueForecastingAgent', () => {
     });
 
     it('should produce non-negative projections', async () => {
+      // DESC order from DB, reversed internally
       mockPool.query.mockResolvedValue({
         rows: [
-          { period: '2025-01', value: '100' },
-          { period: '2025-02', value: '90' },
           { period: '2025-03', value: '80' },
+          { period: '2025-02', value: '90' },
+          { period: '2025-01', value: '100' },
         ],
       });
       const result = await agent.trendAnalysis('revenue', 3);
@@ -652,14 +655,25 @@ describe('RevenueForecastingAgent', () => {
     });
 
     it('should handle partial failures gracefully and still return output', async () => {
-      // Revenue query succeeds but spend query fails
-      let callIdx = 0;
-      mockPool.query.mockImplementation(() => {
-        callIdx++;
-        if (callIdx <= 2) {
+      // Revenue queries succeed, spend queries fail, infrastructure queries succeed.
+      // The agent should degrade gracefully, using empty fallbacks for
+      // sub-analyses that depend on spend data.
+      mockPool.query.mockImplementation((_sql: string) => {
+        const sql = typeof _sql === 'string' ? _sql : '';
+        // Historical revenue aggregation queries succeed
+        if (sql.includes('GROUP BY') && sql.includes('roas')) {
           return Promise.resolve({ rows: buildRevenueRows(6) });
         }
-        return Promise.reject(new Error('Connection lost'));
+        // Campaign spend detail queries fail
+        if (sql.includes('platform') && sql.includes('conversions')) {
+          return Promise.reject(new Error('Connection lost'));
+        }
+        // Budget allocation queries fail
+        if (sql.includes('budget_allocations')) {
+          return Promise.reject(new Error('Connection lost'));
+        }
+        // Infrastructure queries (agent_states, agent_decisions) succeed
+        return Promise.resolve({ rows: [] });
       });
 
       const output = await agent.process({
@@ -671,6 +685,8 @@ describe('RevenueForecastingAgent', () => {
       // Should still produce output even if some sub-analyses fail
       expect(output.agentType).toBe('revenue_forecasting');
       expect(output.decision).toBe('revenue_forecast_complete');
+      // Should have warnings about the failures
+      expect(output.warnings.length).toBeGreaterThan(0);
     });
   });
 
