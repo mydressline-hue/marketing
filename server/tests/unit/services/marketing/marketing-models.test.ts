@@ -205,7 +205,7 @@ beforeAll(async () => {
         [id, 'mmm', JSON.stringify(params), userId],
       );
       await AuditService.log({
-        userId,
+        userId: userId as string,
         action: 'marketing_models.run_mmm',
         resourceType: 'marketing_model',
         resourceId: id,
@@ -273,7 +273,7 @@ beforeAll(async () => {
         [id, 'bayesian', campaignId, userId],
       );
       await AuditService.log({
-        userId,
+        userId: userId as string,
         action: 'marketing_models.run_bayesian',
         resourceType: 'attribution_model',
         resourceId: id,
@@ -322,7 +322,7 @@ beforeAll(async () => {
         [id, JSON.stringify(params), userId],
       );
       await AuditService.log({
-        userId,
+        userId: userId as string,
         action: 'marketing_models.run_econometric',
         resourceType: 'econometric_model',
         resourceId: id,
@@ -374,7 +374,7 @@ beforeAll(async () => {
         [id, params.test_name, JSON.stringify(params.test_regions), JSON.stringify(params.control_regions), params.start_date, params.end_date, userId],
       );
       await AuditService.log({
-        userId,
+        userId: userId as string,
         action: 'marketing_models.create_geo_lift',
         resourceType: 'geo_lift_test',
         resourceId: id,
@@ -446,7 +446,7 @@ beforeAll(async () => {
         [id, params.survey_name, params.campaign_id, params.sample_size, userId],
       );
       await AuditService.log({
-        userId,
+        userId: userId as string,
         action: 'marketing_models.create_brand_lift',
         resourceType: 'brand_lift_survey',
         resourceId: id,
@@ -495,7 +495,7 @@ beforeAll(async () => {
         [id, JSON.stringify(conversions), userId],
       );
       await AuditService.log({
-        userId,
+        userId: userId as string,
         action: 'marketing_models.record_offline',
         resourceType: 'offline_conversion',
         resourceId: id,
@@ -536,7 +536,7 @@ beforeAll(async () => {
         [id, channel, userId],
       );
       await AuditService.log({
-        userId,
+        userId: userId as string,
         action: 'marketing_models.run_saturation',
         resourceType: 'saturation_analysis',
         resourceId: id,
@@ -585,7 +585,7 @@ beforeAll(async () => {
         [id, channel, userId],
       );
       await AuditService.log({
-        userId,
+        userId: userId as string,
         action: 'marketing_models.calc_diminishing_returns',
         resourceType: 'diminishing_returns',
         resourceId: id,

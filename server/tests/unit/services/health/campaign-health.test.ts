@@ -518,10 +518,10 @@ beforeAll(async () => {
         throw new NotFoundError('Alert not found');
       }
       await AuditService.log({
-        userId,
+        userId: userId as string,
         action: 'health.acknowledge_alert',
         resourceType: 'health_alert',
-        resourceId: alertId,
+        resourceId: alertId as string,
         details: {},
       });
       return result.rows[0];
@@ -567,7 +567,7 @@ beforeAll(async () => {
       );
 
       await AuditService.log({
-        userId,
+        userId: userId as string,
         action: 'health.full_check',
         resourceType: 'campaign_health',
         resourceId: id,

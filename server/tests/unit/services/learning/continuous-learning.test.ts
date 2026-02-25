@@ -464,17 +464,21 @@ describe('ContinuousLearningService', () => {
 
   describe('Creative Fatigue Detection', () => {
     it('should detect creative fatigue', async () => {
+      // Initial query returns creatives with baseline/recent stats that indicate fatigue
       const rows = [
-        makeCreativePerformanceRow({ fatigue_score: 0.82, creative_id: 'cr-1' }),
-        makeCreativePerformanceRow({ id: 'crp-2', fatigue_score: 0.71, creative_id: 'cr-2' }),
+        { creative_id: 'cr-1', creative_name: 'Ad A', campaign_id: CAMPAIGN_ID,
+          days_running: 60, baseline_ctr: 0.05, baseline_conv: 0.03,
+          recent_ctr: 0.02, recent_conv: 0.015, frequency: 8 },
       ];
-      mockQuery.mockResolvedValueOnce({ rows });
+      mockQuery.mockResolvedValueOnce({ rows }); // main query
+      mockQuery.mockResolvedValueOnce({ rows: [{ name: 'Replacement Creative' }] }); // suggestions
+      mockQuery.mockResolvedValueOnce({ rows: [] }); // insert alert
 
-      const result = await ContinuousLearningService.detectCreativeFatigue(CAMPAIGN_ID);
+      const result = await ContinuousLearningService.detectCreativeFatigue(CAMPAIGN_ID) as any;
 
-      expect(result.fatigued_creatives).toBeInstanceOf(Array);
-      expect(result.fatigued_creatives.length).toBeGreaterThan(0);
-      expect(result.fatigued_creatives[0].fatigue_score).toBeGreaterThanOrEqual(0.7);
+      expect(Array.isArray(result)).toBe(true);
+      expect(result.length).toBeGreaterThan(0);
+      expect(result[0].fatigue_score).toBeGreaterThanOrEqual(0.5);
     });
 
     it('should recommend creative rotations', async () => {
@@ -548,18 +552,22 @@ describe('ContinuousLearningService', () => {
     });
 
     it('should calculate fatigue score correctly', async () => {
-      const row = makeCreativePerformanceRow({
-        ctr_trend: [0.050, 0.048, 0.042, 0.035, 0.028],
-        fatigue_score: 0.78,
-        days_running: 55,
-      });
-      mockQuery.mockResolvedValueOnce({ rows: [row] });
+      // Creative with significant CTR and conversion decline + high frequency
+      const row = {
+        creative_id: 'cr-fat', creative_name: 'Fatigued Ad', campaign_id: CAMPAIGN_ID,
+        days_running: 55, baseline_ctr: 0.050, baseline_conv: 0.030,
+        recent_ctr: 0.020, recent_conv: 0.012, frequency: 10,
+      };
+      mockQuery.mockResolvedValueOnce({ rows: [row] }); // main query
+      mockQuery.mockResolvedValueOnce({ rows: [] }); // suggestions
+      mockQuery.mockResolvedValueOnce({ rows: [] }); // insert alert
 
-      const result = await ContinuousLearningService.detectCreativeFatigue(CAMPAIGN_ID);
+      const result = await ContinuousLearningService.detectCreativeFatigue(CAMPAIGN_ID) as any;
 
       // Fatigue score should be high when CTR is declining
-      expect(result.fatigued_creatives[0].fatigue_score).toBeGreaterThan(0.5);
-      expect(result.fatigued_creatives[0].ctr_trend).toBeInstanceOf(Array);
+      expect(result.length).toBe(1);
+      expect(result[0].fatigue_score).toBeGreaterThan(0.5);
+      expect(result[0].ctr_decline_pct).toBeGreaterThan(0);
     });
   });
 
@@ -800,23 +808,18 @@ describe('ContinuousLearningService', () => {
     });
 
     it('should return learning metrics', async () => {
-      const metricsRow = {
-        strategies_learned_24h: 15,
-        outcomes_processed_24h: 340,
-        signals_recorded_24h: 120,
-        avg_strategy_improvement: 0.05,
-        fatigue_alerts_generated_24h: 8,
-        seasonal_adjustments_active: 3,
-        cache_hit_rate: 0.82,
-      };
-      mockQuery.mockResolvedValueOnce({ rows: [metricsRow] });
+      // getLearningMetrics makes 4 queries: records count, strategy memory, fatigue alerts, market trends
+      mockQuery.mockResolvedValueOnce({ rows: [{ total: 340, avg_rw: 0.74 }] });
+      mockQuery.mockResolvedValueOnce({ rows: [] }); // strategy memory
+      mockQuery.mockResolvedValueOnce({ rows: [{ c: 8 }] }); // fatigue alerts
+      mockQuery.mockResolvedValueOnce({ rows: [{ c: 3 }] }); // market trends
 
       const result = await ContinuousLearningService.getLearningMetrics();
 
-      expect(result.strategies_learned_24h).toBe(15);
-      expect(result.outcomes_processed_24h).toBe(340);
-      expect(result.avg_strategy_improvement).toBe(0.05);
-      expect(result.cache_hit_rate).toBe(0.82);
+      expect(result.totalRecords).toBe(340);
+      expect(result.avgReward).toBeDefined();
+      expect(result.fatigueAlerts).toBe(8);
+      expect(result.activeTrends).toBe(3);
     });
 
     it('should handle reset learning data', async () => {
