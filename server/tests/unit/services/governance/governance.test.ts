@@ -109,8 +109,11 @@ function mockPolicyCached(policy = DEFAULT_GOVERNANCE_POLICY): void {
 
 describe('GovernanceService', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     mockCacheGet.mockResolvedValue(null);
+    mockCacheSet.mockResolvedValue(undefined);
+    mockCacheDel.mockResolvedValue(undefined);
+    mockAuditLog.mockResolvedValue(undefined);
     mockGenerateId.mockReturnValue('generated-uuid');
   });
 
@@ -400,7 +403,8 @@ describe('GovernanceService', () => {
       mockPolicyLookup();
       mockQuery.mockResolvedValueOnce({ rows: [] }); // kill switch
       mockQuery.mockResolvedValueOnce({ rows: [] }); // contradictions
-      // No budget check needed since output has budget_required
+      // Budget check (output_data has budget_required: 50000)
+      mockQuery.mockResolvedValueOnce({ rows: [{ available_budget: '100000' }] });
 
       const result = await GovernanceService.validateStrategy('decision-001');
 

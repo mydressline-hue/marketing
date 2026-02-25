@@ -8,9 +8,9 @@
 
 import { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
-import { KillSwitchService } from '../services/killswitch/KillSwitchService';
-import { AutomatedTriggersService } from '../services/killswitch/AutomatedTriggersService';
-import { GovernanceService } from '../services/governance/GovernanceService';
+import { KillSwitchService, OperationType } from '../services/killswitch/KillSwitchService';
+import { GovernanceService, ApprovalRequest } from '../services/governance/GovernanceService';
+import type { DateRange } from '../types';
 
 // ===========================================================================
 // Kill Switch Handlers
@@ -21,17 +21,10 @@ import { GovernanceService } from '../services/governance/GovernanceService';
  * Activate the kill switch at the specified level.
  */
 export const activateKillSwitch = asyncHandler(async (req: Request, res: Response) => {
-  const { level, reason, trigger_type, affected_countries, affected_campaigns } = req.body;
+  const { level, reason } = req.body;
   const userId = req.user!.id;
 
-  const result = await KillSwitchService.activate({
-    level,
-    reason,
-    trigger_type,
-    affected_countries,
-    affected_campaigns,
-    activated_by: userId,
-  });
+  const result = await KillSwitchService.activateGlobalKillSwitch(userId, level, reason);
 
   res.status(201).json({
     success: true,
@@ -46,9 +39,8 @@ export const activateKillSwitch = asyncHandler(async (req: Request, res: Respons
 export const deactivateKillSwitch = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const userId = req.user!.id;
-  const { reason } = req.body;
 
-  const result = await KillSwitchService.deactivate(id, userId, reason);
+  const result = await KillSwitchService.deactivateKillSwitch(id, userId);
 
   res.json({
     success: true,
@@ -61,7 +53,7 @@ export const deactivateKillSwitch = asyncHandler(async (req: Request, res: Respo
  * Get current kill switch status including all active switches.
  */
 export const getKillSwitchStatus = asyncHandler(async (_req: Request, res: Response) => {
-  const result = await KillSwitchService.getStatus();
+  const result = await KillSwitchService.getActiveKillSwitches();
 
   res.json({
     success: true,
@@ -94,7 +86,7 @@ export const getKillSwitchHistory = asyncHandler(async (req: Request, res: Respo
     limit: limit ? parseInt(limit as string, 10) : 20,
   };
 
-  const result = await KillSwitchService.getHistory(pagination);
+  const result = await KillSwitchService.getKillSwitchHistory(pagination);
 
   res.json({
     success: true,
@@ -131,9 +123,8 @@ export const pauseCampaign = asyncHandler(async (req: Request, res: Response) =>
 export const resumeCampaign = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const userId = req.user!.id;
-  const { reason } = req.body;
 
-  const result = await KillSwitchService.resumeCampaign(id, userId, reason);
+  const result = await KillSwitchService.resumeCampaign(id, userId);
 
   res.json({
     success: true,
@@ -165,9 +156,8 @@ export const pauseCountry = asyncHandler(async (req: Request, res: Response) => 
 export const resumeCountry = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const userId = req.user!.id;
-  const { reason } = req.body;
 
-  const result = await KillSwitchService.resumeCountry(id, userId, reason);
+  const result = await KillSwitchService.resumeCountry(id, userId);
 
   res.json({
     success: true,
@@ -183,7 +173,7 @@ export const pauseAutomation = asyncHandler(async (req: Request, res: Response) 
   const userId = req.user!.id;
   const { reason } = req.body;
 
-  const result = await AutomatedTriggersService.pauseAll(userId, reason);
+  const result = await KillSwitchService.pauseAutomation(userId, reason);
 
   res.json({
     success: true,
@@ -199,7 +189,7 @@ export const lockApiKeys = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.id;
   const { reason } = req.body;
 
-  const result = await KillSwitchService.lockApiKeys(userId, reason);
+  const result = await KillSwitchService.lockAPIKeys(userId, reason);
 
   res.json({
     success: true,
@@ -214,8 +204,8 @@ export const lockApiKeys = asyncHandler(async (req: Request, res: Response) => {
 export const checkOperation = asyncHandler(async (req: Request, res: Response) => {
   const { operation, context } = req.query;
 
-  const result = await KillSwitchService.checkOperation(
-    operation as string,
+  const result = await KillSwitchService.isOperationAllowed(
+    operation as OperationType,
     context ? JSON.parse(context as string) : {},
   );
 
@@ -235,9 +225,8 @@ export const checkOperation = asyncHandler(async (req: Request, res: Response) =
  */
 export const assessRisk = asyncHandler(async (req: Request, res: Response) => {
   const { decisionId } = req.params;
-  const userId = req.user!.id;
 
-  const result = await GovernanceService.assessRisk(decisionId, userId);
+  const result = await GovernanceService.assessRisk(decisionId);
 
   res.json({
     success: true,
@@ -270,9 +259,8 @@ export const gateConfidence = asyncHandler(async (req: Request, res: Response) =
  */
 export const validateStrategy = asyncHandler(async (req: Request, res: Response) => {
   const { decisionId } = req.params;
-  const userId = req.user!.id;
 
-  const result = await GovernanceService.validateStrategy(decisionId, userId);
+  const result = await GovernanceService.validateStrategy(decisionId);
 
   res.json({
     success: true,
@@ -288,7 +276,7 @@ export const getApprovals = asyncHandler(async (req: Request, res: Response) => 
   const { page, limit, status } = req.query;
 
   const filters = {
-    status: status as string | undefined,
+    status: status as ApprovalRequest['status'] | undefined,
     page: page ? parseInt(page as string, 10) : 1,
     limit: limit ? parseInt(limit as string, 10) : 20,
   };
@@ -315,7 +303,8 @@ export const resolveApproval = asyncHandler(async (req: Request, res: Response) 
   const userId = req.user!.id;
   const { action, reason } = req.body;
 
-  const result = await GovernanceService.resolveApproval(id, userId, action, reason);
+  const approved = action === 'approved' || action === 'approve';
+  const result = await GovernanceService.resolveApproval(id, userId, approved, reason);
 
   res.json({
     success: true,
@@ -376,10 +365,10 @@ export const updatePolicy = asyncHandler(async (req: Request, res: Response) => 
 export const getGovernanceMetrics = asyncHandler(async (req: Request, res: Response) => {
   const { startDate, endDate } = req.query;
 
-  const dateRange = {
-    startDate: startDate as string | undefined,
-    endDate: endDate as string | undefined,
-  };
+  const dateRange: DateRange | undefined =
+    startDate && endDate
+      ? { startDate: startDate as string, endDate: endDate as string }
+      : undefined;
 
   const result = await GovernanceService.getMetrics(dateRange);
 

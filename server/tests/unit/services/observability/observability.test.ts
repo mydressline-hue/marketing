@@ -652,11 +652,11 @@ describe('ObservabilityService', () => {
           sample_count: '50',
         }],
       });
-      // Trend query: first half and second half nearly equal
+      // Trend query: first half and second half nearly equal (within 0.02 threshold)
       mockQuery.mockResolvedValueOnce({
         rows: [{
-          first_half_avg: '0.84',
-          second_half_avg: '0.86',
+          first_half_avg: '0.845',
+          second_half_avg: '0.855',
         }],
       });
 

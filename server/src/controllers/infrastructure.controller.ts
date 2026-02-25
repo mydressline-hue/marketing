@@ -25,12 +25,7 @@ import { FailoverService } from '../services/failover/FailoverService';
 export const getSpendMonitoring = asyncHandler(async (req: Request, res: Response) => {
   const { startDate, endDate, country, channel } = req.query;
 
-  const result = await MonitoringService.getSpendMonitoring({
-    startDate: startDate as string | undefined,
-    endDate: endDate as string | undefined,
-    country: country as string | undefined,
-    channel: channel as string | undefined,
-  });
+  const result = await MonitoringService.monitorSpend();
 
   res.json({
     success: true,
@@ -42,14 +37,18 @@ export const getSpendMonitoring = asyncHandler(async (req: Request, res: Respons
  * GET /monitoring/anomalies
  * Get detected anomalies across spend, performance, and system metrics.
  */
-export const getAnomalies = asyncHandler(async (req: Request, res: Response) => {
-  const { severity, startDate, endDate } = req.query;
+export const getAnomalies = asyncHandler(async (_req: Request, res: Response) => {
+  const [ctrAnomalies, cpcAnomalies, conversionAnomalies] = await Promise.all([
+    MonitoringService.detectCTRAnomaly(),
+    MonitoringService.detectCPCAnomaly(),
+    MonitoringService.detectConversionAnomaly(),
+  ]);
 
-  const result = await MonitoringService.getAnomalies({
-    severity: severity as string | undefined,
-    startDate: startDate as string | undefined,
-    endDate: endDate as string | undefined,
-  });
+  const result = {
+    ctr: ctrAnomalies,
+    cpc: cpcAnomalies,
+    conversion_rate: conversionAnomalies,
+  };
 
   res.json({
     success: true,
@@ -62,10 +61,9 @@ export const getAnomalies = asyncHandler(async (req: Request, res: Response) => 
  * Get active alerts.
  */
 export const getAlerts = asyncHandler(async (req: Request, res: Response) => {
-  const { status, severity, page, limit } = req.query;
+  const { severity, page, limit } = req.query;
 
-  const result = await MonitoringService.getAlerts({
-    status: status as string | undefined,
+  const result = await MonitoringService.getActiveAlerts({
     severity: severity as string | undefined,
     page: page ? parseInt(page as string, 10) : 1,
     limit: limit ? parseInt(limit as string, 10) : 20,
@@ -89,9 +87,8 @@ export const getAlerts = asyncHandler(async (req: Request, res: Response) => {
 export const acknowledgeAlert = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const userId = req.user!.id;
-  const { note } = req.body;
 
-  const result = await MonitoringService.acknowledgeAlert(id, userId, note);
+  const result = await MonitoringService.acknowledgeAlert(id, userId);
 
   res.json({
     success: true,
@@ -121,11 +118,10 @@ export const resolveAlert = asyncHandler(async (req: Request, res: Response) => 
  * Get alert history with optional filters.
  */
 export const getAlertHistory = asyncHandler(async (req: Request, res: Response) => {
-  const { startDate, endDate, page, limit } = req.query;
+  const { severity, page, limit } = req.query;
 
   const result = await MonitoringService.getAlertHistory({
-    startDate: startDate as string | undefined,
-    endDate: endDate as string | undefined,
+    severity: severity as string | undefined,
     page: page ? parseInt(page as string, 10) : 1,
     limit: limit ? parseInt(limit as string, 10) : 20,
   });
@@ -149,7 +145,7 @@ export const updateAlertConfig = asyncHandler(async (req: Request, res: Response
   const userId = req.user!.id;
   const configUpdate = req.body;
 
-  const result = await MonitoringService.updateAlertConfig(configUpdate, userId);
+  const result = await MonitoringService.configureAlert(configUpdate);
 
   res.json({
     success: true,
@@ -162,7 +158,7 @@ export const updateAlertConfig = asyncHandler(async (req: Request, res: Response
  * Get aggregated monitoring dashboard data.
  */
 export const getMonitoringDashboard = asyncHandler(async (_req: Request, res: Response) => {
-  const result = await MonitoringService.getDashboard();
+  const result = await MonitoringService.getMonitoringDashboard();
 
   res.json({
     success: true,
@@ -178,14 +174,8 @@ export const getMonitoringDashboard = asyncHandler(async (_req: Request, res: Re
  * GET /data-quality/report
  * Get data quality report with scores and issues.
  */
-export const getDataQualityReport = asyncHandler(async (req: Request, res: Response) => {
-  const { table, startDate, endDate } = req.query;
-
-  const result = await DataQualityService.getReport({
-    table: table as string | undefined,
-    startDate: startDate as string | undefined,
-    endDate: endDate as string | undefined,
-  });
+export const getDataQualityReport = asyncHandler(async (_req: Request, res: Response) => {
+  const result = await DataQualityService.generateDataQualityReport();
 
   res.json({
     success: true,
@@ -199,9 +189,8 @@ export const getDataQualityReport = asyncHandler(async (req: Request, res: Respo
  */
 export const validateTableSchema = asyncHandler(async (req: Request, res: Response) => {
   const { table } = req.params;
-  const userId = req.user!.id;
 
-  const result = await DataQualityService.validateSchema(table, userId);
+  const result = await DataQualityService.validateSchema(table);
 
   res.json({
     success: true,
@@ -216,7 +205,7 @@ export const validateTableSchema = asyncHandler(async (req: Request, res: Respon
 export const getDataLineage = asyncHandler(async (req: Request, res: Response) => {
   const { table } = req.params;
 
-  const result = await DataQualityService.getLineage(table);
+  const result = await DataQualityService.getDataLineage(table);
 
   res.json({
     success: true,
@@ -229,7 +218,7 @@ export const getDataLineage = asyncHandler(async (req: Request, res: Response) =
  * Detect PII fields across all tables.
  */
 export const detectPii = asyncHandler(async (_req: Request, res: Response) => {
-  const result = await DataQualityService.detectPii();
+  const result = await DataQualityService.detectPIIFields();
 
   res.json({
     success: true,
@@ -242,10 +231,9 @@ export const detectPii = asyncHandler(async (_req: Request, res: Response) => {
  * Anonymize PII data in specified tables/fields.
  */
 export const anonymizePii = asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.user!.id;
-  const { tables, fields, strategy } = req.body;
+  const { table, columns } = req.body;
 
-  const result = await DataQualityService.anonymizePii({ tables, fields, strategy }, userId);
+  const result = await DataQualityService.anonymizePII(table, columns);
 
   res.json({
     success: true,
@@ -260,7 +248,7 @@ export const anonymizePii = asyncHandler(async (req: Request, res: Response) => 
 export const getUserConsent = asyncHandler(async (req: Request, res: Response) => {
   const { userId } = req.params;
 
-  const result = await DataQualityService.getConsent(userId);
+  const result = await DataQualityService.getConsentStatus(userId);
 
   res.json({
     success: true,
@@ -273,10 +261,9 @@ export const getUserConsent = asyncHandler(async (req: Request, res: Response) =
  * Manage consent records (create/update).
  */
 export const manageConsent = asyncHandler(async (req: Request, res: Response) => {
-  const adminUserId = req.user!.id;
-  const consentData = req.body;
+  const { userId, consentType, granted, regulation } = req.body;
 
-  const result = await DataQualityService.manageConsent(consentData, adminUserId);
+  const result = await DataQualityService.manageConsent(userId, consentType, granted, regulation);
 
   res.json({
     success: true,
@@ -519,7 +506,7 @@ export const enforceLogRetention = asyncHandler(async (req: Request, res: Respon
  * Public health check -- no authentication required.
  */
 export const healthCheck = asyncHandler(async (_req: Request, res: Response) => {
-  const result = await FailoverService.healthCheck();
+  const result = await ObservabilityService.healthCheck();
 
   res.json({
     success: true,
@@ -532,7 +519,7 @@ export const healthCheck = asyncHandler(async (_req: Request, res: Response) => 
  * Detailed health check with subsystem statuses (admin only).
  */
 export const detailedHealthCheck = asyncHandler(async (_req: Request, res: Response) => {
-  const result = await FailoverService.detailedHealthCheck();
+  const result = await FailoverService.getRecoveryStatus();
 
   res.json({
     success: true,
@@ -558,10 +545,9 @@ export const getFailoverState = asyncHandler(async (_req: Request, res: Response
  * Enter degraded mode (disable non-critical subsystems).
  */
 export const enterDegradedMode = asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.user!.id;
   const { reason, services } = req.body;
 
-  const result = await FailoverService.enterDegradedMode({ reason, services }, userId);
+  const result = await FailoverService.enterDegradedMode(services, reason);
 
   res.json({
     success: true,
@@ -574,10 +560,9 @@ export const enterDegradedMode = asyncHandler(async (req: Request, res: Response
  * Attempt to recover from degraded or failed state.
  */
 export const attemptRecovery = asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.user!.id;
   const { services } = req.body;
 
-  const result = await FailoverService.attemptRecovery({ services }, userId);
+  const result = await FailoverService.attemptRecovery(services);
 
   res.json({
     success: true,
@@ -590,10 +575,9 @@ export const attemptRecovery = asyncHandler(async (req: Request, res: Response) 
  * Initiate a system backup.
  */
 export const initiateBackup = asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.user!.id;
   const { type, tables } = req.body;
 
-  const result = await FailoverService.initiateBackup({ type, tables }, userId);
+  const result = await FailoverService.initiateBackup(type, tables);
 
   res.status(201).json({
     success: true,
@@ -608,18 +592,22 @@ export const initiateBackup = asyncHandler(async (req: Request, res: Response) =
 export const getBackupHistory = asyncHandler(async (req: Request, res: Response) => {
   const { page, limit } = req.query;
 
-  const result = await FailoverService.getBackupHistory({
-    page: page ? parseInt(page as string, 10) : 1,
-    limit: limit ? parseInt(limit as string, 10) : 20,
-  });
+  const allBackups = await FailoverService.getBackupHistory();
+
+  const pageNum = page ? parseInt(page as string, 10) : 1;
+  const limitNum = limit ? parseInt(limit as string, 10) : 20;
+  const total = allBackups.length;
+  const totalPages = Math.ceil(total / limitNum);
+  const start = (pageNum - 1) * limitNum;
+  const data = allBackups.slice(start, start + limitNum);
 
   res.json({
     success: true,
-    data: result.data,
+    data,
     meta: {
-      total: result.total,
-      page: result.page,
-      totalPages: result.totalPages,
+      total,
+      page: pageNum,
+      totalPages,
     },
   });
 });
