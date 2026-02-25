@@ -282,6 +282,12 @@ describe('BrandConsistencyAgent', () => {
 
   describe('checkVisualConsistency', () => {
     it('returns full compliance for correctly branded creative', async () => {
+      // Use mockImplementation for consistent key-based routing
+      mockCacheGet.mockImplementation(async (key: string) => {
+        if (key.includes('guidelines')) return SAMPLE_GUIDELINES;
+        return null;
+      });
+
       // Fetch creative details
       mockQuery.mockResolvedValueOnce({
         rows: [{
@@ -299,9 +305,6 @@ describe('BrandConsistencyAgent', () => {
         }],
       });
 
-      // Guidelines
-      mockCacheGet.mockResolvedValueOnce(SAMPLE_GUIDELINES);
-
       const result = await agent.checkVisualConsistency('creative-001');
 
       expect(result.creativeId).toBe('creative-001');
@@ -313,6 +316,11 @@ describe('BrandConsistencyAgent', () => {
     });
 
     it('detects non-approved colors and reduces compliance', async () => {
+      mockCacheGet.mockImplementation(async (key: string) => {
+        if (key.includes('guidelines')) return SAMPLE_GUIDELINES;
+        return null;
+      });
+
       mockQuery.mockResolvedValueOnce({
         rows: [{
           id: 'creative-002',
@@ -329,8 +337,6 @@ describe('BrandConsistencyAgent', () => {
         }],
       });
 
-      mockCacheGet.mockResolvedValueOnce(SAMPLE_GUIDELINES);
-
       const result = await agent.checkVisualConsistency('creative-002');
 
       expect(result.colorCompliance).toBe(50); // 1 out of 2 compliant
@@ -339,6 +345,11 @@ describe('BrandConsistencyAgent', () => {
     });
 
     it('flags missing logo', async () => {
+      mockCacheGet.mockImplementation(async (key: string) => {
+        if (key.includes('guidelines')) return SAMPLE_GUIDELINES;
+        return null;
+      });
+
       mockQuery.mockResolvedValueOnce({
         rows: [{
           id: 'creative-003',
@@ -355,8 +366,6 @@ describe('BrandConsistencyAgent', () => {
         }],
       });
 
-      mockCacheGet.mockResolvedValueOnce(SAMPLE_GUIDELINES);
-
       const result = await agent.checkVisualConsistency('creative-003');
 
       expect(result.logoUsage).toBe(false);
@@ -364,9 +373,12 @@ describe('BrandConsistencyAgent', () => {
     });
 
     it('returns zero scores when creative is not found', async () => {
+      mockCacheGet.mockImplementation(async (key: string) => {
+        if (key.includes('guidelines')) return SAMPLE_GUIDELINES;
+        return null;
+      });
+
       // Default mockQuery returns { rows: [] } -- creative not found
-      // Guidelines needed after creative fetch
-      mockCacheGet.mockResolvedValueOnce(SAMPLE_GUIDELINES);
 
       const result = await agent.checkVisualConsistency('nonexistent-creative');
 
@@ -381,12 +393,16 @@ describe('BrandConsistencyAgent', () => {
 
   describe('validateMessagingAlignment', () => {
     it('returns empty deviations when no campaign content exists', async () => {
-      // Cache miss for messaging validation (default)
-      // fetchCampaignContent returns no rows (default)
-      // getBrandGuidelines from cache
       mockCacheGet.mockImplementation(async (key: string) => {
         if (key.includes('guidelines')) return SAMPLE_GUIDELINES;
-        return null;
+        return null; // Cache miss for messaging validation
+      });
+      // Ensure fetchCampaignContent returns empty
+      mockQuery.mockImplementation(async (text: string) => {
+        if (typeof text === 'string' && text.includes('FROM creatives')) {
+          return { rows: [] };
+        }
+        return { rows: [] };
       });
 
       const result = await agent.validateMessagingAlignment('campaign-empty');
@@ -408,7 +424,6 @@ describe('BrandConsistencyAgent', () => {
         recommendations: [],
       };
 
-      // First cacheGet call (for messaging cache) returns the cached result
       mockCacheGet.mockImplementation(async (key: string) => {
         if (key.includes('messaging:campaign-001')) return cachedResult;
         return null;
