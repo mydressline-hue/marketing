@@ -90,13 +90,14 @@ describe('MonitoringService', () => {
       mockQuery.mockResolvedValueOnce({
         rows: [{ total_spend_today: '5000', total_budget: '20000' }],
       });
-      // Per-campaign anomaly query
+      // Per-campaign anomaly query -- spend within normal range
+      // Expected daily = 3000/30 = 100, actual = 150 -> 50% deviation (below 200%)
       mockQuery.mockResolvedValueOnce({
         rows: [
           {
             campaign_id: 'c1',
             campaign_name: 'Campaign Alpha',
-            actual_spend: '500',
+            actual_spend: '150',
             budget: '3000',
             campaign_days: '30',
           },
