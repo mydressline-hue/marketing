@@ -1419,4 +1419,76 @@ export class GovernanceService {
 
     return metrics;
   }
+
+  // -------------------------------------------------------------------------
+  // Controller-compatible aliases
+  // -------------------------------------------------------------------------
+
+  /** Alias for {@link gateByConfidence} accepting an options object. */
+  static async gateConfidence(opts: {
+    confidence_score: number;
+    decision_type: string;
+    context?: Record<string, unknown>;
+  }): Promise<{
+    allowed: boolean;
+    requires_approval: boolean;
+    reason: string;
+  }> {
+    const agentType: AgentType =
+      (opts.context?.agent_type as AgentType) ?? 'master_orchestrator';
+    return GovernanceService.gateByConfidence(
+      agentType,
+      opts.confidence_score,
+      opts.decision_type,
+    );
+  }
+
+  /** Alias for {@link getApprovalQueue}. */
+  static async getApprovals(
+    filters?: ApprovalQueueFilters,
+  ): ReturnType<typeof GovernanceService.getApprovalQueue> {
+    return GovernanceService.getApprovalQueue(filters);
+  }
+
+  /** Alias for {@link executeManualOverride} with controller-compatible param order. */
+  static async manualOverride(
+    decisionId: string,
+    userId: string,
+    reason: string,
+    overrideAction: string,
+  ): Promise<ManualOverride> {
+    return GovernanceService.executeManualOverride(
+      decisionId,
+      userId,
+      overrideAction,
+      reason,
+    );
+  }
+
+  /** Alias for {@link getGovernancePolicy}. */
+  static async getPolicy(): Promise<GovernancePolicy> {
+    return GovernanceService.getGovernancePolicy();
+  }
+
+  /** Alias for {@link updateGovernancePolicy}. */
+  static async updatePolicy(
+    policy: Partial<GovernancePolicy>,
+    userId: string,
+  ): Promise<GovernancePolicy> {
+    return GovernanceService.updateGovernancePolicy(policy, userId);
+  }
+
+  /** Alias for {@link getGovernanceMetrics}. */
+  static async getMetrics(
+    dateRange?: DateRange,
+  ): Promise<GovernanceMetrics> {
+    return GovernanceService.getGovernanceMetrics(dateRange);
+  }
+
+  /** Alias for {@link getDecisionAuditTrail}. */
+  static async getAuditTrail(
+    decisionId: string,
+  ): Promise<DecisionAuditTrail> {
+    return GovernanceService.getDecisionAuditTrail(decisionId);
+  }
 }
