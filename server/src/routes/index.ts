@@ -9,6 +9,8 @@ import budgetRoutes from './budget.routes';
 import alertsRoutes from './alerts.routes';
 import settingsRoutes from './settings.routes';
 import agentsRoutes from './agents.routes';
+import killswitchRoutes from './killswitch.routes';
+import infrastructureRoutes from './infrastructure.routes';
 
 const router = Router();
 
@@ -22,6 +24,8 @@ router.use('/budget', budgetRoutes);
 router.use('/alerts', alertsRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/agents', agentsRoutes);
+router.use('/killswitch', killswitchRoutes);
+router.use('/infrastructure', infrastructureRoutes);
 
 // Health check
 router.get('/health', (_req, res) => {
