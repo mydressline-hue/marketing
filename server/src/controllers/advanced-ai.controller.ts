@@ -579,7 +579,7 @@ export const listGeoLiftTests = asyncHandler(async (req: Request, res: Response)
     status: status as string | undefined,
     page: page ? parseInt(page as string, 10) : 1,
     limit: limit ? parseInt(limit as string, 10) : 20,
-  });
+  }) as { data: Record<string, unknown>[]; total: number; page: number; totalPages: number };
 
   res.json({
     success: true,

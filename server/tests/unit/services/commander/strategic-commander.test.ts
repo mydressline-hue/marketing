@@ -175,7 +175,7 @@ beforeAll(async () => {
         [id, horizonDays, userId],
       );
       await AuditService.log({
-        userId,
+        userId: userId as string,
         action: 'commander.generate_projection',
         resourceType: 'projection',
         resourceId: id,
@@ -247,7 +247,7 @@ beforeAll(async () => {
         [id, JSON.stringify(params), userId],
       );
       await AuditService.log({
-        userId,
+        userId: userId as string,
         action: 'commander.generate_scenarios',
         resourceType: 'scenario',
         resourceId: id,
@@ -300,7 +300,7 @@ beforeAll(async () => {
         [id, strategy, 'devils_advocate', 'open', userId],
       );
       await AuditService.log({
-        userId,
+        userId: userId as string,
         action: 'commander.initiate_challenge',
         resourceType: 'challenge',
         resourceId: id,
@@ -402,7 +402,7 @@ beforeAll(async () => {
         [id, JSON.stringify(strategyA), JSON.stringify(strategyB), userId],
       );
       await AuditService.log({
-        userId,
+        userId: userId as string,
         action: 'commander.compare_strategies',
         resourceType: 'strategy_comparison',
         resourceId: id,
@@ -443,7 +443,7 @@ beforeAll(async () => {
         [id, totalBudget, JSON.stringify(constraints), userId],
       );
       await AuditService.log({
-        userId,
+        userId: userId as string,
         action: 'commander.run_simulation',
         resourceType: 'budget_simulation',
         resourceId: id,
