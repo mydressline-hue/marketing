@@ -1516,7 +1516,7 @@ When making recommendations:
 
     // Generate scale actions for high-performing campaigns
     for (const campaign of highPerformers.slice(0, 5)) {
-      const roas = (campaign.metrics as Record<string, unknown>)?.roas as number | undefined;
+      const roas = (campaign.metrics as unknown as Record<string, unknown>)?.roas as number | undefined;
       actions.push({
         type: 'scale',
         target: campaign.id,
@@ -1527,7 +1527,7 @@ When making recommendations:
 
     // Generate pause actions for underperformers
     for (const campaign of underperformers.slice(0, 5)) {
-      const roas = (campaign.metrics as Record<string, unknown>)?.roas as number | undefined;
+      const roas = (campaign.metrics as unknown as Record<string, unknown>)?.roas as number | undefined;
       actions.push({
         type: 'pause',
         target: campaign.id,

@@ -1444,7 +1444,7 @@ export class ShopifyIntegrationAgent extends BaseAgent {
 
     // In production: GET /admin/api/2024-01/inventory_levels.json?inventory_item_ids=...
     // Query local state as proxy
-    const result = await pool.query<Product>(
+    const result = await pool.query<{ product_id: string; available: number }>(
       `SELECT id as product_id, inventory_level as available
        FROM products WHERE shopify_id = $1`,
       [shopifyId],
@@ -1459,7 +1459,7 @@ export class ShopifyIntegrationAgent extends BaseAgent {
       available: result.rows[0].available,
       reserved: 0,
       incoming: 0,
-    } as unknown as InventoryLevel;
+    };
   }
 
   /**

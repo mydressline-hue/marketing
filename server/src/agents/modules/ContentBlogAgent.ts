@@ -195,7 +195,7 @@ export class ContentBlogAgent extends BaseAgent {
       );
     }
 
-    const language = targetLanguage || country?.language || 'en';
+    const language = targetLanguage || (country?.language as string) || 'en';
 
     // ---- Step 1: SEO Keyword Research ----
     this.log.info('Step 1: Researching SEO keywords', { topic, countryId });
@@ -387,7 +387,7 @@ export class ContentBlogAgent extends BaseAgent {
     countryId: string,
   ): Promise<GeneratedBlogPost> {
     const country = await this.fetchCountryData(countryId);
-    const language = country?.language || 'en';
+    const language = (country?.language as string) || 'en';
 
     const prompt = [
       `Write a comprehensive, SEO-optimized blog post about: "${topic}"`,
@@ -465,7 +465,7 @@ export class ContentBlogAgent extends BaseAgent {
       id: p.id,
       title: p.title,
       keywords: p.seo_data?.keywords || [],
-      slug: (p as Record<string, unknown>).slug || p.id,
+      slug: (p as unknown as Record<string, unknown>).slug || p.id,
     }));
 
     const prompt = [

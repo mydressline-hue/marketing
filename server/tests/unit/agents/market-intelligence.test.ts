@@ -56,6 +56,20 @@ jest.mock('../../../src/agents/base/ConfidenceScoring', () => ({
   }),
 }));
 
+// Mock the AnthropicClient with sendMessage (used by BaseAgent.callAI via dynamic import)
+jest.mock('../../../src/agents/ai/AnthropicClient', () => ({
+  AnthropicClient: jest.fn().mockImplementation(() => ({
+    complete: jest.fn().mockResolvedValue('AI-generated entry strategy recommendation for this market.'),
+    sendMessage: jest.fn().mockResolvedValue({
+      content: 'AI-generated entry strategy recommendation for this market.',
+      model: 'claude-opus-4-20250514',
+      usage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
+      requestId: 'mock-req-1',
+      latencyMs: 200,
+    }),
+  })),
+}));
+
 // ---------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------
@@ -186,6 +200,21 @@ describe('MarketIntelligenceAgent', () => {
     mockCacheGet.mockResolvedValue(null);
     mockCacheSet.mockResolvedValue(undefined);
     agent = new MarketIntelligenceAgent();
+
+    // Mock the protected callAI method to avoid real AI/network calls and retry delays.
+    // This returns a string that can be used as an entry strategy or parsed as JSON recommendations.
+    jest.spyOn(agent as never, 'callAI' as never).mockImplementation(
+      ((_systemPrompt: string, userPrompt: string) => {
+        if (userPrompt.includes('strategic recommendations')) {
+          return Promise.resolve(
+            '["Prioritize top markets for direct entry", "Explore emerging markets with partnerships", "Establish monitoring for all markets"]',
+          );
+        }
+        return Promise.resolve(
+          'AI-generated entry strategy recommendation for this market.',
+        );
+      }) as never,
+    );
   });
 
   // -----------------------------------------------------------------------
@@ -620,24 +649,37 @@ describe('MarketIntelligenceAgent', () => {
     });
 
     it('handles country analysis failures gracefully with warnings', async () => {
-      // Return a country whose analysis will succeed and a malformed one
-      const badCountry = {
+      const badCountry: Country = {
         ...GERMANY,
         id: 'bad-country',
         name: 'Bad Country',
         code: 'BC',
-        // social_platforms set to a non-object to cause issues
-        social_platforms: null as unknown as Record<string, number>,
       };
 
+      // fetchActiveCountries returns two countries
       mockQuery.mockResolvedValueOnce({ rows: [GERMANY, badCountry] });
+      // persistState
       mockQuery.mockResolvedValueOnce({ rows: [] });
+      // logDecision
       mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      // Make analyzeCountryOpportunity throw for the second country only
+      const originalAnalyze = agent.analyzeCountryOpportunity.bind(agent);
+      let callCount = 0;
+      jest.spyOn(agent, 'analyzeCountryOpportunity').mockImplementation(async (country) => {
+        callCount++;
+        if (callCount === 2) {
+          throw new Error('Simulated analysis failure');
+        }
+        return originalAnalyze(country);
+      });
 
       const output = await agent.process(TEST_INPUT);
 
-      // Should still produce output even if one country fails
+      // Should still produce output; the first country succeeds
       expect(output.decision).toBe('market_analysis_complete');
+      // Should contain a warning about the failed country
+      expect(output.warnings.some((w) => w.includes('Bad Country'))).toBe(true);
     });
 
     it('uses cached countries when available', async () => {
@@ -686,21 +728,30 @@ describe('MarketIntelligenceAgent', () => {
     });
 
     it('fetches and caches trends from DB', async () => {
-      mockCacheGet.mockResolvedValueOnce(null);
-      mockQuery.mockResolvedValueOnce({
-        rows: [{
-          country_code: 'DE',
-          gdp: 4e12,
-          internet_penetration: 92,
-          ecommerce_adoption: 85,
-          social_platforms: {},
-          ad_costs: {},
-          opportunity_score: 78,
-          updated_at: '2025-01-01T00:00:00Z',
-        }],
-      });
+      const trendRow = {
+        country_code: 'DE',
+        gdp: 4e12,
+        internet_penetration: 92,
+        ecommerce_adoption: 85,
+        social_platforms: {},
+        ad_costs: {},
+        opportunity_score: 78,
+        updated_at: '2025-01-01T00:00:00Z',
+      };
+
+      // Ensure cache misses for this call
+      mockCacheGet.mockResolvedValue(null);
+
+      // Mock the DB query to return a matching row
+      mockQuery.mockResolvedValue({ rows: [trendRow] });
 
       const trends = await agent.getMarketTrends('DE');
+
+      // Verify pool.query was called with the right SQL
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('FROM countries'),
+        ['DE'],
+      );
 
       expect(trends).toHaveProperty('countryCode', 'DE');
       expect(trends).toHaveProperty('currentMetrics');

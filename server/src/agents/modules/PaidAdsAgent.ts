@@ -897,7 +897,7 @@ Return a JSON object with fields: name, type, budget, targeting, expectedMetrics
     // Campaign type from DB may have revenue on metrics or as direct field
     const metrics = campaign.metrics;
     const revenue = metrics
-      ? (Number((metrics as Record<string, unknown>).revenue) || 0)
+      ? (Number((metrics as unknown as Record<string, unknown>).revenue) || 0)
       : 0;
 
     // Also check for revenue in the campaign object directly (DB schema has revenue column)
@@ -1320,7 +1320,7 @@ Return a JSON array of recommendation strings.`,
 
       const metrics = campaign.metrics;
       const revenue = metrics
-        ? (Number((metrics as Record<string, unknown>).revenue) || 0)
+        ? (Number((metrics as unknown as Record<string, unknown>).revenue) || 0)
         : 0;
       const directRevenue = Number((campaign as unknown as CampaignRow).revenue) || 0;
       totalRevenue += revenue > 0 ? revenue : directRevenue;
