@@ -6,7 +6,9 @@
  *   2.  Verify matrix structure and data integrity
  *   3.  Retrieve country-specific allocation
  *   4.  Retrieve historical channel performance
- *   5.  Verify caching behavior across requests
+ *   5.  Verify optimization notes and confidence scoring
+ *   6.  Verify authentication enforcement
+ *   7.  Validate country breakdown channel entries
  */
 
 // ---------------------------------------------------------------------------
@@ -73,22 +75,38 @@ jest.mock('../../../src/utils/helpers', () => ({
 // Imports
 // ---------------------------------------------------------------------------
 
-import request from 'supertest';
+import supertest from 'supertest';
 import jwt from 'jsonwebtoken';
-import app from '../../../src/app';
+import express from 'express';
 import { pool } from '../../../src/config/database';
-import { cacheGet, cacheSet } from '../../../src/config/redis';
+import { cacheGet } from '../../../src/config/redis';
+import channelAllocationRoutes from '../../../src/routes/final-outputs-channels.routes';
+import { errorHandler, notFoundHandler } from '../../../src/middleware/errorHandler';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-const API = '/api/v1';
 const JWT_SECRET = 'test-jwt-secret-key-minimum-32-chars!!';
 
 const mockPool = pool as unknown as { query: jest.Mock };
 const mockCacheGet = cacheGet as jest.Mock;
-const mockCacheSet = cacheSet as jest.Mock;
+
+/**
+ * Creates a minimal Express app with only the channel allocation routes,
+ * matching the mount path used in the full application.
+ */
+function createWorkflowApp(): express.Express {
+  const app = express();
+  app.use(express.json());
+  app.use(
+    '/api/v1/final-outputs/channel-allocation',
+    channelAllocationRoutes,
+  );
+  app.use(notFoundHandler);
+  app.use(errorHandler);
+  return app;
+}
 
 function generateAdminToken(): string {
   return jwt.sign(
@@ -257,6 +275,11 @@ const HISTORY_ROWS = [
 
 /**
  * Sets up mock DB responses for the full matrix generation flow.
+ * The service issues 4 parallel queries:
+ *   1. agent_decisions
+ *   2. budget_allocations
+ *   3. campaigns
+ *   4. countries
  */
 function setupMatrixMocks() {
   mockCacheGet.mockResolvedValue(null);
@@ -271,6 +294,8 @@ function setupMatrixMocks() {
 // ---------------------------------------------------------------------------
 
 describe('Channel Allocation Matrix E2E Workflow', () => {
+  const app = createWorkflowApp();
+  const request = supertest(app);
   const adminToken = generateAdminToken();
 
   beforeEach(() => {
@@ -281,8 +306,8 @@ describe('Channel Allocation Matrix E2E Workflow', () => {
   it('generates a full channel allocation matrix with correct structure', async () => {
     setupMatrixMocks();
 
-    const response = await request(app)
-      .get(`${API}/final-outputs/channel-allocation`)
+    const response = await request
+      .get('/api/v1/final-outputs/channel-allocation')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
@@ -317,8 +342,8 @@ describe('Channel Allocation Matrix E2E Workflow', () => {
   it('retrieves country-specific allocation for an active country', async () => {
     setupMatrixMocks();
 
-    const response = await request(app)
-      .get(`${API}/final-outputs/channel-allocation/US`)
+    const response = await request
+      .get('/api/v1/final-outputs/channel-allocation/US')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
@@ -345,8 +370,8 @@ describe('Channel Allocation Matrix E2E Workflow', () => {
   it('returns 404 for a country code without allocation data', async () => {
     setupMatrixMocks();
 
-    const response = await request(app)
-      .get(`${API}/final-outputs/channel-allocation/ZZ`)
+    const response = await request
+      .get('/api/v1/final-outputs/channel-allocation/ZZ')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(404);
 
@@ -361,8 +386,8 @@ describe('Channel Allocation Matrix E2E Workflow', () => {
       rowCount: 3,
     });
 
-    const response = await request(app)
-      .get(`${API}/final-outputs/channel-allocation/history`)
+    const response = await request
+      .get('/api/v1/final-outputs/channel-allocation/history')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
@@ -380,7 +405,7 @@ describe('Channel Allocation Matrix E2E Workflow', () => {
     expect(googleJan).toBeDefined();
     expect(googleJan.spend).toBe(18500);
     expect(googleJan.revenue).toBe(105000);
-    // ROAS: 105000 / 18500 = 5.68 (rounded to 2 decimals)
+    // ROAS: 105000 / 18500 = 5.675... rounded to 5.68
     expect(googleJan.roas).toBe(5.68);
     expect(googleJan.conversions).toBe(2100);
     expect(googleJan.clicks).toBe(35000);
@@ -390,8 +415,8 @@ describe('Channel Allocation Matrix E2E Workflow', () => {
   it('generates optimization notes from agent decisions', async () => {
     setupMatrixMocks();
 
-    const response = await request(app)
-      .get(`${API}/final-outputs/channel-allocation`)
+    const response = await request
+      .get('/api/v1/final-outputs/channel-allocation')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
@@ -407,8 +432,8 @@ describe('Channel Allocation Matrix E2E Workflow', () => {
   it('correctly computes confidence score from agent decisions', async () => {
     setupMatrixMocks();
 
-    const response = await request(app)
-      .get(`${API}/final-outputs/channel-allocation`)
+    const response = await request
+      .get('/api/v1/final-outputs/channel-allocation')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
@@ -419,16 +444,16 @@ describe('Channel Allocation Matrix E2E Workflow', () => {
   });
 
   it('denies access without authentication', async () => {
-    await request(app)
-      .get(`${API}/final-outputs/channel-allocation`)
+    await request
+      .get('/api/v1/final-outputs/channel-allocation')
       .expect(401);
 
-    await request(app)
-      .get(`${API}/final-outputs/channel-allocation/US`)
+    await request
+      .get('/api/v1/final-outputs/channel-allocation/US')
       .expect(401);
 
-    await request(app)
-      .get(`${API}/final-outputs/channel-allocation/history`)
+    await request
+      .get('/api/v1/final-outputs/channel-allocation/history')
       .expect(401);
   });
 });

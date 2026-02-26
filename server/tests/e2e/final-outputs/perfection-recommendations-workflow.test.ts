@@ -338,6 +338,22 @@ describe('Perfection Recommendations Workflow (E2E)', () => {
 
   describe('Scenario: Category-based recommendation filtering', () => {
     it('filters recommendations correctly by category', async () => {
+      const { cacheGet: mockCacheGetFn, cacheSet: mockCacheSetFn } =
+        jest.requireMock('../../../src/config/redis') as {
+          cacheGet: jest.Mock;
+          cacheSet: jest.Mock;
+        };
+
+      // Capture the value stored by cacheSet so subsequent cacheGet calls return it
+      let cachedValue: unknown = null;
+      mockCacheSetFn.mockImplementation((_key: string, value: unknown) => {
+        cachedValue = value;
+        return Promise.resolve();
+      });
+      mockCacheGetFn.mockImplementation(() => Promise.resolve(cachedValue));
+
+      // First call: cacheGet returns null, data comes from DB
+      cachedValue = null;
       new PerfectionWorkflowSimulator()
         .withOrchestrator(60, 2, 1)
         .withAllAgents(50)
@@ -355,8 +371,7 @@ describe('Perfection Recommendations Workflow (E2E)', () => {
 
       for (const category of categories) {
         const filtered = fullResult.recommendations.filter((r) => r.category === category);
-        // Each category that has agents should have at least some recommendations
-        // We just verify the filtering is consistent
+        // getRecommendationsByCategory will use the cached result from the first call
         const serviceFiltered = await PerfectionRecommendationsOutputService.getRecommendationsByCategory(category);
         expect(serviceFiltered.length).toBe(filtered.length);
         for (const rec of serviceFiltered) {

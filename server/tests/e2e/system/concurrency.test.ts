@@ -280,7 +280,7 @@ class ConcurrencySimulator {
     const key = `rate:${userId}`;
     const now = Date.now();
     const windowSize = 60000; // 1 minute
-    const maxRequests = 100;
+    const defaultMaxRequests = 100;
 
     let window = this.rateLimitWindows.get(key);
 
@@ -291,14 +291,14 @@ class ConcurrencySimulator {
         requestCount: 1,
         windowStart: now,
         windowSize,
-        maxRequests,
+        maxRequests: defaultMaxRequests,
       };
       this.rateLimitWindows.set(key, window);
       return false;
     }
 
     window.requestCount++;
-    if (window.requestCount > maxRequests) {
+    if (window.requestCount > window.maxRequests) {
       return true;
     }
 

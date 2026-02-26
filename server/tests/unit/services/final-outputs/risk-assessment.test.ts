@@ -118,81 +118,89 @@ describe('RiskAssessmentOutputService', () => {
 
   describe('generateRiskAssessmentReport', () => {
     function setupDefaultQueryMocks() {
-      // fetchRisks: risk_flags, fraud_alerts, risk_assessments
+      // Query call order follows Promise.all concurrency:
+      // 1-3: fetchRisks (inner Promise.all: risk_flags, fraud_alerts, risk_assessments)
+      // 4:   fetchComplianceStatus (sequential, first: gdpr)
+      // 5-8: fetchFraudMetrics (inner Promise.all: fraud_rate, bot, anomaly, blocked)
+      // 9-13: fetchSecurityPosture (inner Promise.all: key_rotation, encryption, soc2, audit, vulns)
+      // 14:  fetchRiskTrend
+      // 15:  fetchGovernanceRiskMetrics
+      // 16:  fetchComplianceStatus (sequential, second: ccpa) -- after gdpr resolves
+      // 17:  fetchComplianceStatus (sequential, third: local_laws) -- after ccpa resolves
       mockQuery
-        // risk_flags
+        // 1. risk_flags
         .mockResolvedValueOnce(
           makeQueryResult([makeRiskFlagRow()]),
         )
-        // fraud_alerts
+        // 2. fraud_alerts
         .mockResolvedValueOnce(
           makeQueryResult([makeFraudAlertRow()]),
         )
-        // risk_assessments (governance)
+        // 3. risk_assessments (governance)
         .mockResolvedValueOnce(
           makeQueryResult([makeRiskAssessmentRow()]),
         )
-        // fetchComplianceStatus: gdpr
+        // 4. fetchComplianceStatus: gdpr
         .mockResolvedValueOnce(
           makeQueryResult([{ total: '10', compliant: '8' }]),
         )
-        // fetchComplianceStatus: ccpa
-        .mockResolvedValueOnce(
-          makeQueryResult([{ total: '5', compliant: '5' }]),
-        )
-        // fetchComplianceStatus: local ad laws
-        .mockResolvedValueOnce(
-          makeQueryResult([
-            { country_code: 'DE', compliant: true },
-            { country_code: 'US', compliant: true },
-          ]),
-        )
-        // fetchFraudMetrics: click fraud rate
+        // 5. fetchFraudMetrics: click fraud rate
         .mockResolvedValueOnce(
           makeQueryResult([{ fraud_campaigns: '2', total_campaigns: '20' }]),
         )
-        // fetchFraudMetrics: bot traffic
+        // 6. fetchFraudMetrics: bot traffic
         .mockResolvedValueOnce(
           makeQueryResult([{ bot_pct: '5.5' }]),
         )
-        // fetchFraudMetrics: anomaly count
+        // 7. fetchFraudMetrics: anomaly count
         .mockResolvedValueOnce(
           makeQueryResult([{ anomaly_count: '3' }]),
         )
-        // fetchFraudMetrics: blocked IPs
+        // 8. fetchFraudMetrics: blocked IPs
         .mockResolvedValueOnce(
           makeQueryResult([{ blocked_count: '15' }]),
         )
-        // fetchSecurityPosture: API key rotation
+        // 9. fetchSecurityPosture: API key rotation
         .mockResolvedValueOnce(
           makeQueryResult([{ total: '5', recent: '5' }]),
         )
-        // fetchSecurityPosture: encryption
+        // 10. fetchSecurityPosture: encryption
         .mockResolvedValueOnce(
           makeQueryResult([{ at_rest: 'enabled', in_transit: 'enabled' }]),
         )
-        // fetchSecurityPosture: SOC2
+        // 11. fetchSecurityPosture: SOC2
         .mockResolvedValueOnce(
           makeQueryResult([{ readiness_pct: '85' }]),
         )
-        // fetchSecurityPosture: last audit
+        // 12. fetchSecurityPosture: last audit
         .mockResolvedValueOnce(
           makeQueryResult([{ last_audit: '2025-12-01T00:00:00Z' }]),
         )
-        // fetchSecurityPosture: vulnerabilities
+        // 13. fetchSecurityPosture: vulnerabilities
         .mockResolvedValueOnce(
           makeQueryResult([{ vuln_count: '2' }]),
         )
-        // fetchRiskTrend
+        // 14. fetchRiskTrend
         .mockResolvedValueOnce(
           makeQueryResult([
             { date: new Date('2025-12-01'), risk_score: '40' },
             { date: new Date('2025-12-02'), risk_score: '45' },
           ]),
         )
-        // fetchGovernanceRiskMetrics
+        // 15. fetchGovernanceRiskMetrics
         .mockResolvedValueOnce(
           makeQueryResult([{ avg_risk: '35', total: '50', high_risk_pct: '20' }]),
+        )
+        // 16. fetchComplianceStatus: ccpa (after gdpr resolves)
+        .mockResolvedValueOnce(
+          makeQueryResult([{ total: '5', compliant: '5' }]),
+        )
+        // 17. fetchComplianceStatus: local ad laws (after ccpa resolves)
+        .mockResolvedValueOnce(
+          makeQueryResult([
+            { country_code: 'DE', compliant: true },
+            { country_code: 'US', compliant: true },
+          ]),
         );
     }
 
