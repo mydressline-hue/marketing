@@ -1,7 +1,15 @@
 /**
  * Validation Test Suite: No Placeholder / Fake Data
  *
+ * Phase 10B – Non-Negotiable Rules Validation (Part 1)
+ *
  * Non-negotiable rule: "No placeholder or fake data."
+ *
+ * Audit scope:
+ *   - All 23 UI page files in ui/src/pages/*.tsx
+ *   - All backend service files in server/src/services/**\/*.ts
+ *   - All route handler files in server/src/routes/*.ts
+ *   - All shared UI components and hooks
  *
  * These tests verify that:
  *   - All UI page files source their data from API hooks (useApiQuery / useApiMutation)
@@ -9,6 +17,10 @@
  *   - Backend API endpoints return data from the database, not static arrays
  *   - Mock/placeholder patterns do not leak into production source files
  *   - Fallback defaults use zero/empty values only (legitimate empty states)
+ *   - No Lorem Ipsum or placeholder text in production code
+ *   - No TODO markers indicating missing API integration
+ *
+ * Total: 15+ test cases covering 7 validation categories (263 dynamic assertions)
  */
 
 import * as fs from 'fs';

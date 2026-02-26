@@ -91,7 +91,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import { authenticate } from '../../../src/middleware/auth';
-import { asyncHandler, errorHandler, notFoundHandler } from '../../../src/middleware/errorHandler';
+import { errorHandler, notFoundHandler } from '../../../src/middleware/errorHandler';
 import { RiskAssessmentOutputService } from '../../../src/services/final-outputs/RiskAssessmentOutputService';
 import {
   getRiskAssessmentReport,
@@ -124,25 +124,19 @@ function buildTestApp(): express.Express {
   router.get(
     '/risk-assessment',
     authenticate,
-    asyncHandler(async (req, res) => {
-      await getRiskAssessmentReport(req, res, () => {});
-    }),
+    getRiskAssessmentReport,
   );
 
   router.get(
     '/risk-assessment/mitigation-plan',
     authenticate,
-    asyncHandler(async (req, res) => {
-      await getMitigationPlan(req, res, () => {});
-    }),
+    getMitigationPlan,
   );
 
   router.get(
     '/risk-assessment/:category',
     authenticate,
-    asyncHandler(async (req, res) => {
-      await getRisksByCategory(req, res, () => {});
-    }),
+    getRisksByCategory,
   );
 
   app.use(API_PREFIX, router);

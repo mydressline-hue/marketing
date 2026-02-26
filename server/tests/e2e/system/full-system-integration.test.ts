@@ -573,6 +573,12 @@ describe('Full System Integration Tests (E2E Capstone)', () => {
         .get(`${API}/dashboard/overview`)
         .set('Authorization', `Bearer ${adminToken}`);
 
+      // Debug: log the response on failure
+      if (res.status === 500) {
+        // eslint-disable-next-line no-console
+        console.log('Dashboard overview 500 body:', JSON.stringify(res.body));
+      }
+
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toBeDefined();

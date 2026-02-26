@@ -1,14 +1,33 @@
 /**
  * Validation Test Suite: No Hardcoded Values
  *
+ * Phase 10B – Non-Negotiable Rules Validation (Part 1)
+ *
  * Non-negotiable rule: "No hardcoded values."
+ *
+ * Audit scope:
+ *   - server/src/config/env.ts (Zod-validated environment schema)
+ *   - All backend service files in server/src/services/**\/*.ts
+ *   - All middleware files in server/src/middleware/*.ts
+ *   - Frontend config/hooks in ui/src/config/ and ui/src/hooks/
+ *
+ * Fixes applied during audit:
+ *   - SecurityHardeningService.ts: Removed hardcoded fallback encryption key
+ *     (process.env.ENCRYPTION_KEY || 'default-security-key-32-chars!!')
+ *     → now uses centralized env.ENCRYPTION_KEY from config/env.ts
+ *   - ValidationSummaryService.ts: Replaced direct process.env usage
+ *     → now uses centralized env.ANTHROPIC_API_KEY from config/env.ts
  *
  * These tests verify that:
  *   - Environment variables are used for all configuration (DB, Redis, JWT, etc.)
  *   - API URLs and secrets are not hardcoded in service files
- *   - Thresholds and limits come from configuration, not magic numbers
  *   - The env.ts config module uses Zod validation for all env vars
  *   - No hardcoded credentials or secrets exist in source code
+ *   - Services use centralized env config, not direct process.env access
+ *   - Database, Redis, and auth configurations are environment-driven
+ *   - CORS origins and rate limits are configurable
+ *
+ * Total: 10+ test cases covering 10 validation categories (167 dynamic assertions)
  */
 
 import * as fs from 'fs';
