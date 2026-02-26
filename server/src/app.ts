@@ -43,6 +43,7 @@ import dashboardRoutes from './routes/dashboard.routes';
 import notificationsRoutes from './routes/notifications.routes';
 import auditRoutes from './routes/audit.routes';
 import apikeysRoutes from './routes/apikeys.routes';
+import finalOutputsRoutes from './routes/final-outputs.routes';
 
 // ---------------------------------------------------------------------------
 // App
@@ -89,6 +90,7 @@ app.use(`${prefix}/dashboard`, dashboardRoutes);
 app.use(`${prefix}/notifications`, notificationsRoutes);
 app.use(`${prefix}/audit`, auditRoutes);
 app.use(`${prefix}/apikeys`, apikeysRoutes);
+app.use(`${prefix}/final-outputs`, finalOutputsRoutes);
 
 // ── Error handling ────────────────────────────────────────────────────────
 app.use(notFoundHandler);
