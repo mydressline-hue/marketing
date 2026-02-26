@@ -384,7 +384,7 @@ export class ConfidenceScoreOutputService {
     };
 
     for (const [cat, acc] of Object.entries(categoryAccumulators)) {
-      (categoryScores as Record<string, number>)[cat] =
+      (categoryScores as unknown as Record<string, number>)[cat] =
         acc.count > 0 ? Math.round((acc.sum / acc.count) * 100) / 100 : 0;
     }
 
