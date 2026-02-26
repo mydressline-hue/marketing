@@ -11,6 +11,14 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
+import { validateBody } from '../middleware/validation';
+import {
+  activateKillSwitchSchema,
+  gateConfidenceSchema,
+  resolveApprovalSchema,
+  manualOverrideSchema,
+  updateGovernancePolicySchema,
+} from '../validators/schemas';
 import {
   activateKillSwitch,
   deactivateKillSwitch,
@@ -51,6 +59,7 @@ router.use(authenticate);
 router.post(
   '/killswitch/activate',
   requirePermission('write:killswitch'),
+  validateBody(activateKillSwitchSchema),
   activateKillSwitch,
 );
 
@@ -146,6 +155,7 @@ router.post(
 router.post(
   '/governance/gate-confidence',
   requirePermission('read:governance'),
+  validateBody(gateConfidenceSchema),
   gateConfidence,
 );
 
@@ -167,6 +177,7 @@ router.get(
 router.post(
   '/governance/approvals/:id/resolve',
   requirePermission('write:governance'),
+  validateBody(resolveApprovalSchema),
   resolveApproval,
 );
 
@@ -174,6 +185,7 @@ router.post(
 router.post(
   '/governance/override/:decisionId',
   requirePermission('write:governance'),
+  validateBody(manualOverrideSchema),
   manualOverride,
 );
 
@@ -188,6 +200,7 @@ router.get(
 router.put(
   '/governance/policy',
   requirePermission('write:governance'),
+  validateBody(updateGovernancePolicySchema),
   updatePolicy,
 );
 

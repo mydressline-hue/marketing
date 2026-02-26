@@ -26,6 +26,8 @@ import { pool } from '../config/database';
 import { cacheGet, cacheSet } from '../config/redis';
 import { logger } from '../utils/logger';
 import roiProjectionRoutes from './final-outputs-roi.routes';
+import perfectionRoutes from './final-outputs-perfection.routes';
+import riskAssessmentRoutes from './final-outputs-risk.routes';
 
 // ---------------------------------------------------------------------------
 // Router
@@ -38,6 +40,9 @@ router.use(authenticate);
 
 // Mount dedicated ROI Projection routes (Deliverable #6)
 router.use('/', roiProjectionRoutes);
+
+// Mount dedicated Perfection Recommendations routes (Deliverable #10)
+router.use('/', perfectionRoutes);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -870,115 +875,11 @@ router.get(
 );
 
 // ---------------------------------------------------------------------------
-// 10. Perfection Recommendations
+// 10. Perfection Recommendations (served by dedicated routes file)
 // ---------------------------------------------------------------------------
-
-router.get(
-  '/perfection-recommendations',
-  asyncHandler(async (_req: Request, res: Response) => {
-    const result = await pool.query(`
-      SELECT agent_type,
-             COUNT(*) AS total_decisions,
-             AVG(confidence_score) AS avg_confidence,
-             COUNT(*) FILTER (WHERE confidence_score >= 90) AS high_confidence,
-             COUNT(*) FILTER (WHERE confidence_score >= 70 AND confidence_score < 90) AS medium_confidence,
-             COUNT(*) FILTER (WHERE confidence_score < 70) AS low_confidence
-      FROM agent_decisions
-      GROUP BY agent_type
-      ORDER BY avg_confidence ASC
-    `);
-
-    const recommendations = result.rows.map((r: Record<string, unknown>) => ({
-      agent_type: r.agent_type,
-      total_decisions: Number(r.total_decisions),
-      avg_confidence: Number(Number(r.avg_confidence || 0).toFixed(2)),
-      high_confidence: Number(r.high_confidence),
-      medium_confidence: Number(r.medium_confidence),
-      low_confidence: Number(r.low_confidence),
-      recommendation: generateRecommendation(
-        String(r.agent_type),
-        Number(r.avg_confidence || 0),
-        Number(r.low_confidence),
-      ),
-    }));
-
-    ok(res, { recommendations, total: recommendations.length });
-  }),
-);
-
-router.get(
-  '/perfection-recommendations/maturity',
-  asyncHandler(async (_req: Request, res: Response) => {
-    const result = await pool.query(`
-      SELECT agent_type,
-             COUNT(*) AS total_decisions,
-             AVG(confidence_score) AS avg_confidence,
-             COUNT(DISTINCT country_code) AS countries_covered
-      FROM agent_decisions
-      GROUP BY agent_type
-    `);
-
-    const totalCountries = await pool.query('SELECT COUNT(*) AS cnt FROM countries');
-    const total = Number(totalCountries.rows[0]?.cnt) || 1;
-
-    const maturity = result.rows.map((r: Record<string, unknown>) => {
-      const avgConf = Number(r.avg_confidence || 0);
-      const coverage = Number(r.countries_covered) / total;
-      const maturityScore = avgConf * 0.6 + coverage * 100 * 0.4;
-
-      let level: string;
-      if (maturityScore >= 85) level = 'optimized';
-      else if (maturityScore >= 70) level = 'managed';
-      else if (maturityScore >= 50) level = 'defined';
-      else if (maturityScore >= 30) level = 'developing';
-      else level = 'initial';
-
-      return {
-        agent_type: r.agent_type,
-        maturity_score: Number(maturityScore.toFixed(1)),
-        maturity_level: level,
-        avg_confidence: Number(avgConf.toFixed(2)),
-        coverage_pct: Number((coverage * 100).toFixed(1)),
-        countries_covered: Number(r.countries_covered),
-        total_decisions: Number(r.total_decisions),
-      };
-    });
-
-    maturity.sort((a, b) => b.maturity_score - a.maturity_score);
-
-    ok(res, {
-      maturity,
-      overall_maturity: Number(
-        (maturity.reduce((s, m) => s + m.maturity_score, 0) / (maturity.length || 1)).toFixed(1),
-      ),
-    });
-  }),
-);
-
-router.get(
-  '/perfection-recommendations/:category',
-  asyncHandler(async (req: Request, res: Response) => {
-    const { category } = req.params;
-    const validCategories = [
-      'data_enrichment', 'model_tuning', 'coverage_expansion',
-      'confidence_improvement', 'process_optimization',
-    ];
-
-    if (!validCategories.includes(category.toLowerCase())) {
-      res.status(400).json({
-        success: false,
-        error: {
-          code: 'INVALID_CATEGORY',
-          message: `Invalid recommendation category. Valid categories: ${validCategories.join(', ')}`,
-        },
-      });
-      return;
-    }
-
-    const recommendations = generateCategoryRecommendations(category.toLowerCase());
-    ok(res, { category, recommendations });
-  }),
-);
+// Routes for /perfection-recommendations, /perfection-recommendations/maturity,
+// and /perfection-recommendations/:category are mounted via
+// final-outputs-perfection.routes.ts above.
 
 // ---------------------------------------------------------------------------
 // Validation Summary (cross-deliverable)

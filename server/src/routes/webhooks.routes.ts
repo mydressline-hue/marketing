@@ -11,6 +11,8 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/rbac';
+import { validateBody } from '../middleware/validation';
+import { registerWebhookSchema } from '../validators/schemas';
 import {
   receiveWebhook,
   registerWebhook,
@@ -32,7 +34,7 @@ router.post('/:platform/inbound', receiveWebhook);
 // ---------------------------------------------------------------------------
 
 // POST /webhooks/register -- register a new webhook endpoint (admin only)
-router.post('/register', authenticate, requireRole('admin'), registerWebhook);
+router.post('/register', authenticate, requireRole('admin'), validateBody(registerWebhookSchema), registerWebhook);
 
 // GET /webhooks/registrations -- list active webhook registrations
 router.get('/registrations', authenticate, listRegistrations);

@@ -9,6 +9,11 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
+import { validateBody } from '../middleware/validation';
+import {
+  sendNotificationSchema,
+  updateNotificationPreferencesSchema,
+} from '../validators/schemas';
 import {
   sendNotification,
   getNotifications,
@@ -27,7 +32,7 @@ const router = Router();
 // ---------------------------------------------------------------------------
 
 // POST /notifications/send – send a notification (requires write:infrastructure)
-router.post('/send', authenticate, requirePermission('write:infrastructure'), sendNotification);
+router.post('/send', authenticate, requirePermission('write:infrastructure'), validateBody(sendNotificationSchema), sendNotification);
 
 // GET /notifications – get user's notifications (paginated, filterable)
 router.get('/', authenticate, requirePermission('read:campaigns'), getNotifications);
@@ -39,7 +44,7 @@ router.get('/unread-count', authenticate, requirePermission('read:campaigns'), g
 router.get('/preferences', authenticate, requirePermission('read:campaigns'), getPreferences);
 
 // PUT /notifications/preferences – update notification preferences
-router.put('/preferences', authenticate, requirePermission('read:campaigns'), updatePreferences);
+router.put('/preferences', authenticate, requirePermission('read:campaigns'), validateBody(updateNotificationPreferencesSchema), updatePreferences);
 
 // POST /notifications/read-all – mark all notifications as read
 router.post('/read-all', authenticate, requirePermission('read:campaigns'), markAllAsRead);

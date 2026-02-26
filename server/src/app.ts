@@ -46,6 +46,7 @@ import apikeysRoutes from './routes/apikeys.routes';
 import finalOutputsRoutes from './routes/final-outputs.routes';
 import finalOutputsStrategyRoutes from './routes/final-outputs-strategy.routes';
 import finalOutputsChannelsRoutes from './routes/final-outputs-channels.routes';
+import finalOutputsRoadmapRoutes from './routes/final-outputs-roadmap.routes';
 
 // ---------------------------------------------------------------------------
 // App
@@ -95,6 +96,7 @@ app.use(`${prefix}/apikeys`, apikeysRoutes);
 app.use(`${prefix}/final-outputs`, finalOutputsRoutes);
 app.use(`${prefix}/final-outputs`, finalOutputsStrategyRoutes);
 app.use(`${prefix}/final-outputs/channel-allocation`, finalOutputsChannelsRoutes);
+app.use(`${prefix}/final-outputs`, finalOutputsRoadmapRoutes);
 
 // ── Error handling ────────────────────────────────────────────────────────
 app.use(notFoundHandler);

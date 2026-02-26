@@ -23,6 +23,7 @@ import finalOutputsStrategyRoutes from './final-outputs-strategy.routes';
 import finalOutputsConfidenceRoutes from './final-outputs-confidence.routes';
 import finalOutputsBudgetRoutes from './final-outputs-budget.routes';
 import finalOutputsWeaknessRoutes from './final-outputs-weakness.routes';
+import finalOutputsRoadmapRoutes from './final-outputs-roadmap.routes';
 
 const router = Router();
 

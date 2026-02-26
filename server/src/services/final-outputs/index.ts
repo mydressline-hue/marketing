@@ -77,3 +77,46 @@ export {
   type ROITrendEntry,
   type ROITrendOutput,
 } from './ROIProjectionOutputService';
+
+export {
+  PerfectionRecommendationsOutputService,
+  type PerfectionRecommendationsOutput,
+  type PerfectionRecommendation,
+  type MaturityAssessment,
+  type MaturityLevel,
+  type RecommendationCategory,
+  type RecommendationPriority,
+  type EnterpriseGrade,
+  type NextStep,
+  type Benchmarks,
+} from './PerfectionRecommendationsOutputService';
+
+export {
+  TestCoverageReportService,
+  type TestCoverageReport,
+  type ModuleCoverage,
+} from './TestCoverageReportService';
+
+export {
+  ExecutionRoadmapOutputService,
+  type ExecutionRoadmap,
+  type RoadmapPhase,
+  type RoadmapKeyAction,
+  type RoadmapMilestone,
+  type CriticalPathTask,
+  type ResourceRequirements,
+  type KPITarget,
+} from './ExecutionRoadmapOutputService';
+
+export {
+  RiskAssessmentOutputService,
+  type RiskAssessmentReport,
+  type RiskEntry,
+  type RiskCategory,
+  type RiskLevel,
+  type ComplianceStatusReport,
+  type FraudMetrics,
+  type SecurityPosture,
+  type RiskTrendPoint,
+  type MitigationAction,
+} from './RiskAssessmentOutputService';

@@ -191,6 +191,115 @@ export const updateSettingsSchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
+// Kill Switch schemas
+// ---------------------------------------------------------------------------
+
+export const activateKillSwitchSchema = z.object({
+  level: z.number().int().min(0).max(4, 'Level must be between 0 and 4'),
+  reason: z.string().min(1, 'Reason is required'),
+});
+
+// ---------------------------------------------------------------------------
+// Governance schemas
+// ---------------------------------------------------------------------------
+
+export const gateConfidenceSchema = z.object({
+  decisionId: uuidString.optional(),
+  confidenceScore: z.number().min(0).max(1, 'Confidence score must be between 0 and 1'),
+  agentType: z.string().min(1, 'Agent type is required'),
+  threshold: z.number().min(0).max(1).optional(),
+});
+
+export const resolveApprovalSchema = z.object({
+  approved: z.boolean({ required_error: 'Approved flag is required' }),
+  reason: z.string().min(1, 'Reason is required'),
+});
+
+export const manualOverrideSchema = z.object({
+  overrideAction: z.string().min(1, 'Override action is required'),
+  reason: z.string().min(1, 'Reason is required'),
+  newValue: z.unknown().optional(),
+});
+
+export const updateGovernancePolicySchema = z.object({
+  confidenceThreshold: z.number().min(0).max(1).optional(),
+  requireHumanApproval: z.boolean().optional(),
+  maxAutonomousBudget: z.number().nonnegative().optional(),
+  riskTolerance: z.enum(['low', 'medium', 'high']).optional(),
+});
+
+// ---------------------------------------------------------------------------
+// Notification schemas
+// ---------------------------------------------------------------------------
+
+export const sendNotificationSchema = z.object({
+  userId: uuidString.optional(),
+  type: z.string().min(1, 'Notification type is required'),
+  title: z.string().min(1, 'Title is required'),
+  message: z.string().min(1, 'Message is required'),
+  channel: z.enum(['email', 'push', 'sms', 'in_app']).optional(),
+  metadata: z.record(z.unknown()).optional(),
+});
+
+export const updateNotificationPreferencesSchema = z.object({
+  email: z.boolean().optional(),
+  push: z.boolean().optional(),
+  sms: z.boolean().optional(),
+  inApp: z.boolean().optional(),
+  frequency: z.enum(['realtime', 'hourly', 'daily', 'weekly']).optional(),
+});
+
+// ---------------------------------------------------------------------------
+// Webhook schemas
+// ---------------------------------------------------------------------------
+
+export const registerWebhookSchema = z.object({
+  url: z.string().url('Must be a valid URL'),
+  platform: z.string().min(1, 'Platform is required'),
+  events: z.array(z.string().min(1)).min(1, 'At least one event is required'),
+  secret: z.string().min(8, 'Secret must be at least 8 characters').optional(),
+});
+
+// ---------------------------------------------------------------------------
+// Queue schemas
+// ---------------------------------------------------------------------------
+
+export const enqueueJobSchema = z.object({
+  type: z.string().min(1, 'Job type is required'),
+  payload: z.record(z.unknown()),
+  priority: z.number().int().min(0).max(10).optional(),
+  scheduledAt: isoDateString.optional(),
+});
+
+// ---------------------------------------------------------------------------
+// API Key schemas
+// ---------------------------------------------------------------------------
+
+export const createApiKeySchema = z.object({
+  name: z.string().min(1, 'Key name is required'),
+  platform: z.string().min(1, 'Platform is required'),
+  scopes: z.array(z.string().min(1)).min(1, 'At least one scope is required'),
+  expiresAt: isoDateString.optional(),
+});
+
+export const updateApiKeySchema = z.object({
+  name: z.string().min(1).optional(),
+  scopes: z.array(z.string().min(1)).min(1).optional(),
+  expiresAt: isoDateString.optional(),
+});
+
+// ---------------------------------------------------------------------------
+// Budget record spend schema
+// ---------------------------------------------------------------------------
+
+export const recordSpendSchema = z.object({
+  amount: z.number().positive('Amount must be a positive number'),
+  channel: z.string().min(1, 'Channel is required'),
+  date: isoDateString.optional(),
+  metadata: z.record(z.unknown()).optional(),
+});
+
+// ---------------------------------------------------------------------------
 // Common / utility schemas
 // ---------------------------------------------------------------------------
 
@@ -235,3 +344,15 @@ export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;
 export type PaginationInput = z.infer<typeof paginationSchema>;
 export type DateRangeInput = z.infer<typeof dateRangeSchema>;
 export type IdParamInput = z.infer<typeof idParamSchema>;
+export type ActivateKillSwitchInput = z.infer<typeof activateKillSwitchSchema>;
+export type GateConfidenceInput = z.infer<typeof gateConfidenceSchema>;
+export type ResolveApprovalInput = z.infer<typeof resolveApprovalSchema>;
+export type ManualOverrideInput = z.infer<typeof manualOverrideSchema>;
+export type UpdateGovernancePolicyInput = z.infer<typeof updateGovernancePolicySchema>;
+export type SendNotificationInput = z.infer<typeof sendNotificationSchema>;
+export type UpdateNotificationPreferencesInput = z.infer<typeof updateNotificationPreferencesSchema>;
+export type RegisterWebhookInput = z.infer<typeof registerWebhookSchema>;
+export type EnqueueJobInput = z.infer<typeof enqueueJobSchema>;
+export type CreateApiKeyInput = z.infer<typeof createApiKeySchema>;
+export type UpdateApiKeyInput = z.infer<typeof updateApiKeySchema>;
+export type RecordSpendInput = z.infer<typeof recordSpendSchema>;
