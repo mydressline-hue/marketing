@@ -152,8 +152,28 @@ describe('API Endpoint Inventory Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockCacheGet.mockResolvedValue(null);
-    // Default mock: empty result set
-    mockPool.query.mockResolvedValue({ rows: [], rowCount: 0 });
+    // Default mock: return a row with common aggregate fields so services that
+    // access rows[0].xxx do not crash. Individual tests can override.
+    mockPool.query.mockResolvedValue({
+      rows: [{
+        count: '0',
+        total: '0',
+        total_spend: '0',
+        total_active: '0',
+        critical: '0',
+        warning: '0',
+        info: '0',
+        unacknowledged: '0',
+        active: '0',
+        paused: '0',
+        draft: '0',
+        idle: '0',
+        max_level: 0,
+        countries_active: '0',
+        market_readiness_avg: '0',
+      }],
+      rowCount: 1,
+    });
   });
 
   // =========================================================================

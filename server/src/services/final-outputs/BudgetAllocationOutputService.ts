@@ -145,10 +145,10 @@ export class BudgetAllocationOutputService {
     const activeAllocations = allocationsResult.rows;
 
     // Step 2: Compute total budget across all active allocations
-    const totalBudget = activeAllocations.reduce(
-      (sum, a) => sum + parseFloat(String(a.total_budget)),
-      0,
-    );
+    let totalBudget = 0;
+    for (const alloc of activeAllocations) {
+      totalBudget += parseFloat(String(alloc.total_budget));
+    }
 
     // Step 3: Fetch default currency from active countries configuration
     const currencyResult = await query<{ currency: string }>(
@@ -232,22 +232,22 @@ export class BudgetAllocationOutputService {
        ORDER BY date DESC`,
     );
 
-    const dailySpends = dailySpendResult.rows.map((r) =>
-      parseFloat(r.daily_total) || 0,
+    const dailySpends: number[] = dailySpendResult.rows.map(
+      (r: { daily_total: string }) => parseFloat(r.daily_total) || 0,
     );
 
     // Calculate current daily rate (average of last 7 days)
     const recentSpends = dailySpends.slice(0, 7);
     const currentDailyRate =
       recentSpends.length > 0
-        ? recentSpends.reduce((s, v) => s + v, 0) / recentSpends.length
+        ? recentSpends.reduce((s: number, v: number) => s + v, 0) / recentSpends.length
         : 0;
 
     // Previous week for trend comparison
     const previousSpends = dailySpends.slice(7, 14);
     const previousDailyRate =
       previousSpends.length > 0
-        ? previousSpends.reduce((s, v) => s + v, 0) / previousSpends.length
+        ? previousSpends.reduce((s: number, v: number) => s + v, 0) / previousSpends.length
         : 0;
 
     // Determine velocity trend
@@ -389,19 +389,21 @@ export class BudgetAllocationOutputService {
        ORDER BY ch.key`,
     );
 
-    const byChannel = channelResult.rows.map((row) => {
-      const allocated = parseFloat(row.allocated) || 0;
-      const spent = parseFloat(row.spent) || 0;
-      return {
-        channel: row.channel,
-        allocated: Math.round(allocated * 100) / 100,
-        spent: Math.round(spent * 100) / 100,
-        utilization_pct:
-          allocated > 0
-            ? Math.round((spent / allocated) * 10000) / 100
-            : 0,
-      };
-    });
+    const byChannel = channelResult.rows.map(
+      (row: { channel: string; allocated: string; spent: string }) => {
+        const allocated = parseFloat(row.allocated) || 0;
+        const spent = parseFloat(row.spent) || 0;
+        return {
+          channel: row.channel,
+          allocated: Math.round(allocated * 100) / 100,
+          spent: Math.round(spent * 100) / 100,
+          utilization_pct:
+            allocated > 0
+              ? Math.round((spent / allocated) * 10000) / 100
+              : 0,
+        };
+      },
+    );
 
     // Country-level utilization
     const countryResult = await query<{
@@ -422,20 +424,22 @@ export class BudgetAllocationOutputService {
        ORDER BY c.name`,
     );
 
-    const byCountry = countryResult.rows.map((row) => {
-      const allocated = parseFloat(row.allocated) || 0;
-      const spent = parseFloat(row.spent) || 0;
-      return {
-        country_code: row.country_code,
-        country_name: row.country_name,
-        allocated: Math.round(allocated * 100) / 100,
-        spent: Math.round(spent * 100) / 100,
-        utilization_pct:
-          allocated > 0
-            ? Math.round((spent / allocated) * 10000) / 100
-            : 0,
-      };
-    });
+    const byCountry = countryResult.rows.map(
+      (row: { country_code: string; country_name: string; allocated: string; spent: string }) => {
+        const allocated = parseFloat(row.allocated) || 0;
+        const spent = parseFloat(row.spent) || 0;
+        return {
+          country_code: row.country_code,
+          country_name: row.country_name,
+          allocated: Math.round(allocated * 100) / 100,
+          spent: Math.round(spent * 100) / 100,
+          utilization_pct:
+            allocated > 0
+              ? Math.round((spent / allocated) * 10000) / 100
+              : 0,
+        };
+      },
+    );
 
     const result: BudgetUtilizationResult = {
       total_budget: Math.round(totalBudget * 100) / 100,
