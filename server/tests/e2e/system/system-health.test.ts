@@ -349,10 +349,11 @@ describe('System Health Comprehensive Tests', () => {
     });
 
     it('10. GET /health/deep returns degraded when some components fail', async () => {
-      // Mock PostgreSQL SELECT 1 (up)
+      // Same microtask ordering: #1=postgres, #2=integrations-conn, #3=agents, #4=outputs, #5=sync-errors
       mockPool.query
+        // #1 checkPostgres: SELECT 1 (up)
         .mockResolvedValueOnce({ rows: [{ '?column?': 1 }], rowCount: 1 })
-        // Mock integrations: one degraded
+        // #2 checkIntegrations: connections (one degraded)
         .mockResolvedValueOnce({
           rows: [
             { platform_type: 'google_ads', status: 'connected', last_sync_at: '2025-06-01T00:00:00Z' },
@@ -360,8 +361,7 @@ describe('System Health Comprehensive Tests', () => {
           ],
           rowCount: 2,
         })
-        .mockResolvedValueOnce({ rows: [], rowCount: 0 })
-        // Mock agent system: degraded (not all active)
+        // #3 checkAgentSystem: degraded (not all active)
         .mockResolvedValueOnce({
           rows: [{
             total_agents: 5,
@@ -372,14 +372,16 @@ describe('System Health Comprehensive Tests', () => {
           }],
           rowCount: 1,
         })
-        // Mock final outputs: partial
+        // #4 checkFinalOutputs: partial (only 2 of 6 deliverables)
         .mockResolvedValueOnce({
           rows: [
             { agent_type: 'country_strategy', cnt: 10, last_at: '2025-06-01T12:00:00Z', avg_conf: 88 },
             { agent_type: 'channel_allocation', cnt: 8, last_at: '2025-06-01T11:00:00Z', avg_conf: 85 },
           ],
           rowCount: 2,
-        });
+        })
+        // #5 checkIntegrations: sync error counts
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 });
 
       const res = await request(app)
         .get('/health/deep')
