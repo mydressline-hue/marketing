@@ -538,30 +538,36 @@ describe('Full System Integration Tests (E2E Capstone)', () => {
     });
 
     it('2. should access the dashboard overview after login', async () => {
+      // DashboardService.getOverview fires 14 parallel queries.
+      // Provide a default mock that returns sensible empty data for each.
+      const defaultRow = { rows: [], rowCount: 0 };
+      const spendRow = { rows: [{ total_spend: '25000.00' }], rowCount: 1 };
+      const platformSpend = { rows: [{ platform: 'google', spend: '15000.00' }], rowCount: 1 };
+      const trendRow = { rows: [{ date: '2025-06-01', amount: '1000.00' }], rowCount: 1 };
+      const campaignStatus = { rows: [{ status: 'active', count: '3' }], rowCount: 1 };
+      const campaignByPlatform = { rows: [{ platform: 'google', count: '3' }], rowCount: 1 };
+      const connectionsRow = { rows: [], rowCount: 0 };
+      const agentsRow = { rows: [], rowCount: 0 };
+      const alertsRow = { rows: [{ count: '0' }], rowCount: 1 };
+      const killSwitchRow = { rows: [{ max_level: 0 }], rowCount: 1 };
+      const countriesRow = { rows: [], rowCount: 0 };
+
+      // Mock all 14 parallel queries
       mockPool.query
-        .mockResolvedValueOnce({
-          rows: [{
-            total_campaigns: 5,
-            active_campaigns: 3,
-            total_spend: '25000.00',
-            total_revenue: '87500.00',
-          }],
-          rowCount: 1,
-        })
-        .mockResolvedValueOnce({
-          rows: [
-            { platform: 'google', spend: '15000.00' },
-            { platform: 'meta', spend: '10000.00' },
-          ],
-          rowCount: 2,
-        })
-        .mockResolvedValueOnce({
-          rows: [
-            { country_name: 'Germany', spend: '15000.00' },
-            { country_name: 'United Kingdom', spend: '10000.00' },
-          ],
-          rowCount: 2,
-        });
+        .mockResolvedValueOnce(spendRow)           // 1. total spend
+        .mockResolvedValueOnce(platformSpend)       // 2. spend by platform
+        .mockResolvedValueOnce(trendRow)            // 3. spend trend
+        .mockResolvedValueOnce(campaignStatus)      // 4. campaign status counts
+        .mockResolvedValueOnce(campaignByPlatform)  // 5. campaigns by platform
+        .mockResolvedValueOnce(connectionsRow)      // 6. ad platform connections
+        .mockResolvedValueOnce(connectionsRow)      // 7. CRM connections
+        .mockResolvedValueOnce(connectionsRow)      // 8. analytics connections
+        .mockResolvedValueOnce(defaultRow)          // 9. CRM contacts count
+        .mockResolvedValueOnce(defaultRow)          // 10. CRM recent syncs
+        .mockResolvedValueOnce(agentsRow)           // 11. agents
+        .mockResolvedValueOnce(alertsRow)           // 12. alerts count
+        .mockResolvedValueOnce(killSwitchRow)       // 13. kill switch level
+        .mockResolvedValueOnce(countriesRow);       // 14. countries
 
       const res = await request(app)
         .get(`${API}/dashboard/overview`)
