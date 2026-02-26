@@ -1,16 +1,19 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
+import { QueryProvider } from './providers/QueryProvider'
 import { AppProvider } from './context/AppContext'
 import './index.css'
 import App from './App'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
+    <QueryProvider>
       <AppProvider>
-        <App />
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
       </AppProvider>
-    </BrowserRouter>
+    </QueryProvider>
   </StrictMode>,
 )
