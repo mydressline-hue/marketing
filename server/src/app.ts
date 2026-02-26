@@ -30,6 +30,19 @@ import contentRoutes from './routes/content.routes';
 import alertsRoutes from './routes/alerts.routes';
 import settingsRoutes from './routes/settings.routes';
 import budgetRoutes from './routes/budget.routes';
+import agentsRoutes from './routes/agents.routes';
+import killswitchRoutes from './routes/killswitch.routes';
+import infrastructureRoutes from './routes/infrastructure.routes';
+import advancedAiRoutes from './routes/advanced-ai.routes';
+import integrationsRoutes from './routes/integrations.routes';
+import healthcheckRoutes from './routes/healthcheck.routes';
+import webhooksRoutes from './routes/webhooks.routes';
+import queueRoutes from './routes/queue.routes';
+import ratelimitRoutes from './routes/ratelimit.routes';
+import dashboardRoutes from './routes/dashboard.routes';
+import notificationsRoutes from './routes/notifications.routes';
+import auditRoutes from './routes/audit.routes';
+import apikeysRoutes from './routes/apikeys.routes';
 
 // ---------------------------------------------------------------------------
 // App
@@ -50,9 +63,7 @@ app.use(cookieParser());
 app.use(requestLogger);
 
 // ── Health check ──────────────────────────────────────────────────────────
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+app.use('/health', healthcheckRoutes);
 
 // ── API routes ────────────────────────────────────────────────────────────
 const prefix = env.API_PREFIX;
@@ -66,6 +77,18 @@ app.use(`${prefix}/content`, contentRoutes);
 app.use(`${prefix}/alerts`, alertsRoutes);
 app.use(`${prefix}/settings`, settingsRoutes);
 app.use(`${prefix}/budget`, budgetRoutes);
+app.use(`${prefix}/agents`, agentsRoutes);
+app.use(prefix, killswitchRoutes);
+app.use(`${prefix}/infrastructure`, infrastructureRoutes);
+app.use(`${prefix}/advanced-ai`, advancedAiRoutes);
+app.use(`${prefix}/integrations`, integrationsRoutes);
+app.use(`${prefix}/webhooks`, webhooksRoutes);
+app.use(`${prefix}/queue`, queueRoutes);
+app.use(`${prefix}/ratelimits`, ratelimitRoutes);
+app.use(`${prefix}/dashboard`, dashboardRoutes);
+app.use(`${prefix}/notifications`, notificationsRoutes);
+app.use(`${prefix}/audit`, auditRoutes);
+app.use(`${prefix}/apikeys`, apikeysRoutes);
 
 // ── Error handling ────────────────────────────────────────────────────────
 app.use(notFoundHandler);

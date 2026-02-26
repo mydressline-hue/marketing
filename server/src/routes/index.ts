@@ -11,6 +11,13 @@ import settingsRoutes from './settings.routes';
 import agentsRoutes from './agents.routes';
 import killswitchRoutes from './killswitch.routes';
 import infrastructureRoutes from './infrastructure.routes';
+import auditRoutes from './audit.routes';
+import dashboardRoutes from './dashboard.routes';
+import webhooksRoutes from './webhooks.routes';
+import queueRoutes from './queue.routes';
+import ratelimitRoutes from './ratelimit.routes';
+import notificationsRoutes from './notifications.routes';
+import apikeysRoutes from './apikeys.routes';
 
 const router = Router();
 
@@ -26,6 +33,13 @@ router.use('/settings', settingsRoutes);
 router.use('/agents', agentsRoutes);
 router.use('/killswitch', killswitchRoutes);
 router.use('/infrastructure', infrastructureRoutes);
+router.use('/audit', auditRoutes);
+router.use('/dashboard', dashboardRoutes);
+router.use('/webhooks', webhooksRoutes);
+router.use('/queue', queueRoutes);
+router.use('/ratelimits', ratelimitRoutes);
+router.use('/notifications', notificationsRoutes);
+router.use('/apikeys', apikeysRoutes);
 
 // Health check
 router.get('/health', (_req, res) => {
