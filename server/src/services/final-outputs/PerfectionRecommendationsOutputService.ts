@@ -366,13 +366,13 @@ export class PerfectionRecommendationsOutputService {
       const result = await pool.query(
         `SELECT * FROM cross_challenge_results ORDER BY created_at DESC LIMIT 100`,
       );
-      return result.rows.map((row) => ({
+      return result.rows.map((row: Record<string, unknown>) => ({
         id: row.id,
         challenger: row.challenger,
         challenged: row.challenged,
         finding: row.finding,
         severity: row.severity,
-        confidence: parseFloat(row.confidence ?? '0'),
+        confidence: parseFloat(String(row.confidence ?? '0')),
         resolved: row.resolved ?? false,
         created_at: row.created_at,
       }));
