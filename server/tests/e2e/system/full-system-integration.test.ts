@@ -539,45 +539,41 @@ describe('Full System Integration Tests (E2E Capstone)', () => {
 
     it('2. should access the dashboard overview after login', async () => {
       // DashboardService.getOverview fires 14 parallel queries.
-      // Provide a default mock that returns sensible empty data for each.
-      const defaultRow = { rows: [], rowCount: 0 };
-      const spendRow = { rows: [{ total_spend: '25000.00' }], rowCount: 1 };
-      const platformSpend = { rows: [{ platform: 'google', spend: '15000.00' }], rowCount: 1 };
-      const trendRow = { rows: [{ date: '2025-06-01', amount: '1000.00' }], rowCount: 1 };
-      const campaignStatus = { rows: [{ status: 'active', count: '3' }], rowCount: 1 };
-      const campaignByPlatform = { rows: [{ platform: 'google', count: '3' }], rowCount: 1 };
-      const connectionsRow = { rows: [], rowCount: 0 };
-      const agentsRow = { rows: [], rowCount: 0 };
-      const alertsRow = { rows: [{ count: '0' }], rowCount: 1 };
-      const killSwitchRow = { rows: [{ max_level: 0 }], rowCount: 1 };
-      const countriesRow = { rows: [], rowCount: 0 };
+      // Each mock must match the exact row shape expected by the service.
 
-      // Mock all 14 parallel queries
       mockPool.query
-        .mockResolvedValueOnce(spendRow)           // 1. total spend
-        .mockResolvedValueOnce(platformSpend)       // 2. spend by platform
-        .mockResolvedValueOnce(trendRow)            // 3. spend trend
-        .mockResolvedValueOnce(campaignStatus)      // 4. campaign status counts
-        .mockResolvedValueOnce(campaignByPlatform)  // 5. campaigns by platform
-        .mockResolvedValueOnce(connectionsRow)      // 6. ad platform connections
-        .mockResolvedValueOnce(connectionsRow)      // 7. CRM connections
-        .mockResolvedValueOnce(connectionsRow)      // 8. analytics connections
-        .mockResolvedValueOnce(defaultRow)          // 9. CRM contacts count
-        .mockResolvedValueOnce(defaultRow)          // 10. CRM recent syncs
-        .mockResolvedValueOnce(agentsRow)           // 11. agents
-        .mockResolvedValueOnce(alertsRow)           // 12. alerts count
-        .mockResolvedValueOnce(killSwitchRow)       // 13. kill switch level
-        .mockResolvedValueOnce(countriesRow);       // 14. countries
+        // 1. Spend: total
+        .mockResolvedValueOnce({ rows: [{ total_spend: '25000.00' }], rowCount: 1 })
+        // 2. Spend: by platform
+        .mockResolvedValueOnce({ rows: [{ platform: 'google', spend: '15000.00' }], rowCount: 1 })
+        // 3. Spend: trend (last 30 days)
+        .mockResolvedValueOnce({ rows: [{ date: '2025-06-01', amount: '1000.00' }], rowCount: 1 })
+        // 4. Campaigns: status counts
+        .mockResolvedValueOnce({ rows: [{ total: '5', active: '3', paused: '1', draft: '1' }], rowCount: 1 })
+        // 5. Campaigns: by platform
+        .mockResolvedValueOnce({ rows: [{ platform: 'google', count: '3' }], rowCount: 1 })
+        // 6. Integrations: ad platforms
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 })
+        // 7. Integrations: CRM platforms
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 })
+        // 8. Integrations: analytics platforms
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 })
+        // 9. CRM: contact counts by platform
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 })
+        // 10. CRM: recent syncs
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 })
+        // 11. Agents: status counts
+        .mockResolvedValueOnce({ rows: [{ total: '0', active: '0', paused: '0', idle: '0' }], rowCount: 1 })
+        // 12. Alerts: counts
+        .mockResolvedValueOnce({ rows: [{ total_active: '0', critical: '0', warning: '0', info: '0', unacknowledged: '0' }], rowCount: 1 })
+        // 13. Kill switch: active state
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 })
+        // 14. Countries: active count and avg score
+        .mockResolvedValueOnce({ rows: [{ countries_active: '2', market_readiness_avg: '85.5' }], rowCount: 1 });
 
       const res = await request(app)
         .get(`${API}/dashboard/overview`)
         .set('Authorization', `Bearer ${adminToken}`);
-
-      // Debug: log the response on failure
-      if (res.status === 500) {
-        // eslint-disable-next-line no-console
-        console.log('Dashboard overview 500 body:', JSON.stringify(res.body));
-      }
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);

@@ -122,7 +122,7 @@ class RiskDataSimulator {
   private lastAudit = '2025-12-01T00:00:00Z';
   private vulnCount = '0';
   private riskTrend: Record<string, unknown>[] = [];
-  private govMetrics = { avg_risk: '30', total: '50', high_risk_pct: '10' };
+  private govMetrics = { avg_risk: '10', total: '50', high_risk_pct: '5' };
 
   addRiskFlag(overrides: Record<string, unknown> = {}): this {
     this.riskFlags.push({
@@ -237,51 +237,61 @@ class RiskDataSimulator {
   /**
    * Installs all mock query responses in sequence matching
    * the order RiskAssessmentOutputService makes database calls.
+   *
+   * Query order follows Promise.all concurrency:
+   * 1-3:  fetchRisks (inner Promise.all: risk_flags, fraud_alerts, risk_assessments)
+   * 4:    fetchComplianceStatus (sequential, first: gdpr)
+   * 5-8:  fetchFraudMetrics (inner Promise.all: fraud_rate, bot, anomaly, blocked)
+   * 9-13: fetchSecurityPosture (inner Promise.all: key_rotation, encryption, soc2, audit, vulns)
+   * 14:   fetchRiskTrend
+   * 15:   fetchGovernanceRiskMetrics
+   * 16:   fetchComplianceStatus (sequential, second: ccpa) -- after gdpr resolves
+   * 17:   fetchComplianceStatus (sequential, third: local_laws) -- after ccpa resolves
    */
   install(): void {
     mockQuery
-      // fetchRisks: risk_flags
+      // 1. fetchRisks: risk_flags
       .mockResolvedValueOnce(makeQueryResult(this.riskFlags))
-      // fetchRisks: fraud_alerts
+      // 2. fetchRisks: fraud_alerts
       .mockResolvedValueOnce(makeQueryResult(this.fraudAlerts))
-      // fetchRisks: risk_assessments
+      // 3. fetchRisks: risk_assessments
       .mockResolvedValueOnce(makeQueryResult(this.govRiskAssessments))
-      // fetchComplianceStatus: GDPR
+      // 4. fetchComplianceStatus: GDPR (first sequential call)
       .mockResolvedValueOnce(
         makeQueryResult([
           { total: String(this.gdprStats.total), compliant: String(this.gdprStats.compliant) },
         ]),
       )
-      // fetchComplianceStatus: CCPA
+      // 5. fetchFraudMetrics: click fraud rate
+      .mockResolvedValueOnce(makeQueryResult([this.fraudMetrics]))
+      // 6. fetchFraudMetrics: bot traffic
+      .mockResolvedValueOnce(makeQueryResult([{ bot_pct: this.botPct }]))
+      // 7. fetchFraudMetrics: anomaly count
+      .mockResolvedValueOnce(makeQueryResult([{ anomaly_count: this.anomalyCount }]))
+      // 8. fetchFraudMetrics: blocked IPs
+      .mockResolvedValueOnce(makeQueryResult([{ blocked_count: this.blockedIps }]))
+      // 9. fetchSecurityPosture: key rotation
+      .mockResolvedValueOnce(makeQueryResult([this.keyRotation]))
+      // 10. fetchSecurityPosture: encryption
+      .mockResolvedValueOnce(makeQueryResult([this.encryption]))
+      // 11. fetchSecurityPosture: SOC2
+      .mockResolvedValueOnce(makeQueryResult([{ readiness_pct: this.soc2Score }]))
+      // 12. fetchSecurityPosture: last audit
+      .mockResolvedValueOnce(makeQueryResult([{ last_audit: this.lastAudit }]))
+      // 13. fetchSecurityPosture: vulnerabilities
+      .mockResolvedValueOnce(makeQueryResult([{ vuln_count: this.vulnCount }]))
+      // 14. fetchRiskTrend
+      .mockResolvedValueOnce(makeQueryResult(this.riskTrend))
+      // 15. fetchGovernanceRiskMetrics
+      .mockResolvedValueOnce(makeQueryResult([this.govMetrics]))
+      // 16. fetchComplianceStatus: CCPA (after gdpr resolves)
       .mockResolvedValueOnce(
         makeQueryResult([
           { total: String(this.ccpaStats.total), compliant: String(this.ccpaStats.compliant) },
         ]),
       )
-      // fetchComplianceStatus: local laws
-      .mockResolvedValueOnce(makeQueryResult(this.localLaws))
-      // fetchFraudMetrics: click fraud rate
-      .mockResolvedValueOnce(makeQueryResult([this.fraudMetrics]))
-      // fetchFraudMetrics: bot traffic
-      .mockResolvedValueOnce(makeQueryResult([{ bot_pct: this.botPct }]))
-      // fetchFraudMetrics: anomaly count
-      .mockResolvedValueOnce(makeQueryResult([{ anomaly_count: this.anomalyCount }]))
-      // fetchFraudMetrics: blocked IPs
-      .mockResolvedValueOnce(makeQueryResult([{ blocked_count: this.blockedIps }]))
-      // fetchSecurityPosture: key rotation
-      .mockResolvedValueOnce(makeQueryResult([this.keyRotation]))
-      // fetchSecurityPosture: encryption
-      .mockResolvedValueOnce(makeQueryResult([this.encryption]))
-      // fetchSecurityPosture: SOC2
-      .mockResolvedValueOnce(makeQueryResult([{ readiness_pct: this.soc2Score }]))
-      // fetchSecurityPosture: last audit
-      .mockResolvedValueOnce(makeQueryResult([{ last_audit: this.lastAudit }]))
-      // fetchSecurityPosture: vulnerabilities
-      .mockResolvedValueOnce(makeQueryResult([{ vuln_count: this.vulnCount }]))
-      // fetchRiskTrend
-      .mockResolvedValueOnce(makeQueryResult(this.riskTrend))
-      // fetchGovernanceRiskMetrics
-      .mockResolvedValueOnce(makeQueryResult([this.govMetrics]));
+      // 17. fetchComplianceStatus: local laws (after ccpa resolves)
+      .mockResolvedValueOnce(makeQueryResult(this.localLaws));
   }
 }
 
