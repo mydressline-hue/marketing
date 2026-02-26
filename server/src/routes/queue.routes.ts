@@ -8,6 +8,8 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
+import { validateBody } from '../middleware/validation';
+import { enqueueJobSchema } from '../validators/schemas';
 import {
   enqueueJob,
   getJob,
@@ -25,7 +27,7 @@ const router = Router();
 // ---------------------------------------------------------------------------
 
 // POST /queue/jobs – enqueue a new job (requires write:infrastructure)
-router.post('/jobs', authenticate, requirePermission('write:infrastructure'), enqueueJob);
+router.post('/jobs', authenticate, requirePermission('write:infrastructure'), validateBody(enqueueJobSchema), enqueueJob);
 
 // GET /queue/jobs – list jobs with optional filters and pagination
 router.get('/jobs', authenticate, requirePermission('read:infrastructure'), listJobs);

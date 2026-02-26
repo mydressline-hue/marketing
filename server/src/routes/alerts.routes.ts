@@ -8,6 +8,8 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
+import { validateBody } from '../middleware/validation';
+import { createAlertSchema } from '../validators/schemas';
 import {
   listAlerts,
   getActiveAlerts,
@@ -38,7 +40,7 @@ router.get('/stats', authenticate, getAlertStats);
 router.get('/:id', authenticate, getAlertById);
 
 // POST /alerts – create a new fraud alert (requires write:campaigns)
-router.post('/', authenticate, requirePermission('write:campaigns'), createAlert);
+router.post('/', authenticate, requirePermission('write:campaigns'), validateBody(createAlertSchema), createAlert);
 
 // PATCH /alerts/:id/acknowledge – acknowledge an alert
 router.patch('/:id/acknowledge', authenticate, acknowledgeAlert);

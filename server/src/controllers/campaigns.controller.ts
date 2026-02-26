@@ -8,6 +8,8 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
 import { CampaignsService } from '../services/campaigns.service';
+import { KillSwitchService } from '../services/killswitch/KillSwitchService';
+import { GovernanceService } from '../services/governance/GovernanceService';
 
 // ---------------------------------------------------------------------------
 // Handlers
@@ -113,6 +115,20 @@ export const getSpendSummary = asyncHandler(async (req: Request, res: Response) 
  */
 export const createCampaign = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.id;
+
+  // Governance gate: verify kill switch allows campaign creation
+  const operationCheck = await KillSwitchService.isOperationAllowed('campaign_create', {
+    countryId: req.body.countryId,
+  });
+  if (!operationCheck.allowed) {
+    res.status(403).json({
+      success: false,
+      error: operationCheck.reason || 'Campaign creation is blocked by an active kill switch.',
+      killSwitchLevel: operationCheck.activeLevel,
+    });
+    return;
+  }
+
   const campaign = await CampaignsService.create(req.body, userId);
 
   res.status(201).json({
@@ -141,6 +157,22 @@ export const updateCampaign = asyncHandler(async (req: Request, res: Response) =
 export const updateCampaignStatus = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.id;
   const { status } = req.body;
+
+  // Governance gate: if activating a campaign, check kill switch and risk
+  if (status === 'active') {
+    const operationCheck = await KillSwitchService.isOperationAllowed('campaign_create', {
+      campaignId: req.params.id,
+    });
+    if (!operationCheck.allowed) {
+      res.status(403).json({
+        success: false,
+        error: operationCheck.reason || 'Campaign activation is blocked by an active kill switch.',
+        killSwitchLevel: operationCheck.activeLevel,
+      });
+      return;
+    }
+  }
+
   const campaign = await CampaignsService.updateStatus(req.params.id, status, userId);
 
   res.json({

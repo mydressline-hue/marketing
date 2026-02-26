@@ -13,6 +13,7 @@
 import crypto from 'crypto';
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet, cacheDel } from '../../config/redis';
+import { env } from '../../config/env';
 import { logger } from '../../utils/logger';
 import { generateId, encrypt, decrypt } from '../../utils/helpers';
 import { NotFoundError, ValidationError } from '../../utils/errors';
@@ -108,7 +109,7 @@ const CACHE_KEY_SECURITY_REPORT = 'security:report';
 const CACHE_TTL_IP_WHITELIST = 300; // 5 minutes
 const CACHE_TTL_SECURITY_REPORT = 600; // 10 minutes
 const KEY_ROTATION_DAYS = 30;
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-security-key-32-chars!!';
+const ENCRYPTION_KEY = env.ENCRYPTION_KEY as string;
 
 // ---------------------------------------------------------------------------
 // Service

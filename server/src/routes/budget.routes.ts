@@ -10,6 +10,12 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
+import { validateBody, validateParams } from '../middleware/validation';
+import {
+  createBudgetAllocationSchema,
+  recordSpendSchema,
+  idParamSchema,
+} from '../validators/schemas';
 import {
   listAllocations,
   getAllocation,
@@ -37,9 +43,9 @@ router.get('/:id', getAllocation);
 router.get('/:id/guardrails', checkGuardrails);
 
 // ---- Write operations (require write:budget permission) ----
-router.post('/', requirePermission('write:budget'), createAllocation);
-router.put('/:id', requirePermission('write:budget'), updateAllocation);
-router.delete('/:id', requirePermission('write:budget'), deleteAllocation);
-router.post('/:id/spend', requirePermission('write:budget'), recordSpend);
+router.post('/', requirePermission('write:budget'), validateBody(createBudgetAllocationSchema), createAllocation);
+router.put('/:id', requirePermission('write:budget'), validateParams(idParamSchema), validateBody(createBudgetAllocationSchema.partial()), updateAllocation);
+router.delete('/:id', requirePermission('write:budget'), validateParams(idParamSchema), deleteAllocation);
+router.post('/:id/spend', requirePermission('write:budget'), validateParams(idParamSchema), validateBody(recordSpendSchema), recordSpend);
 
 export default router;

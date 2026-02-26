@@ -8,6 +8,8 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/rbac';
+import { validateBody } from '../middleware/validation';
+import { updateSettingsSchema } from '../validators/schemas';
 import {
   getAllSettings,
   getApiKeyConfig,
@@ -35,6 +37,6 @@ router.get('/', authenticate, requireRole('admin'), getAllSettings);
 router.get('/api-keys', authenticate, requireRole('admin'), getApiKeyConfig);
 
 // PUT /settings/:key – set a single setting (admin only)
-router.put('/:key', authenticate, requireRole('admin'), setSetting);
+router.put('/:key', authenticate, requireRole('admin'), validateBody(updateSettingsSchema), setSetting);
 
 export default router;
