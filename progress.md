@@ -346,38 +346,55 @@
 
 ---
 
-## PHASE 8: EXTERNAL INTEGRATIONS
+## PHASE 8: EXTERNAL INTEGRATIONS (COMPLETED)
 > Platform APIs, CRM, email marketing, analytics/BI tools
 
 ### 8A. Ad Platform Integrations
-- [ ] Google Ads API - campaign CRUD, bidding, reporting
-- [ ] Meta Marketing API - campaign CRUD, audiences, reporting
-- [ ] TikTok Ads API - campaign CRUD, creatives, reporting
-- [ ] Bing Ads API - campaign CRUD, bidding, reporting
-- [ ] Snapchat Marketing API - campaign CRUD, reporting
+- [x] Google Ads API - campaign CRUD, bidding, reporting
+- [x] Meta Marketing API - campaign CRUD, audiences, reporting
+- [x] TikTok Ads API - campaign CRUD, creatives, reporting
+- [x] Bing Ads API - campaign CRUD, bidding, reporting
+- [x] Snapchat Marketing API - campaign CRUD, reporting
 
 ### 8B. Shopify Integration
-- [ ] Shopify Admin API - product sync (titles, images, descriptions, variants, stock)
-- [ ] Blog/content publishing via API
-- [ ] Webhook registration and handling (order created, product updated, etc.)
-- [ ] Pixel/conversion tracking validation
+- [x] Shopify Admin API - product sync (titles, images, descriptions, variants, stock)
+- [x] Blog/content publishing via API
+- [x] Webhook registration and handling (order created, product updated, etc.)
+- [x] Pixel/conversion tracking validation
 
 ### 8C. CRM & Email Integrations
-- [ ] Salesforce integration (contact/lead sync)
-- [ ] HubSpot integration (contact/deal sync)
-- [ ] Klaviyo integration (email marketing sync)
-- [ ] Mailchimp integration (audience/campaign sync)
-- [ ] Iterable integration (user/event sync)
+- [x] Salesforce integration (contact/lead sync)
+- [x] HubSpot integration (contact/deal sync)
+- [x] Klaviyo integration (email marketing sync)
+- [x] Mailchimp integration (audience/campaign sync)
+- [x] Iterable integration (user/event sync)
 
 ### 8D. Analytics/BI Integrations
-- [ ] Looker integration (data export)
-- [ ] Tableau integration (data connector)
-- [ ] Power BI integration (data feed)
+- [x] Looker integration (data export)
+- [x] Tableau integration (data connector)
+- [x] Power BI integration (data feed)
 
 ### 8E. Testing (3x per module)
-- [ ] Unit tests for all API integrations
-- [ ] Integration tests with sandbox/test accounts
-- [ ] End-to-end tests for data flow across platforms
+- [x] Unit tests for all API integrations
+- [x] Integration tests with sandbox/test accounts
+- [x] End-to-end tests for data flow across platforms
+
+### 8F. Route Mounting & Wiring
+- [x] Advanced AI routes mounted in app.ts (67 endpoints)
+- [x] Integration routes mounted in app.ts (13 endpoints)
+- [x] Agents routes mounted in app.ts (14 endpoints)
+- [x] Kill Switch & Governance routes mounted in app.ts (23 endpoints)
+- [x] Infrastructure routes mounted in app.ts (33 endpoints)
+
+### 8G. New Production Features
+- [x] Webhook Ingest Layer - inbound webhook receiver with HMAC-SHA256 verification per platform
+- [x] Job Queue / Background Worker System - Redis-backed queue with PostgreSQL persistence
+- [x] Platform Rate Limiter - per-platform sliding window rate limiting with Redis sorted sets
+- [x] Unified Dashboard API - single endpoint aggregating all platform data
+- [x] Notification Service - multi-channel (email, slack, in_app, sms) with preferences
+- [x] Audit Log API - query/filter/stats endpoints exposing existing AuditService
+- [x] API Key Scoping - per-integration scoping with IP whitelists, expiration, rate limits
+- [x] Health Check Expansion - deep health with PostgreSQL, Redis, and integration checks
 
 ---
 
@@ -487,7 +504,7 @@
 | Phase 5 | Kill Switch & Governance System | COMPLETE |
 | Phase 6 | Enterprise Infrastructure | COMPLETE |
 | Phase 7 | Advanced AI Capabilities | COMPLETE |
-| Phase 8 | External Integrations | NOT STARTED |
+| Phase 8 | External Integrations + New Features | COMPLETE |
 | Phase 9 | UI-Backend Integration | NOT STARTED |
 | Phase 10 | Final Outputs & System Testing | NOT STARTED |
 
@@ -788,4 +805,64 @@ server/tests/unit/services/health/campaign-health.test.ts
 server/tests/integration/advanced-ai/advanced-ai-api.test.ts
 server/tests/e2e/advanced-ai/simulation-workflow.test.ts
 server/tests/e2e/advanced-ai/learning-workflow.test.ts
+```
+
+### Phase 8: Integration Service Files
+```
+server/src/services/integrations/IntegrationsService.ts
+server/src/services/integrations/ads/GoogleAdsService.ts
+server/src/services/integrations/ads/MetaAdsService.ts
+server/src/services/integrations/ads/TikTokAdsService.ts
+server/src/services/integrations/ads/BingAdsService.ts
+server/src/services/integrations/ads/SnapchatAdsService.ts
+server/src/services/integrations/shopify/ShopifyAdminService.ts
+server/src/services/integrations/crm/SalesforceService.ts
+server/src/services/integrations/crm/HubSpotService.ts
+server/src/services/integrations/crm/KlaviyoService.ts
+server/src/services/integrations/crm/MailchimpService.ts
+server/src/services/integrations/crm/IterableService.ts
+server/src/services/integrations/analytics/LookerService.ts
+server/src/services/integrations/analytics/TableauService.ts
+server/src/services/integrations/analytics/PowerBIService.ts
+server/src/controllers/integrations.controller.ts
+server/src/routes/integrations.routes.ts
+server/src/migrations/004_phase8_tables.sql
+```
+
+### Phase 8: New Feature Files
+```
+server/src/services/webhooks/WebhookService.ts
+server/src/controllers/webhooks.controller.ts
+server/src/routes/webhooks.routes.ts
+server/src/services/queue/QueueService.ts
+server/src/services/queue/WorkerService.ts
+server/src/services/queue/index.ts
+server/src/controllers/queue.controller.ts
+server/src/routes/queue.routes.ts
+server/src/services/ratelimit/PlatformRateLimitService.ts
+server/src/services/ratelimit/index.ts
+server/src/middleware/platformRateLimit.ts
+server/src/controllers/ratelimit.controller.ts
+server/src/routes/ratelimit.routes.ts
+server/src/services/dashboard/DashboardService.ts
+server/src/controllers/dashboard.controller.ts
+server/src/routes/dashboard.routes.ts
+server/src/services/notifications/NotificationService.ts
+server/src/services/notifications/channels/EmailChannel.ts
+server/src/services/notifications/channels/SlackChannel.ts
+server/src/services/notifications/channels/InAppChannel.ts
+server/src/services/notifications/channels/SmsChannel.ts
+server/src/services/notifications/index.ts
+server/src/controllers/notifications.controller.ts
+server/src/routes/notifications.routes.ts
+server/src/controllers/audit.controller.ts
+server/src/routes/audit.routes.ts
+server/src/services/apikey-scoping/ApiKeyScopingService.ts
+server/src/middleware/apiKeyAuth.ts
+server/src/controllers/apikeys.controller.ts
+server/src/routes/apikeys.routes.ts
+server/src/services/healthcheck/HealthCheckService.ts
+server/src/controllers/healthcheck.controller.ts
+server/src/routes/healthcheck.routes.ts
+server/src/migrations/005_new_features.sql
 ```
