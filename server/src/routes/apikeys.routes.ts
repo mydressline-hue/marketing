@@ -12,6 +12,8 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
+import { validateBody } from '../middleware/validation';
+import { createApiKeySchema, updateApiKeySchema } from '../validators/schemas';
 import {
   createKey,
   listKeys,
@@ -36,6 +38,7 @@ router.use(authenticate);
 router.post(
   '/',
   requirePermission('write:infrastructure'),
+  validateBody(createApiKeySchema),
   createKey,
 );
 
@@ -72,6 +75,7 @@ router.get(
 router.put(
   '/:keyId',
   requirePermission('write:infrastructure'),
+  validateBody(updateApiKeySchema),
   updateKey,
 );
 
