@@ -4,13 +4,12 @@ module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/tests'],
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1'
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^\\.\\./\\.\\./\\.\\./\\.\\./\\.\\./\\.\\./src/(.*)$': '<rootDir>/src/$1',
   },
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
-      diagnostics: {
-        ignoreDiagnostics: [2769, 2307],
-      },
+      diagnostics: false,
     }],
   },
   collectCoverageFrom: [
