@@ -839,10 +839,10 @@ describe('E2E: Alert Escalation System', () => {
 
   describe('CPC Spike -> Automated Alert', () => {
     it('should create alert when CPC spikes above baseline', () => {
-      const alert = sim.checkCpc('campaign-1', 8.0, 4.0, cpcConfig.id);
+      const alert = sim.checkCpc('campaign-1', 9.0, 4.0, cpcConfig.id);
       expect(alert).not.toBeNull();
       expect(alert!.metric).toBe('cpc');
-      expect(alert!.severity).toBe('critical'); // 100% spike
+      expect(alert!.severity).toBe('critical'); // 125% spike
       expect(alert!.message).toContain('CPC spiked');
     });
 

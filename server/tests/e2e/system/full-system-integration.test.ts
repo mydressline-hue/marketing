@@ -574,8 +574,12 @@ describe('Full System Integration Tests (E2E Capstone)', () => {
 
     it('3. should create a campaign targeting a specific country', async () => {
       mockPool.query
-        .mockResolvedValueOnce({ rows: [{ id: mockCountry.id }], rowCount: 1 }) // country exists
-        .mockResolvedValueOnce({ rows: [mockCampaign], rowCount: 1 }); // INSERT campaign
+        // KillSwitchService.getCurrentLevel: SELECT MAX(level) FROM kill_switch_state
+        .mockResolvedValueOnce({ rows: [{ max_level: 0 }], rowCount: 1 })
+        // CampaignsService.create: SELECT country
+        .mockResolvedValueOnce({ rows: [{ id: mockCountry.id }], rowCount: 1 })
+        // CampaignsService.create: INSERT campaign
+        .mockResolvedValueOnce({ rows: [mockCampaign], rowCount: 1 });
 
       const res = await request(app)
         .post(`${API}/campaigns`)
@@ -598,9 +602,14 @@ describe('Full System Integration Tests (E2E Capstone)', () => {
 
     it('4. should activate the campaign (draft -> active)', async () => {
       mockPool.query
-        .mockResolvedValueOnce({ rows: [mockCampaign], rowCount: 1 }) // getById
-        .mockResolvedValueOnce({ rows: [{ ...mockCampaign, status: 'active' }], rowCount: 1 }) // UPDATE
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 }); // audit
+        // KillSwitchService.getCurrentLevel: SELECT MAX(level) FROM kill_switch_state
+        .mockResolvedValueOnce({ rows: [{ max_level: 0 }], rowCount: 1 })
+        // CampaignsService.getById (to check current status)
+        .mockResolvedValueOnce({ rows: [mockCampaign], rowCount: 1 })
+        // CampaignsService.updateStatus: UPDATE
+        .mockResolvedValueOnce({ rows: [{ ...mockCampaign, status: 'active' }], rowCount: 1 })
+        // CampaignsService.updateStatus: INSERT audit
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 });
 
       const res = await request(app)
         .patch(`${API}/campaigns/${mockCampaign.id}/status`)

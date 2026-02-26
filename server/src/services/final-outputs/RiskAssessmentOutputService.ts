@@ -255,9 +255,12 @@ export class RiskAssessmentOutputService {
          END`,
     );
 
-    const allRisks = result.rows.map((row) =>
-      RiskAssessmentOutputService.mapRiskFlagToEntry(row, category),
-    );
+    const allRisks = result.rows.map((row) => {
+      const derivedCategory = RiskAssessmentOutputService.categorizeRiskFlag(
+        row.resource_type as string,
+      );
+      return RiskAssessmentOutputService.mapRiskFlagToEntry(row, derivedCategory);
+    });
 
     const filtered = allRisks.filter((r) => r.category === category);
 
