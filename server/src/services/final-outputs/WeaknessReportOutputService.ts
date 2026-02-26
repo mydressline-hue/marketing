@@ -1,11 +1,16 @@
 // ============================================================
 // AI International Growth Engine - Weakness & Improvement Report
-// Final Output Deliverable #9
+// Final Output Deliverable #9 (Phase 10)
 //
 // Aggregates cross-challenge protocol outputs from the database
 // to produce a comprehensive weakness and improvement report.
 // All data is sourced from DB (agent_decisions, challenge_rounds,
 // contradiction_resolutions, gap_reports) -- no hardcoded values.
+//
+// Endpoints:
+//   GET /final-outputs/weakness-report             - Full report
+//   GET /final-outputs/weakness-report/priorities   - Sorted improvements
+//   GET /final-outputs/weakness-report/:category    - By category
 // ============================================================
 
 import { pool } from '../../config/database';
