@@ -128,11 +128,11 @@ describe('Validation: No Placeholder / Fake Data', () => {
         if (line.includes('<KPICard') || (i > 0 && lines.slice(Math.max(0, i - 5), i).some(l => l.includes('<KPICard')))) {
           // value={12345} - literal number (but not 0 which is a valid fallback)
           if (/value=\{(?!0\})\d{3,}\}/.test(line)) {
-            fail(`${path.basename(filePath as string)} line ${i + 1}: KPICard has hardcoded numeric value: ${line}`);
+            throw new Error(`${path.basename(filePath as string)} line ${i + 1}: KPICard has hardcoded numeric value: ${line}`);
           }
           // value="$1.2M" or value="45.2%" - literal formatted strings
           if (/value=["']\$[\d,.]+[KMB]?["']/.test(line) || /value=["']\d+\.?\d*%["']/.test(line)) {
-            fail(`${path.basename(filePath as string)} line ${i + 1}: KPICard has hardcoded string value: ${line}`);
+            throw new Error(`${path.basename(filePath as string)} line ${i + 1}: KPICard has hardcoded string value: ${line}`);
           }
         }
       }

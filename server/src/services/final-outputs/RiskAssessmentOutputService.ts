@@ -644,12 +644,21 @@ export class RiskAssessmentOutputService {
        ORDER BY date ASC`,
     );
 
-    return result.rows.map((row) => ({
-      date: (row.date as Date).toISOString
-        ? (row.date as Date).toISOString()
-        : String(row.date),
-      risk_score: Math.round(parseFloat(String(row.risk_score)) || 0),
-    }));
+    return result.rows.map((row) => {
+      const rawDate = row.date;
+      let dateStr: string;
+      if (rawDate instanceof Date) {
+        dateStr = rawDate.toISOString();
+      } else if (rawDate && typeof (rawDate as Date).toISOString === 'function') {
+        dateStr = (rawDate as Date).toISOString();
+      } else {
+        dateStr = String(rawDate || '');
+      }
+      return {
+        date: dateStr,
+        risk_score: Math.round(parseFloat(String(row.risk_score)) || 0),
+      };
+    });
   }
 
   /**

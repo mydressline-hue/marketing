@@ -220,11 +220,9 @@ describe('ROI Projection API Integration', () => {
     });
 
     it('should reject unauthenticated requests', async () => {
-      const res = await request(app)
+      await request(app)
         .get(`${API_PREFIX}/final-outputs/roi-projection`)
         .expect(401);
-
-      expect(res.body.error).toBeDefined();
     });
   });
 

@@ -95,8 +95,10 @@ describe('Monitoring & Alerts Validation', () => {
       expect(typeof MonitoringService.monitorSpend).toBe('function');
     });
 
-    it('should expose a detectMetricAnomalies method', () => {
-      expect(typeof MonitoringService.detectMetricAnomalies).toBe('function');
+    it('should expose anomaly detection methods', () => {
+      expect(typeof MonitoringService.detectCTRAnomaly).toBe('function');
+      expect(typeof MonitoringService.detectCPCAnomaly).toBe('function');
+      expect(typeof MonitoringService.detectConversionAnomaly).toBe('function');
     });
   });
 

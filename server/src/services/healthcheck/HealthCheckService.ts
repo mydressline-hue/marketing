@@ -78,10 +78,31 @@ export interface DiskCheck {
   status: 'ok' | 'warning' | 'critical';
 }
 
+export interface AgentSystemCheck {
+  status: 'operational' | 'degraded' | 'down';
+  total_agents: number;
+  active_agents: number;
+  last_decision_at: string | null;
+  decisions_24h: number;
+  avg_confidence: number;
+  error?: string;
+}
+
+export interface FinalOutputsCheck {
+  status: 'ready' | 'partial' | 'unavailable';
+  deliverables_available: number;
+  total_deliverables: number;
+  last_generated_at: string | null;
+  avg_confidence: number;
+  error?: string;
+}
+
 export interface DeepHealthChecks {
   postgresql: PostgresCheck;
   redis: RedisCheck;
   integrations: IntegrationsCheck;
+  agents: AgentSystemCheck;
+  final_outputs: FinalOutputsCheck;
   memory: MemoryCheck;
   disk: DiskCheck;
 }
@@ -157,14 +178,23 @@ export class HealthCheckService {
    * historical tracking.
    */
   static async checkDeep(): Promise<DeepHealthResult> {
-    const [postgresCheck, redisCheck, integrationsCheck, memoryCheck, diskCheck] =
-      await Promise.all([
-        HealthCheckService.checkPostgres(),
-        HealthCheckService.checkRedis(),
-        HealthCheckService.checkIntegrations(),
-        HealthCheckService.checkMemory(),
-        HealthCheckService.checkDisk(),
-      ]);
+    const [
+      postgresCheck,
+      redisCheck,
+      integrationsCheck,
+      agentsCheck,
+      finalOutputsCheck,
+      memoryCheck,
+      diskCheck,
+    ] = await Promise.all([
+      HealthCheckService.checkPostgres(),
+      HealthCheckService.checkRedis(),
+      HealthCheckService.checkIntegrations(),
+      HealthCheckService.checkAgentSystem(),
+      HealthCheckService.checkFinalOutputs(),
+      HealthCheckService.checkMemory(),
+      HealthCheckService.checkDisk(),
+    ]);
 
     // Determine overall status
     const criticalDown =
@@ -172,13 +202,17 @@ export class HealthCheckService {
     const anyDegraded =
       integrationsCheck.degraded > 0 ||
       integrationsCheck.disconnected > 0 ||
-      diskCheck.status === 'warning';
+      diskCheck.status === 'warning' ||
+      agentsCheck.status === 'degraded' ||
+      finalOutputsCheck.status === 'partial';
     const diskCritical = diskCheck.status === 'critical';
+    const agentsDown = agentsCheck.status === 'down';
+    const outputsUnavailable = finalOutputsCheck.status === 'unavailable';
 
     let status: 'healthy' | 'degraded' | 'unhealthy';
     if (criticalDown || diskCritical) {
       status = 'unhealthy';
-    } else if (anyDegraded) {
+    } else if (anyDegraded || agentsDown || outputsUnavailable) {
       status = 'degraded';
     } else {
       status = 'healthy';
@@ -193,6 +227,8 @@ export class HealthCheckService {
         postgresql: postgresCheck,
         redis: redisCheck,
         integrations: integrationsCheck,
+        agents: agentsCheck,
+        final_outputs: finalOutputsCheck,
         memory: memoryCheck,
         disk: diskCheck,
       },
@@ -559,6 +595,150 @@ export class HealthCheckService {
     } catch {
       // If we cannot determine disk status, report OK to avoid false alarms
       return { status: 'ok' };
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // Private: Agent System Check
+  // -----------------------------------------------------------------------
+
+  /**
+   * Check the status of the AI agent system by verifying agent_decisions
+   * table accessibility and recent activity.
+   */
+  private static async checkAgentSystem(): Promise<AgentSystemCheck> {
+    try {
+      const result = await pool.query(`
+        SELECT
+          COUNT(DISTINCT agent_type) AS total_agents,
+          COUNT(DISTINCT agent_type) FILTER (
+            WHERE created_at >= NOW() - INTERVAL '24 hours'
+          ) AS active_agents,
+          MAX(created_at) AS last_decision_at,
+          COUNT(*) FILTER (
+            WHERE created_at >= NOW() - INTERVAL '24 hours'
+          ) AS decisions_24h,
+          AVG(confidence_score) AS avg_confidence
+        FROM agent_decisions
+      `);
+
+      const row = result.rows[0] || {};
+      const totalAgents = Number(row.total_agents) || 0;
+      const activeAgents = Number(row.active_agents) || 0;
+      const avgConfidence = Number(Number(row.avg_confidence || 0).toFixed(2));
+
+      let status: 'operational' | 'degraded' | 'down';
+      if (totalAgents === 0) {
+        status = 'down';
+      } else if (activeAgents < totalAgents || avgConfidence < 50) {
+        status = 'degraded';
+      } else {
+        status = 'operational';
+      }
+
+      return {
+        status,
+        total_agents: totalAgents,
+        active_agents: activeAgents,
+        last_decision_at: row.last_decision_at
+          ? new Date(row.last_decision_at).toISOString()
+          : null,
+        decisions_24h: Number(row.decisions_24h) || 0,
+        avg_confidence: avgConfidence,
+      };
+    } catch (err) {
+      logger.warn('Agent system health check failed', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+
+      return {
+        status: 'down',
+        total_agents: 0,
+        active_agents: 0,
+        last_decision_at: null,
+        decisions_24h: 0,
+        avg_confidence: 0,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // Private: Final Outputs Check
+  // -----------------------------------------------------------------------
+
+  /**
+   * Check whether the system can generate final output deliverables by
+   * verifying that agent decisions exist for the expected deliverable types.
+   */
+  private static async checkFinalOutputs(): Promise<FinalOutputsCheck> {
+    const expectedDeliverables = [
+      'country_strategy',
+      'channel_allocation',
+      'budget_model',
+      'risk_assessment',
+      'roi_projection',
+      'execution_roadmap',
+    ];
+
+    try {
+      const result = await pool.query(`
+        SELECT agent_type,
+               COUNT(*) AS cnt,
+               MAX(created_at) AS last_at,
+               AVG(confidence_score) AS avg_conf
+        FROM agent_decisions
+        WHERE agent_type = ANY($1)
+        GROUP BY agent_type
+      `, [expectedDeliverables]);
+
+      const available = result.rows.length;
+      const total = expectedDeliverables.length;
+
+      let lastGenerated: string | null = null;
+      let totalAvgConf = 0;
+
+      for (const row of result.rows) {
+        const ts = row.last_at ? new Date(row.last_at).toISOString() : null;
+        if (ts && (!lastGenerated || ts > lastGenerated)) {
+          lastGenerated = ts;
+        }
+        totalAvgConf += Number(row.avg_conf || 0);
+      }
+
+      const avgConfidence = available > 0
+        ? Number((totalAvgConf / available).toFixed(2))
+        : 0;
+
+      let status: 'ready' | 'partial' | 'unavailable';
+      if (available === total && avgConfidence >= 60) {
+        status = 'ready';
+      } else if (available > 0) {
+        status = 'partial';
+      } else {
+        status = 'unavailable';
+      }
+
+      return {
+        status,
+        deliverables_available: available,
+        total_deliverables: total,
+        last_generated_at: lastGenerated,
+        avg_confidence: avgConfidence,
+      };
+    } catch (err) {
+      logger.warn('Final outputs health check failed', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+
+      return {
+        status: 'unavailable',
+        deliverables_available: 0,
+        total_deliverables: expectedDeliverables.length,
+        last_generated_at: null,
+        avg_confidence: 0,
+        error: err instanceof Error ? err.message : String(err),
+      };
     }
   }
 

@@ -44,6 +44,9 @@ router.use('/', roiProjectionRoutes);
 // Mount dedicated Perfection Recommendations routes (Deliverable #10)
 router.use('/', perfectionRoutes);
 
+// Mount dedicated Risk Assessment routes (Deliverable #5 - RiskAssessmentOutputService)
+router.use('/', riskAssessmentRoutes);
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -400,110 +403,11 @@ router.get(
 );
 
 // ---------------------------------------------------------------------------
-// 5. Risk Assessment
+// 5. Risk Assessment (served by dedicated routes file)
 // ---------------------------------------------------------------------------
-
-router.get(
-  '/risk-assessment',
-  asyncHandler(async (_req: Request, res: Response) => {
-    const rows = await cachedQuery<Record<string, unknown>>(
-      'final-outputs:risk-assessment',
-      300,
-      `SELECT ad.country_code, c.name AS country_name,
-              ad.decision_data, ad.confidence_score, ad.created_at
-       FROM agent_decisions ad
-       JOIN countries c ON c.code = ad.country_code
-       WHERE ad.agent_type = 'risk_assessment'
-       ORDER BY ad.confidence_score ASC`,
-    );
-
-    ok(res, rows.map((r) => ({
-      country_code: r.country_code,
-      country_name: r.country_name,
-      risks: r.decision_data,
-      confidence: r.confidence_score,
-      assessed_at: r.created_at,
-    })));
-  }),
-);
-
-router.get(
-  '/risk-assessment/mitigation-plan',
-  asyncHandler(async (_req: Request, res: Response) => {
-    const result = await pool.query(`
-      SELECT ad.country_code, c.name AS country_name,
-             ad.decision_data, ad.confidence_score
-      FROM agent_decisions ad
-      JOIN countries c ON c.code = ad.country_code
-      WHERE ad.agent_type = 'risk_assessment'
-      ORDER BY ad.confidence_score ASC
-    `);
-
-    const plans = result.rows.map((r: Record<string, unknown>) => {
-      const data = r.decision_data as Record<string, unknown> | null;
-      return {
-        country_code: r.country_code,
-        country_name: r.country_name,
-        mitigation_strategies: data?.mitigation_strategies || data?.mitigations || [],
-        risk_level: data?.overall_risk_level || 'unknown',
-        confidence: r.confidence_score,
-      };
-    });
-
-    ok(res, { mitigation_plans: plans, total: plans.length });
-  }),
-);
-
-router.get(
-  '/risk-assessment/:category',
-  asyncHandler(async (req: Request, res: Response) => {
-    const { category } = req.params;
-    const validCategories = [
-      'regulatory', 'cultural', 'economic', 'competitive',
-      'operational', 'technological', 'political', 'financial',
-    ];
-
-    if (!validCategories.includes(category.toLowerCase())) {
-      res.status(400).json({
-        success: false,
-        error: {
-          code: 'INVALID_CATEGORY',
-          message: `Invalid risk category. Valid categories: ${validCategories.join(', ')}`,
-        },
-      });
-      return;
-    }
-
-    const result = await pool.query(
-      `SELECT ad.country_code, c.name AS country_name,
-              ad.decision_data, ad.confidence_score, ad.created_at
-       FROM agent_decisions ad
-       JOIN countries c ON c.code = ad.country_code
-       WHERE ad.agent_type = 'risk_assessment'
-       ORDER BY ad.created_at DESC`,
-    );
-
-    const filtered = result.rows
-      .map((r: Record<string, unknown>) => {
-        const data = r.decision_data as Record<string, unknown> | null;
-        const risks = (data?.risks || data?.risk_factors || []) as Record<string, unknown>[];
-        const categoryRisks = risks.filter(
-          (risk: Record<string, unknown>) =>
-            String(risk.category || '').toLowerCase() === category.toLowerCase(),
-        );
-        return {
-          country_code: r.country_code,
-          country_name: r.country_name,
-          category,
-          risks: categoryRisks,
-          confidence: r.confidence_score,
-        };
-      })
-      .filter((entry) => entry.risks.length > 0);
-
-    ok(res, filtered, { category, total: filtered.length });
-  }),
-);
+// Routes for /risk-assessment, /risk-assessment/mitigation-plan,
+// and /risk-assessment/:category are mounted via
+// final-outputs-risk.routes.ts above.
 
 // ---------------------------------------------------------------------------
 // 6. ROI Projection
