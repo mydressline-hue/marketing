@@ -15,13 +15,16 @@
 // Mocks -- must come before any app/source imports
 // ---------------------------------------------------------------------------
 
-jest.mock('../../../src/config/database', () => ({
-  pool: { query: jest.fn(), connect: jest.fn() },
-  query: jest.fn(),
-  getClient: jest.fn(),
-  testConnection: jest.fn().mockResolvedValue(undefined),
-  closePool: jest.fn(),
-}));
+jest.mock('../../../src/config/database', () => {
+  const queryFn = jest.fn();
+  return {
+    pool: { query: queryFn, connect: jest.fn() },
+    query: queryFn, // same mock instance so both pool.query and query() work
+    getClient: jest.fn(),
+    testConnection: jest.fn().mockResolvedValue(undefined),
+    closePool: jest.fn(),
+  };
+});
 
 jest.mock('../../../src/config/redis', () => ({
   redis: { get: jest.fn(), set: jest.fn(), del: jest.fn(), quit: jest.fn(), connect: jest.fn() },
