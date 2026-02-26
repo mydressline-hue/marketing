@@ -18,6 +18,7 @@ import queueRoutes from './queue.routes';
 import ratelimitRoutes from './ratelimit.routes';
 import notificationsRoutes from './notifications.routes';
 import apikeysRoutes from './apikeys.routes';
+import finalOutputsRoadmapRoutes from './final-outputs-roadmap.routes';
 
 const router = Router();
 
@@ -40,6 +41,7 @@ router.use('/queue', queueRoutes);
 router.use('/ratelimits', ratelimitRoutes);
 router.use('/notifications', notificationsRoutes);
 router.use('/apikeys', apikeysRoutes);
+router.use('/final-outputs', finalOutputsRoadmapRoutes);
 
 // Health check
 router.get('/health', (_req, res) => {
