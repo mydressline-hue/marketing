@@ -120,3 +120,10 @@ export {
   type RiskTrendPoint,
   type MitigationAction,
 } from './RiskAssessmentOutputService';
+
+export {
+  ValidationSummaryService,
+  type ValidationSummary,
+  type RuleValidation,
+  type RuleStatus,
+} from './ValidationSummaryService';

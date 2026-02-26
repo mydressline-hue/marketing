@@ -11,6 +11,7 @@
 
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet } from '../../config/redis';
+import { env } from '../../config/env';
 import { logger } from '../../utils/logger';
 import { KillSwitchService } from '../killswitch/KillSwitchService';
 import { GovernanceService } from '../governance/GovernanceService';
@@ -584,7 +585,7 @@ export class ValidationSummaryService {
       const active = parseInt(keyResult.rows[0].active, 10);
 
       // Also check environment variable presence
-      const envKeyPresent = !!(process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY);
+      const envKeyPresent = !!(env.ANTHROPIC_API_KEY);
 
       if (active > 0 || envKeyPresent) {
         return {

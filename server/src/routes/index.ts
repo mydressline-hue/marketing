@@ -24,6 +24,7 @@ import finalOutputsConfidenceRoutes from './final-outputs-confidence.routes';
 import finalOutputsBudgetRoutes from './final-outputs-budget.routes';
 import finalOutputsWeaknessRoutes from './final-outputs-weakness.routes';
 import finalOutputsRoadmapRoutes from './final-outputs-roadmap.routes';
+import finalOutputsValidationRoutes from './final-outputs-validation.routes';
 
 const router = Router();
 
@@ -51,6 +52,8 @@ router.use('/final-outputs', finalOutputsStrategyRoutes);
 router.use('/final-outputs', finalOutputsConfidenceRoutes);
 router.use('/final-outputs/budget-model', finalOutputsBudgetRoutes);
 router.use('/final-outputs/weakness-report', finalOutputsWeaknessRoutes);
+router.use('/final-outputs', finalOutputsRoadmapRoutes);
+router.use('/final-outputs', finalOutputsValidationRoutes);
 
 // Health check
 router.get('/health', (_req, res) => {
