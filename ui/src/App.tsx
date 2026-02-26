@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
+import { ErrorBoundary } from './components/shared/ErrorBoundary';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const MarketIntelligence = lazy(() => import('./pages/MarketIntelligence'));
@@ -42,33 +43,35 @@ export default function App() {
       <div className="lg:ml-[260px]">
         <Header />
         <main className="p-6">
-          <Suspense fallback={<LoadingSpinner />}>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/market-intelligence" element={<MarketIntelligence />} />
-              <Route path="/country-strategy" element={<CountryStrategy />} />
-              <Route path="/paid-ads" element={<PaidAds />} />
-              <Route path="/organic-social" element={<OrganicSocial />} />
-              <Route path="/content-blog" element={<ContentBlog />} />
-              <Route path="/creative-studio" element={<CreativeStudio />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/budget-optimizer" element={<BudgetOptimizer />} />
-              <Route path="/ab-testing" element={<ABTesting />} />
-              <Route path="/conversion" element={<Conversion />} />
-              <Route path="/shopify" element={<Shopify />} />
-              <Route path="/localization" element={<Localization />} />
-              <Route path="/compliance" element={<Compliance />} />
-              <Route path="/competitive-intel" element={<CompetitiveIntel />} />
-              <Route path="/fraud-detection" element={<FraudDetection />} />
-              <Route path="/brand-consistency" element={<BrandConsistency />} />
-              <Route path="/data-engineering" element={<DataEngineering />} />
-              <Route path="/security" element={<Security />} />
-              <Route path="/revenue-forecast" element={<RevenueForecast />} />
-              <Route path="/orchestrator" element={<Orchestrator />} />
-              <Route path="/kill-switch" element={<KillSwitch />} />
-              <Route path="/settings" element={<SettingsPage />} />
-            </Routes>
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/market-intelligence" element={<MarketIntelligence />} />
+                <Route path="/country-strategy" element={<CountryStrategy />} />
+                <Route path="/paid-ads" element={<PaidAds />} />
+                <Route path="/organic-social" element={<OrganicSocial />} />
+                <Route path="/content-blog" element={<ContentBlog />} />
+                <Route path="/creative-studio" element={<CreativeStudio />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/budget-optimizer" element={<BudgetOptimizer />} />
+                <Route path="/ab-testing" element={<ABTesting />} />
+                <Route path="/conversion" element={<Conversion />} />
+                <Route path="/shopify" element={<Shopify />} />
+                <Route path="/localization" element={<Localization />} />
+                <Route path="/compliance" element={<Compliance />} />
+                <Route path="/competitive-intel" element={<CompetitiveIntel />} />
+                <Route path="/fraud-detection" element={<FraudDetection />} />
+                <Route path="/brand-consistency" element={<BrandConsistency />} />
+                <Route path="/data-engineering" element={<DataEngineering />} />
+                <Route path="/security" element={<Security />} />
+                <Route path="/revenue-forecast" element={<RevenueForecast />} />
+                <Route path="/orchestrator" element={<Orchestrator />} />
+                <Route path="/kill-switch" element={<KillSwitch />} />
+                <Route path="/settings" element={<SettingsPage />} />
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
         </main>
       </div>
     </div>
