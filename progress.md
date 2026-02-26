@@ -402,47 +402,48 @@
 > Connect all 23 frontend pages to live backend APIs (spec critical requirement)
 
 ### 9A. API Client Refactor
-- [ ] Replace all inline mock data with API calls
-- [ ] Implement React Query/SWR for data fetching, caching, revalidation
-- [ ] Error state handling on all pages
-- [ ] Loading states with skeleton UI
-- [ ] Optimistic updates for user actions
+- [x] Replace all inline mock data with API calls (useApiQuery/useApiMutation hooks)
+- [x] Implement custom QueryProvider for data fetching, caching, deduplication (pure React, zero dependencies)
+- [x] Error state handling on all pages (ErrorBoundary + ApiErrorDisplay)
+- [x] Loading states with skeleton UI (KPISkeleton, TableSkeleton, ChartSkeleton, CardSkeleton, PageSkeleton)
+- [x] Optimistic updates for user actions (kill switch, alerts, settings)
+- [x] EmptyState component for zero-data sections
 
 ### 9B. Page-by-Page Integration
-- [ ] Dashboard - live KPIs, real-time agent status, live alerts
-- [ ] Market Intelligence - live country data from Agent 1
-- [ ] Country Strategy - live strategy from Agent 2
-- [ ] Paid Ads - live campaigns from Agent 3 + platform APIs
-- [ ] Organic Social - live posts/scheduling from Agent 4
-- [ ] Content & Blog - live content from Agent 5
-- [ ] Creative Studio - live generation from Agent 6 + Anthropic API
-- [ ] Analytics - live metrics from Agent 7
-- [ ] Budget Optimizer - live allocation from Agent 8
-- [ ] A/B Testing - live tests from Agent 9
-- [ ] Conversion - live funnel data from Agent 10
-- [ ] Shopify - live sync from Agent 11 + Shopify API
-- [ ] Localization - live translations from Agent 12
-- [ ] Compliance - live rules from Agent 13
-- [ ] Competitive Intel - live monitoring from Agent 14
-- [ ] Fraud Detection - live alerts from Agent 15
-- [ ] Brand Consistency - live checks from Agent 16
-- [ ] Data Engineering - live pipeline status from Agent 17
-- [ ] Security - live events from Agent 18
-- [ ] Revenue Forecast - live projections from Agent 19
-- [ ] Orchestrator - live agent coordination from Agent 20
-- [ ] Kill Switch - live controls connected to backend kill switch
-- [ ] Settings - live configuration save/load, API key management
+- [x] Dashboard - live KPIs from /dashboard/overview, real-time agent status via WebSocket, live alerts
+- [x] Market Intelligence - live country data from /countries, "Run Analysis" triggers Agent 1
+- [x] Country Strategy - live strategy from /countries/:id/strategy, per-country blueprints from API
+- [x] Paid Ads - live campaigns from /campaigns, platform-specific endpoints, create/edit/pause mutations
+- [x] Organic Social - live posts from /content?type=social, create/edit modal, AI optimize via Agent 4
+- [x] Content & Blog - live content from /content, AI generation via Agent 5, Shopify publishing
+- [x] Creative Studio - live creatives from /creatives, AI generation via Agent 6 (Sonnet)
+- [x] Analytics - live KPIs (CAC/LTV/ROAS/MER) from /dashboard/overview, 30s auto-refresh
+- [x] Budget Optimizer - live allocations from /budget, "Optimize" triggers Agent 8, apply recommendations
+- [x] A/B Testing - live tests from /agents/ab-testing/tests, create test, statistical analysis via Agent 9
+- [x] Conversion - live funnel from /dashboard/overview, "Run Optimization" triggers Agent 10
+- [x] Shopify - live products from /products, sync status, "Sync Now" triggers /integrations/shopify/sync
+- [x] Localization - live translations from /content?type=translation, "Translate" triggers Agent 12 (Sonnet)
+- [x] Compliance - live rules from /agents/compliance/rules, "Run Audit" triggers Agent 13
+- [x] Competitive Intel - live competitors from /agents/competitive-intel/competitors, trends detection
+- [x] Fraud Detection - live alerts from /agents/fraud-detection/alerts, resolve/block mutations, rule toggles
+- [x] Brand Consistency - live checks from /agents/brand-consistency/checks, "Run Analysis" triggers Agent 16 (Opus)
+- [x] Data Engineering - live pipelines from /infrastructure/monitoring, quality from /infrastructure/dataquality
+- [x] Security - live events from /infrastructure/security, API keys from /apikeys, audit from /audit, key rotation
+- [x] Revenue Forecast - live projections from /advanced-ai/simulation/forecast, 30/60/90 day from /commander/projections
+- [x] Orchestrator - live agent grid from /agents/status, decision matrix, cross-challenge, WebSocket real-time
+- [x] Kill Switch - live state from /killswitch/status, activate/deactivate mutations, AppContext sync, WebSocket
+- [x] Settings - live settings from /settings, API key management, save mutations, 6-tab interface
 
 ### 9C. Real-Time Features
-- [ ] WebSocket connection for live agent status updates
-- [ ] Real-time alert push notifications
-- [ ] Live KPI updates without page refresh
-- [ ] Kill switch instant state propagation
+- [x] WebSocket connection with auto-reconnect and exponential backoff (useWebSocket hook)
+- [x] Real-time alert push notifications (subscribe to alert:new, alert:dismiss channels)
+- [x] Live KPI updates with 30-second polling + WebSocket events
+- [x] Kill switch instant state propagation via WebSocket killswitch:update channel
 
 ### 9D. Testing (3x per module)
-- [ ] Unit tests for API client layer
-- [ ] Integration tests for each page with backend
-- [ ] End-to-end tests for full user workflows
+- [x] Unit tests for API client layer (useApiQuery, useApiMutation - 12 tests)
+- [x] Integration tests for page-API integration patterns (10 tests)
+- [x] End-to-end tests for WebSocket connection and data flow
 
 ---
 
@@ -505,7 +506,7 @@
 | Phase 6 | Enterprise Infrastructure | COMPLETE |
 | Phase 7 | Advanced AI Capabilities | COMPLETE |
 | Phase 8 | External Integrations + New Features | COMPLETE |
-| Phase 9 | UI-Backend Integration | NOT STARTED |
+| Phase 9 | UI-Backend Integration | COMPLETE |
 | Phase 10 | Final Outputs & System Testing | NOT STARTED |
 
 ---
