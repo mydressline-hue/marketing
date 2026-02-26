@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   Megaphone,
   Plus,
@@ -8,6 +8,7 @@ import {
   Download,
   TrendingUp,
   DollarSign,
+  X,
 } from 'lucide-react';
 import {
   LineChart,
@@ -25,7 +26,68 @@ import Card from '../components/shared/Card';
 import KPICard from '../components/shared/KPICard';
 import StatusBadge from '../components/shared/StatusBadge';
 import DataTable from '../components/shared/DataTable';
+import { TableSkeleton, ChartSkeleton } from '../components/shared/LoadingSkeleton';
+import { ApiErrorDisplay } from '../components/shared/ErrorBoundary';
+import EmptyState from '../components/shared/EmptyState';
+import { useApiQuery, useApiMutation } from '../hooks/useApi';
 import type { CampaignData } from '../types';
+
+// ---------------------------------------------------------------------------
+// API response types
+// ---------------------------------------------------------------------------
+
+interface CampaignsResponse {
+  campaigns: CampaignData[];
+  total: number;
+}
+
+interface CampaignMetrics {
+  daily: { day: string; spend: number; conversions: number }[];
+  platformRoas: { platform: string; roas: number }[];
+  totals: {
+    totalSpend: number;
+    totalSpendChange: number;
+    totalRevenue: number;
+    totalRevenueChange: number;
+    averageRoas: number;
+    averageRoasChange: number;
+    activeCampaigns: number;
+    activeCampaignsChange: number;
+  };
+}
+
+interface Recommendation {
+  id: number;
+  type: 'increase' | 'pause' | 'expand' | 'adjust';
+  title: string;
+  description: string;
+  impact: string;
+  urgency: 'high' | 'medium' | 'low';
+}
+
+interface RecommendationsResponse {
+  recommendations: Recommendation[];
+}
+
+interface RetargetingAudience {
+  name: string;
+  size: number;
+  matchRate: number;
+  status: 'active' | 'paused';
+  platforms: string[];
+}
+
+interface RetargetingResponse {
+  audiences: RetargetingAudience[];
+}
+
+interface CampaignFormData {
+  name: string;
+  platform: string;
+  country: string;
+  budget: number;
+  status: string;
+}
 
 // ---------------------------------------------------------------------------
 // Platform colors & labels
@@ -44,273 +106,12 @@ const platformConfig: Record<
 
 const platformTabs = ['All', 'Google', 'Meta', 'TikTok', 'Bing', 'Snapchat'] as const;
 
-// ---------------------------------------------------------------------------
-// Mock campaign data (10 campaigns)
-// ---------------------------------------------------------------------------
-
-const campaigns: CampaignData[] = [
-  {
-    id: 'c1',
-    name: 'US - Brand Awareness Search',
-    platform: 'google',
-    country: 'United States',
-    status: 'active',
-    budget: 12000,
-    spent: 9840,
-    impressions: 1420000,
-    clicks: 42600,
-    conversions: 1278,
-    roas: 5.12,
-    cpc: 0.23,
-    ctr: 3.0,
-  },
-  {
-    id: 'c2',
-    name: 'UK - Retargeting Lookalike',
-    platform: 'meta',
-    country: 'United Kingdom',
-    status: 'active',
-    budget: 8500,
-    spent: 7650,
-    impressions: 980000,
-    clicks: 29400,
-    conversions: 882,
-    roas: 4.85,
-    cpc: 0.26,
-    ctr: 3.0,
-  },
-  {
-    id: 'c3',
-    name: 'DE - Product Launch Video',
-    platform: 'tiktok',
-    country: 'Germany',
-    status: 'active',
-    budget: 6000,
-    spent: 5100,
-    impressions: 2150000,
-    clicks: 64500,
-    conversions: 645,
-    roas: 3.78,
-    cpc: 0.08,
-    ctr: 3.0,
-  },
-  {
-    id: 'c4',
-    name: 'CA - Shopping Campaigns',
-    platform: 'google',
-    country: 'Canada',
-    status: 'active',
-    budget: 9200,
-    spent: 8280,
-    impressions: 760000,
-    clicks: 22800,
-    conversions: 912,
-    roas: 4.61,
-    cpc: 0.36,
-    ctr: 3.0,
-  },
-  {
-    id: 'c5',
-    name: 'AU - Carousel Engagement',
-    platform: 'meta',
-    country: 'Australia',
-    status: 'paused',
-    budget: 5500,
-    spent: 3300,
-    impressions: 430000,
-    clicks: 12900,
-    conversions: 258,
-    roas: 2.18,
-    cpc: 0.26,
-    ctr: 3.0,
-  },
-  {
-    id: 'c6',
-    name: 'FR - Dynamic Search Ads',
-    platform: 'bing',
-    country: 'France',
-    status: 'active',
-    budget: 4800,
-    spent: 4080,
-    impressions: 520000,
-    clicks: 15600,
-    conversions: 468,
-    roas: 3.92,
-    cpc: 0.26,
-    ctr: 3.0,
-  },
-  {
-    id: 'c7',
-    name: 'US - Gen Z Snap Stories',
-    platform: 'snapchat',
-    country: 'United States',
-    status: 'active',
-    budget: 3800,
-    spent: 3040,
-    impressions: 1850000,
-    clicks: 37000,
-    conversions: 370,
-    roas: 3.45,
-    cpc: 0.08,
-    ctr: 2.0,
-  },
-  {
-    id: 'c8',
-    name: 'UK - Performance Max',
-    platform: 'google',
-    country: 'United Kingdom',
-    status: 'active',
-    budget: 11000,
-    spent: 9900,
-    impressions: 1100000,
-    clicks: 33000,
-    conversions: 1320,
-    roas: 5.38,
-    cpc: 0.30,
-    ctr: 3.0,
-  },
-  {
-    id: 'c9',
-    name: 'DE - UGC Creator Ads',
-    platform: 'tiktok',
-    country: 'Germany',
-    status: 'draft',
-    budget: 7000,
-    spent: 0,
-    impressions: 0,
-    clicks: 0,
-    conversions: 0,
-    roas: 0,
-    cpc: 0,
-    ctr: 0,
-  },
-  {
-    id: 'c10',
-    name: 'CA - Bing Shopping Feed',
-    platform: 'bing',
-    country: 'Canada',
-    status: 'paused',
-    budget: 3200,
-    spent: 1920,
-    impressions: 245000,
-    clicks: 4900,
-    conversions: 147,
-    roas: 2.54,
-    cpc: 0.39,
-    ctr: 2.0,
-  },
-];
-
-// ---------------------------------------------------------------------------
-// Performance trend data (14 days)
-// ---------------------------------------------------------------------------
-
-const dailyTrend = [
-  { day: 'Feb 1', spend: 6100, conversions: 182 },
-  { day: 'Feb 2', spend: 5800, conversions: 174 },
-  { day: 'Feb 3', spend: 6400, conversions: 196 },
-  { day: 'Feb 4', spend: 6700, conversions: 201 },
-  { day: 'Feb 5', spend: 7100, conversions: 218 },
-  { day: 'Feb 6', spend: 6900, conversions: 210 },
-  { day: 'Feb 7', spend: 5500, conversions: 165 },
-  { day: 'Feb 8', spend: 6300, conversions: 189 },
-  { day: 'Feb 9', spend: 6600, conversions: 198 },
-  { day: 'Feb 10', spend: 7200, conversions: 224 },
-  { day: 'Feb 11', spend: 7400, conversions: 237 },
-  { day: 'Feb 12', spend: 7000, conversions: 220 },
-  { day: 'Feb 13', spend: 6800, conversions: 212 },
-  { day: 'Feb 14', spend: 7500, conversions: 245 },
-];
-
-// ---------------------------------------------------------------------------
-// Platform ROAS comparison
-// ---------------------------------------------------------------------------
-
-const platformRoas = [
-  { platform: 'Google', roas: 5.04 },
-  { platform: 'Meta', roas: 4.15 },
-  { platform: 'TikTok', roas: 3.78 },
-  { platform: 'Bing', roas: 3.42 },
-  { platform: 'Snapchat', roas: 3.45 },
-];
-
-// ---------------------------------------------------------------------------
-// AI Recommendations
-// ---------------------------------------------------------------------------
-
-const recommendations = [
-  {
-    id: 1,
-    type: 'increase' as const,
-    title: 'Scale UK Performance Max Campaign',
-    description:
-      'Campaign "UK - Performance Max" is delivering 5.38x ROAS, significantly above target. Recommend increasing daily budget by 30% to capture additional conversion volume.',
-    impact: '+$12K estimated monthly revenue',
-    urgency: 'high' as const,
-  },
-  {
-    id: 2,
-    type: 'pause' as const,
-    title: 'Pause AU Carousel Engagement',
-    description:
-      'The "AU - Carousel Engagement" campaign has fallen below the 2.5x ROAS threshold for 7 consecutive days. Creative fatigue detected across all ad sets.',
-    impact: 'Save $2.2K/month in wasted spend',
-    urgency: 'high' as const,
-  },
-  {
-    id: 3,
-    type: 'expand' as const,
-    title: 'Expand Google Shopping to Netherlands',
-    description:
-      'Market Scanner detected CPA in the Netherlands is 28% lower than comparable EU markets. Recommend launching a Google Shopping campaign mirroring the DE strategy.',
-    impact: '+$8K potential monthly revenue',
-    urgency: 'medium' as const,
-  },
-  {
-    id: 4,
-    type: 'adjust' as const,
-    title: 'Switch TikTok DE to Target CPA Bidding',
-    description:
-      'Current manual bidding on "DE - Product Launch Video" is leaving impressions on the table. AI model predicts a 15% conversion lift with Target CPA at $4.20.',
-    impact: '+96 additional conversions/month',
-    urgency: 'medium' as const,
-  },
-];
-
-// ---------------------------------------------------------------------------
-// Retargeting audiences
-// ---------------------------------------------------------------------------
-
-const retargetingAudiences = [
-  {
-    name: 'Cart Abandoners (7d)',
-    size: 42300,
-    matchRate: 78,
-    status: 'active' as const,
-    platforms: ['Google', 'Meta'],
-  },
-  {
-    name: 'Product Viewers (14d)',
-    size: 128500,
-    matchRate: 65,
-    status: 'active' as const,
-    platforms: ['Google', 'Meta', 'TikTok'],
-  },
-  {
-    name: 'Past Purchasers (90d)',
-    size: 18700,
-    matchRate: 82,
-    status: 'active' as const,
-    platforms: ['Meta', 'Snapchat'],
-  },
-  {
-    name: 'High-Value Lookalike (1%)',
-    size: 2100000,
-    matchRate: 91,
-    status: 'active' as const,
-    platforms: ['Google', 'Meta', 'TikTok'],
-  },
-];
+// Map platform tab label -> API endpoint for platform-specific queries
+const platformEndpoints: Record<string, string> = {
+  Google: '/api/v1/integrations/ads/google/campaigns',
+  Meta: '/api/v1/integrations/ads/meta/campaigns',
+  TikTok: '/api/v1/integrations/ads/tiktok/campaigns',
+};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -344,34 +145,288 @@ const recommendationIcon: Record<string, { icon: string; color: string }> = {
 };
 
 // ---------------------------------------------------------------------------
+// Campaign Modal
+// ---------------------------------------------------------------------------
+
+interface CampaignModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (data: CampaignFormData) => void;
+  loading: boolean;
+  initial?: CampaignData | null;
+}
+
+function CampaignModal({ open, onClose, onSubmit, loading, initial }: CampaignModalProps) {
+  const [form, setForm] = useState<CampaignFormData>({
+    name: initial?.name || '',
+    platform: initial?.platform || 'google',
+    country: initial?.country || '',
+    budget: initial?.budget || 0,
+    status: initial?.status || 'draft',
+  });
+
+  if (!open) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(form);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-surface-100">
+          <h3 className="font-semibold text-surface-900">
+            {initial ? 'Edit Campaign' : 'New Campaign'}
+          </h3>
+          <button onClick={onClose} className="p-1 text-surface-400 hover:text-surface-600">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-1">Campaign Name</label>
+            <input
+              type="text"
+              required
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="w-full px-3 py-2 text-sm border border-surface-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              placeholder="e.g. US - Brand Awareness Search"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-1">Platform</label>
+              <select
+                value={form.platform}
+                onChange={(e) => setForm({ ...form, platform: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-surface-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              >
+                {Object.entries(platformConfig).map(([key, cfg]) => (
+                  <option key={key} value={key}>{cfg.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-1">Country</label>
+              <input
+                type="text"
+                required
+                value={form.country}
+                onChange={(e) => setForm({ ...form, country: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-surface-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                placeholder="e.g. United States"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-1">Budget ($)</label>
+              <input
+                type="number"
+                required
+                min={0}
+                value={form.budget}
+                onChange={(e) => setForm({ ...form, budget: Number(e.target.value) })}
+                className="w-full px-3 py-2 text-sm border border-surface-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-surface-700 mb-1">Status</label>
+              <select
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-surface-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              >
+                <option value="draft">Draft</option>
+                <option value="active">Active</option>
+                <option value="paused">Paused</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-surface-600 bg-white border border-surface-200 rounded-lg hover:bg-surface-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors"
+            >
+              {loading ? 'Saving...' : initial ? 'Update Campaign' : 'Create Campaign'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
 export default function PaidAds() {
   const [activePlatform, setActivePlatform] = useState<string>('All');
-  const [campaignStatuses, setCampaignStatuses] = useState<Record<string, string>>(
-    () => Object.fromEntries(campaigns.map((c) => [c.id, c.status]))
+  const [showModal, setShowModal] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState<CampaignData | null>(null);
+
+  // -----------------------------------------------------------------------
+  // API queries
+  // -----------------------------------------------------------------------
+
+  // Build the campaigns endpoint based on active platform filter
+  const campaignsEndpoint = useMemo(() => {
+    if (activePlatform !== 'All' && platformEndpoints[activePlatform]) {
+      return platformEndpoints[activePlatform];
+    }
+    return '/api/v1/campaigns';
+  }, [activePlatform]);
+
+  const {
+    data: campaignsData,
+    loading: campaignsLoading,
+    error: campaignsError,
+    refetch: refetchCampaigns,
+  } = useApiQuery<CampaignsResponse>(campaignsEndpoint);
+
+  const {
+    data: metricsData,
+    loading: metricsLoading,
+    error: metricsError,
+    refetch: refetchMetrics,
+  } = useApiQuery<CampaignMetrics>('/api/v1/campaigns/metrics');
+
+  const {
+    data: recommendationsData,
+    loading: recommendationsLoading,
+    error: recommendationsError,
+    refetch: refetchRecommendations,
+  } = useApiQuery<RecommendationsResponse>('/api/v1/campaigns/recommendations');
+
+  const {
+    data: retargetingData,
+    loading: retargetingLoading,
+    error: retargetingError,
+    refetch: refetchRetargeting,
+  } = useApiQuery<RetargetingResponse>('/api/v1/campaigns/retargeting');
+
+  // -----------------------------------------------------------------------
+  // API mutations
+  // -----------------------------------------------------------------------
+
+  const { mutate: createCampaign, loading: createLoading } =
+    useApiMutation<CampaignData>('/api/v1/campaigns', 'POST');
+
+  const { mutate: updateCampaign, loading: updateLoading } =
+    useApiMutation<CampaignData>(
+      editingCampaign ? `/api/v1/campaigns/${editingCampaign.id}` : '/api/v1/campaigns',
+      'PUT',
+    );
+
+  // -----------------------------------------------------------------------
+  // Derived data
+  // -----------------------------------------------------------------------
+
+  const campaigns = campaignsData?.campaigns ?? [];
+  const dailyTrend = metricsData?.daily ?? [];
+  const platformRoas = metricsData?.platformRoas ?? [];
+  const totals = metricsData?.totals;
+  const recommendations = recommendationsData?.recommendations ?? [];
+  const retargetingAudiences = retargetingData?.audiences ?? [];
+
+  // For platforms without a dedicated endpoint (Bing, Snapchat), do client-side filtering
+  const filteredCampaigns = useMemo(() => {
+    if (activePlatform === 'All' || platformEndpoints[activePlatform]) {
+      return campaigns;
+    }
+    // Client-side filter for platforms without dedicated endpoints
+    return campaigns.filter(
+      (c) => platformConfig[c.platform]?.label === activePlatform,
+    );
+  }, [campaigns, activePlatform]);
+
+  // -----------------------------------------------------------------------
+  // Handlers
+  // -----------------------------------------------------------------------
+
+  const handleToggleStatus = useCallback(
+    async (campaign: CampaignData) => {
+      const newStatus = campaign.status === 'active' ? 'paused' : 'active';
+      try {
+        await fetch(`/api/v1/campaigns/${campaign.id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        refetchCampaigns();
+      } catch {
+        // Silently fail - error will be visible if refetch shows stale data
+      }
+    },
+    [refetchCampaigns],
   );
 
-  const filteredCampaigns = campaigns.filter((c) => {
-    if (activePlatform === 'All') return true;
-    return platformConfig[c.platform]?.label === activePlatform;
-  });
+  const handleCreateCampaign = useCallback(
+    async (formData: CampaignFormData) => {
+      const result = await createCampaign(formData);
+      if (result) {
+        setShowModal(false);
+        refetchCampaigns();
+        refetchMetrics();
+      }
+    },
+    [createCampaign, refetchCampaigns, refetchMetrics],
+  );
 
-  const toggleCampaignStatus = (id: string) => {
-    setCampaignStatuses((prev) => ({
-      ...prev,
-      [id]: prev[id] === 'active' ? 'paused' : 'active',
-    }));
-  };
+  const handleUpdateCampaign = useCallback(
+    async (formData: CampaignFormData) => {
+      const result = await updateCampaign(formData);
+      if (result) {
+        setEditingCampaign(null);
+        setShowModal(false);
+        refetchCampaigns();
+        refetchMetrics();
+      }
+    },
+    [updateCampaign, refetchCampaigns, refetchMetrics],
+  );
 
+  const openCreateModal = useCallback(() => {
+    setEditingCampaign(null);
+    setShowModal(true);
+  }, []);
+
+  const openEditModal = useCallback((campaign: CampaignData) => {
+    setEditingCampaign(campaign);
+    setShowModal(true);
+  }, []);
+
+  const closeModal = useCallback(() => {
+    setShowModal(false);
+    setEditingCampaign(null);
+  }, []);
+
+  // -----------------------------------------------------------------------
   // Table columns
+  // -----------------------------------------------------------------------
+
   const columns = [
     {
       key: 'name',
       label: 'Campaign Name',
       render: (item: CampaignData) => (
-        <span className="font-medium text-surface-900">{item.name}</span>
+        <button
+          className="font-medium text-surface-900 hover:text-primary-600 transition-colors text-left"
+          onClick={() => openEditModal(item)}
+        >
+          {item.name}
+        </button>
       ),
     },
     {
@@ -379,6 +434,7 @@ export default function PaidAds() {
       label: 'Platform',
       render: (item: CampaignData) => {
         const cfg = platformConfig[item.platform];
+        if (!cfg) return <span className="text-surface-400">--</span>;
         return (
           <span
             className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.color} ${cfg.bg}`}
@@ -400,7 +456,7 @@ export default function PaidAds() {
       key: 'status',
       label: 'Status',
       render: (item: CampaignData) => (
-        <StatusBadge status={campaignStatuses[item.id] || item.status} />
+        <StatusBadge status={item.status} />
       ),
     },
     {
@@ -469,22 +525,21 @@ export default function PaidAds() {
       key: 'actions',
       label: 'Actions',
       render: (item: CampaignData) => {
-        const currentStatus = campaignStatuses[item.id] || item.status;
-        if (currentStatus === 'draft') return <span className="text-surface-400 text-xs">--</span>;
+        if (item.status === 'draft') return <span className="text-surface-400 text-xs">--</span>;
         return (
           <button
             onClick={(e) => {
               e.stopPropagation();
-              toggleCampaignStatus(item.id);
+              handleToggleStatus(item);
             }}
             className={`p-1.5 rounded-lg transition-colors ${
-              currentStatus === 'active'
+              item.status === 'active'
                 ? 'text-amber-600 hover:bg-amber-50'
                 : 'text-green-600 hover:bg-green-50'
             }`}
-            title={currentStatus === 'active' ? 'Pause campaign' : 'Resume campaign'}
+            title={item.status === 'active' ? 'Pause campaign' : 'Resume campaign'}
           >
-            {currentStatus === 'active' ? (
+            {item.status === 'active' ? (
               <Pause className="w-4 h-4" />
             ) : (
               <Play className="w-4 h-4" />
@@ -494,6 +549,10 @@ export default function PaidAds() {
       },
     },
   ];
+
+  // -----------------------------------------------------------------------
+  // Render
+  // -----------------------------------------------------------------------
 
   return (
     <div className="space-y-6">
@@ -512,7 +571,10 @@ export default function PaidAds() {
               <Download className="w-4 h-4" />
               Export
             </button>
-            <button className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors">
+            <button
+              onClick={openCreateModal}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors"
+            >
               <Plus className="w-4 h-4" />
               New Campaign
             </button>
@@ -521,34 +583,50 @@ export default function PaidAds() {
       />
 
       {/* KPI Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard
-          label="Total Ad Spend"
-          value="184K"
-          change={9.2}
-          trend="up"
-          prefix="$"
-        />
-        <KPICard
-          label="Total Revenue"
-          value="782K"
-          change={14.8}
-          trend="up"
-          prefix="$"
-        />
-        <KPICard
-          label="Average ROAS"
-          value="4.25x"
-          change={6.3}
-          trend="up"
-        />
-        <KPICard
-          label="Active Campaigns"
-          value={47}
-          change={4.1}
-          trend="up"
-        />
-      </div>
+      {metricsLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-xl border border-surface-200 p-5">
+              <div className="animate-pulse">
+                <div className="h-4 w-24 bg-surface-200 rounded mb-2" />
+                <div className="h-8 w-20 bg-surface-200 rounded mb-2" />
+                <div className="h-5 w-16 bg-surface-200 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : metricsError ? (
+        <ApiErrorDisplay error={metricsError} onRetry={refetchMetrics} compact />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <KPICard
+            label="Total Ad Spend"
+            value={totals ? fmtCurrency(totals.totalSpend).replace('$', '') : '--'}
+            change={totals?.totalSpendChange ?? 0}
+            trend={totals && totals.totalSpendChange >= 0 ? 'up' : 'down'}
+            prefix="$"
+          />
+          <KPICard
+            label="Total Revenue"
+            value={totals ? fmtCurrency(totals.totalRevenue).replace('$', '') : '--'}
+            change={totals?.totalRevenueChange ?? 0}
+            trend={totals && totals.totalRevenueChange >= 0 ? 'up' : 'down'}
+            prefix="$"
+          />
+          <KPICard
+            label="Average ROAS"
+            value={totals ? `${totals.averageRoas.toFixed(2)}x` : '--'}
+            change={totals?.averageRoasChange ?? 0}
+            trend={totals && totals.averageRoasChange >= 0 ? 'up' : 'down'}
+          />
+          <KPICard
+            label="Active Campaigns"
+            value={totals?.activeCampaigns ?? 0}
+            change={totals?.activeCampaignsChange ?? 0}
+            trend={totals && totals.activeCampaignsChange >= 0 ? 'up' : 'down'}
+          />
+        </div>
+      )}
 
       {/* Platform Filter Tabs */}
       <div className="flex items-center gap-1 bg-surface-100 rounded-lg p-1 w-fit">
@@ -570,10 +648,42 @@ export default function PaidAds() {
       {/* Campaign Performance Table */}
       <Card
         title="Campaign Performance"
-        subtitle={`${filteredCampaigns.length} campaigns${activePlatform !== 'All' ? ` on ${activePlatform}` : ''}`}
+        subtitle={
+          campaignsLoading
+            ? 'Loading campaigns...'
+            : `${filteredCampaigns.length} campaigns${activePlatform !== 'All' ? ` on ${activePlatform}` : ''}`
+        }
         noPadding
       >
-        <DataTable columns={columns} data={filteredCampaigns as unknown as Record<string, unknown>[]} />
+        {campaignsLoading ? (
+          <TableSkeleton rows={6} columns={8} />
+        ) : campaignsError ? (
+          <ApiErrorDisplay
+            error={campaignsError}
+            onRetry={refetchCampaigns}
+            title="Failed to load campaigns"
+          />
+        ) : filteredCampaigns.length === 0 ? (
+          <EmptyState
+            title="No campaigns found"
+            description={
+              activePlatform !== 'All'
+                ? `No campaigns found for ${activePlatform}. Try selecting a different platform or create a new campaign.`
+                : 'Get started by creating your first campaign.'
+            }
+            action={
+              <button
+                onClick={openCreateModal}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                New Campaign
+              </button>
+            }
+          />
+        ) : (
+          <DataTable columns={columns} data={filteredCampaigns as unknown as Record<string, unknown>[]} />
+        )}
       </Card>
 
       {/* Charts Row */}
@@ -584,67 +694,77 @@ export default function PaidAds() {
           subtitle="Daily spend vs conversions - last 14 days"
           actions={<TrendingUp className="w-4 h-4 text-surface-400" />}
         >
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={dailyTrend} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis
-                  dataKey="day"
-                  tick={{ fontSize: 11 }}
-                  stroke="#9ca3af"
-                  tickFormatter={(val: string) => val.replace('Feb ', '')}
-                />
-                <YAxis
-                  yAxisId="spend"
-                  tick={{ fontSize: 11 }}
-                  stroke="#9ca3af"
-                  tickFormatter={(val: number) => `$${(val / 1000).toFixed(0)}K`}
-                />
-                <YAxis
-                  yAxisId="conversions"
-                  orientation="right"
-                  tick={{ fontSize: 11 }}
-                  stroke="#9ca3af"
-                />
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: '8px',
-                    border: '1px solid #e5e7eb',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
-                  }}
-                  formatter={(value: number, name: string) =>
-                    name === 'spend' ? [`$${value.toLocaleString()}`, 'Spend'] : [value, 'Conversions']
-                  }
-                />
-                <Line
-                  yAxisId="spend"
-                  type="monotone"
-                  dataKey="spend"
-                  stroke="#6366f1"
-                  strokeWidth={2}
-                  dot={false}
-                  name="spend"
-                />
-                <Line
-                  yAxisId="conversions"
-                  type="monotone"
-                  dataKey="conversions"
-                  stroke="#22c55e"
-                  strokeWidth={2}
-                  dot={false}
-                  name="conversions"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="flex items-center justify-center gap-6 mt-2 text-xs text-surface-500">
-            <span className="flex items-center gap-1.5">
-              <span className="w-3 h-0.5 bg-indigo-500 rounded" /> Spend
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-3 h-0.5 bg-green-500 rounded" /> Conversions
-            </span>
-          </div>
+          {metricsLoading ? (
+            <ChartSkeleton />
+          ) : metricsError ? (
+            <ApiErrorDisplay error={metricsError} onRetry={refetchMetrics} compact />
+          ) : dailyTrend.length === 0 ? (
+            <EmptyState title="No trend data" description="Performance data will appear once campaigns are active." />
+          ) : (
+            <>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={dailyTrend} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="day"
+                      tick={{ fontSize: 11 }}
+                      stroke="#9ca3af"
+                      tickFormatter={(val: string) => val.replace(/^[A-Za-z]+ /, '')}
+                    />
+                    <YAxis
+                      yAxisId="spend"
+                      tick={{ fontSize: 11 }}
+                      stroke="#9ca3af"
+                      tickFormatter={(val: number) => `$${(val / 1000).toFixed(0)}K`}
+                    />
+                    <YAxis
+                      yAxisId="conversions"
+                      orientation="right"
+                      tick={{ fontSize: 11 }}
+                      stroke="#9ca3af"
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: '8px',
+                        border: '1px solid #e5e7eb',
+                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
+                      }}
+                      formatter={(value: number, name: string) =>
+                        name === 'spend' ? [`$${value.toLocaleString()}`, 'Spend'] : [value, 'Conversions']
+                      }
+                    />
+                    <Line
+                      yAxisId="spend"
+                      type="monotone"
+                      dataKey="spend"
+                      stroke="#6366f1"
+                      strokeWidth={2}
+                      dot={false}
+                      name="spend"
+                    />
+                    <Line
+                      yAxisId="conversions"
+                      type="monotone"
+                      dataKey="conversions"
+                      stroke="#22c55e"
+                      strokeWidth={2}
+                      dot={false}
+                      name="conversions"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex items-center justify-center gap-6 mt-2 text-xs text-surface-500">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-3 h-0.5 bg-indigo-500 rounded" /> Spend
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-3 h-0.5 bg-green-500 rounded" /> Conversions
+                </span>
+              </div>
+            </>
+          )}
         </Card>
 
         {/* ROAS by Platform */}
@@ -653,35 +773,43 @@ export default function PaidAds() {
           subtitle="Cross-platform return comparison"
           actions={<DollarSign className="w-4 h-4 text-surface-400" />}
         >
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={platformRoas} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="platform" tick={{ fontSize: 12 }} stroke="#9ca3af" />
-                <YAxis
-                  tick={{ fontSize: 12 }}
-                  stroke="#9ca3af"
-                  tickFormatter={(val: number) => `${val}x`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: '8px',
-                    border: '1px solid #e5e7eb',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
-                  }}
-                  formatter={(value: number) => [`${value.toFixed(2)}x`, 'ROAS']}
-                />
-                <Bar dataKey="roas" radius={[6, 6, 0, 0]} name="ROAS">
-                  {platformRoas.map((entry, index) => {
-                    const colors = ['#3b82f6', '#6366f1', '#ec4899', '#14b8a6', '#eab308'];
-                    return (
-                      <rect key={`cell-${index}`} fill={colors[index % colors.length]} />
-                    );
-                  })}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {metricsLoading ? (
+            <ChartSkeleton />
+          ) : metricsError ? (
+            <ApiErrorDisplay error={metricsError} onRetry={refetchMetrics} compact />
+          ) : platformRoas.length === 0 ? (
+            <EmptyState title="No ROAS data" description="Platform ROAS data will appear once campaigns generate revenue." />
+          ) : (
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={platformRoas} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="platform" tick={{ fontSize: 12 }} stroke="#9ca3af" />
+                  <YAxis
+                    tick={{ fontSize: 12 }}
+                    stroke="#9ca3af"
+                    tickFormatter={(val: number) => `${val}x`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
+                    }}
+                    formatter={(value: number) => [`${value.toFixed(2)}x`, 'ROAS']}
+                  />
+                  <Bar dataKey="roas" radius={[6, 6, 0, 0]} name="ROAS">
+                    {platformRoas.map((_, index) => {
+                      const colors = ['#3b82f6', '#6366f1', '#ec4899', '#14b8a6', '#eab308'];
+                      return (
+                        <rect key={`cell-${index}`} fill={colors[index % colors.length]} />
+                      );
+                    })}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </Card>
       </div>
 
@@ -693,40 +821,62 @@ export default function PaidAds() {
           subtitle="Smart optimization suggestions"
           className="lg:col-span-2"
           actions={
-            <span className="flex items-center gap-1 text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
-              4 actions
-            </span>
+            !recommendationsLoading && !recommendationsError && recommendations.length > 0 ? (
+              <span className="flex items-center gap-1 text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
+                {recommendations.length} actions
+              </span>
+            ) : undefined
           }
         >
-          <div className="space-y-3">
-            {recommendations.map((rec) => (
-              <div
-                key={rec.id}
-                className={`rounded-lg border-l-4 p-4 ${urgencyStyle[rec.urgency]}`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span
-                        className={`text-xs font-medium px-2 py-0.5 rounded-full ${recommendationIcon[rec.type].color}`}
-                      >
-                        {recommendationIcon[rec.type].icon}
-                      </span>
-                      {rec.urgency === 'high' && (
-                        <span className="text-xs font-medium text-red-600">High Priority</span>
-                      )}
-                    </div>
-                    <h4 className="text-sm font-semibold text-surface-900 mb-1">{rec.title}</h4>
-                    <p className="text-xs text-surface-600 leading-relaxed">{rec.description}</p>
-                    <p className="text-xs font-medium text-green-700 mt-2">{rec.impact}</p>
-                  </div>
-                  <button className="shrink-0 px-3 py-1.5 text-xs font-medium text-primary-600 bg-white border border-primary-200 rounded-lg hover:bg-primary-50 transition-colors">
-                    Apply
-                  </button>
+          {recommendationsLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="animate-pulse rounded-lg border-l-4 border-l-surface-200 bg-surface-50 p-4">
+                  <div className="h-4 w-24 bg-surface-200 rounded mb-2" />
+                  <div className="h-4 w-48 bg-surface-200 rounded mb-2" />
+                  <div className="h-3 w-full bg-surface-200 rounded mb-1" />
+                  <div className="h-3 w-3/4 bg-surface-200 rounded" />
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : recommendationsError ? (
+            <ApiErrorDisplay error={recommendationsError} onRetry={refetchRecommendations} />
+          ) : recommendations.length === 0 ? (
+            <EmptyState
+              title="No recommendations"
+              description="AI recommendations will appear as campaigns gather enough data for optimization."
+            />
+          ) : (
+            <div className="space-y-3">
+              {recommendations.map((rec) => (
+                <div
+                  key={rec.id}
+                  className={`rounded-lg border-l-4 p-4 ${urgencyStyle[rec.urgency]}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span
+                          className={`text-xs font-medium px-2 py-0.5 rounded-full ${recommendationIcon[rec.type]?.color ?? 'text-surface-600 bg-surface-100'}`}
+                        >
+                          {recommendationIcon[rec.type]?.icon ?? rec.type}
+                        </span>
+                        {rec.urgency === 'high' && (
+                          <span className="text-xs font-medium text-red-600">High Priority</span>
+                        )}
+                      </div>
+                      <h4 className="text-sm font-semibold text-surface-900 mb-1">{rec.title}</h4>
+                      <p className="text-xs text-surface-600 leading-relaxed">{rec.description}</p>
+                      <p className="text-xs font-medium text-green-700 mt-2">{rec.impact}</p>
+                    </div>
+                    <button className="shrink-0 px-3 py-1.5 text-xs font-medium text-primary-600 bg-white border border-primary-200 rounded-lg hover:bg-primary-50 transition-colors">
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
 
         {/* Retargeting Status */}
@@ -734,48 +884,79 @@ export default function PaidAds() {
           title="Retargeting Audiences"
           subtitle="Active audience segments"
         >
-          <div className="space-y-4">
-            {retargetingAudiences.map((audience) => (
-              <div
-                key={audience.name}
-                className="rounded-lg border border-surface-200 p-3"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-medium text-surface-900">{audience.name}</h4>
-                  <StatusBadge status={audience.status} size="sm" />
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-xs mb-2">
-                  <div>
-                    <span className="text-surface-500">Size</span>
-                    <p className="font-medium text-surface-800">{fmtNumber(audience.size)}</p>
+          {retargetingLoading ? (
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="animate-pulse rounded-lg border border-surface-200 p-3">
+                  <div className="h-4 w-32 bg-surface-200 rounded mb-3" />
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <div className="h-3 w-16 bg-surface-200 rounded" />
+                    <div className="h-3 w-16 bg-surface-200 rounded" />
                   </div>
-                  <div>
-                    <span className="text-surface-500">Match Rate</span>
-                    <p className="font-medium text-surface-800">{audience.matchRate}%</p>
+                  <div className="h-1.5 w-full bg-surface-200 rounded-full" />
+                </div>
+              ))}
+            </div>
+          ) : retargetingError ? (
+            <ApiErrorDisplay error={retargetingError} onRetry={refetchRetargeting} />
+          ) : retargetingAudiences.length === 0 ? (
+            <EmptyState
+              title="No audiences"
+              description="Retargeting audiences will be generated from campaign activity."
+            />
+          ) : (
+            <div className="space-y-4">
+              {retargetingAudiences.map((audience) => (
+                <div
+                  key={audience.name}
+                  className="rounded-lg border border-surface-200 p-3"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-surface-900">{audience.name}</h4>
+                    <StatusBadge status={audience.status} size="sm" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                    <div>
+                      <span className="text-surface-500">Size</span>
+                      <p className="font-medium text-surface-800">{fmtNumber(audience.size)}</p>
+                    </div>
+                    <div>
+                      <span className="text-surface-500">Match Rate</span>
+                      <p className="font-medium text-surface-800">{audience.matchRate}%</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {audience.platforms.map((p) => (
+                      <span
+                        key={p}
+                        className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-surface-100 text-surface-600"
+                      >
+                        {p}
+                      </span>
+                    ))}
+                  </div>
+                  {/* Match rate bar */}
+                  <div className="w-full bg-surface-100 rounded-full h-1.5 mt-2">
+                    <div
+                      className="bg-indigo-500 h-1.5 rounded-full transition-all"
+                      style={{ width: `${audience.matchRate}%` }}
+                    />
                   </div>
                 </div>
-                <div className="flex items-center gap-1 flex-wrap">
-                  {audience.platforms.map((p) => (
-                    <span
-                      key={p}
-                      className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-surface-100 text-surface-600"
-                    >
-                      {p}
-                    </span>
-                  ))}
-                </div>
-                {/* Match rate bar */}
-                <div className="w-full bg-surface-100 rounded-full h-1.5 mt-2">
-                  <div
-                    className="bg-indigo-500 h-1.5 rounded-full transition-all"
-                    style={{ width: `${audience.matchRate}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </Card>
       </div>
+
+      {/* Campaign Create / Edit Modal */}
+      <CampaignModal
+        open={showModal}
+        onClose={closeModal}
+        onSubmit={editingCampaign ? handleUpdateCampaign : handleCreateCampaign}
+        loading={editingCampaign ? updateLoading : createLoading}
+        initial={editingCampaign}
+      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Shield,
   CheckCircle,
@@ -8,6 +8,8 @@ import {
   Globe,
   Lock,
   Clock,
+  Play,
+  Loader2,
 } from 'lucide-react';
 import {
   PieChart,
@@ -25,215 +27,77 @@ import PageHeader from '../components/shared/PageHeader';
 import Card from '../components/shared/Card';
 import KPICard from '../components/shared/KPICard';
 import StatusBadge from '../components/shared/StatusBadge';
+import { useApiQuery, useApiMutation } from '../hooks/useApi';
+import { TableSkeleton, CardSkeleton } from '../components/shared/LoadingSkeleton';
+import { ApiErrorDisplay } from '../components/shared/ErrorBoundary';
+import EmptyState from '../components/shared/EmptyState';
 
 // ---------------------------------------------------------------------------
-// Mock data
+// API response types
 // ---------------------------------------------------------------------------
 
-const complianceOverview = [
-  { name: 'Compliant', value: 85, color: '#22c55e' },
-  { name: 'Warning', value: 10, color: '#f59e0b' },
-  { name: 'Under Review', value: 5, color: '#6366f1' },
-];
+interface ComplianceRule {
+  id: string;
+  name: string;
+  country: string;
+  category: string;
+  status: 'compliant' | 'warning' | 'review' | 'violation';
+  lastChecked: string;
+  details: string;
+  riskLevel: 'Low' | 'Medium' | 'High';
+}
 
-const regulations = [
-  {
-    id: 'reg-1',
-    name: 'GDPR',
-    country: 'EU',
-    category: 'Data Protection',
-    status: 'compliant' as const,
-    lastChecked: '2026-02-24',
-    details: 'Full data processing compliance with Art. 6 lawful basis verified.',
-    riskLevel: 'Low',
-  },
-  {
-    id: 'reg-2',
-    name: 'CCPA',
-    country: 'United States',
-    category: 'Consumer Rights',
-    status: 'compliant' as const,
-    lastChecked: '2026-02-23',
-    details: 'Consumer opt-out mechanisms active. Annual review scheduled Q1.',
-    riskLevel: 'Low',
-  },
-  {
-    id: 'reg-3',
-    name: 'ePrivacy Directive',
-    country: 'EU',
-    category: 'Data Protection',
-    status: 'warning' as const,
-    lastChecked: '2026-02-22',
-    details: 'Cookie consent banner update needed for new tracking pixels.',
-    riskLevel: 'Medium',
-  },
-  {
-    id: 'reg-4',
-    name: 'UK Data Protection Act',
-    country: 'United Kingdom',
-    category: 'Data Protection',
-    status: 'compliant' as const,
-    lastChecked: '2026-02-24',
-    details: 'ICO registration current. DPO appointed and documented.',
-    riskLevel: 'Low',
-  },
-  {
-    id: 'reg-5',
-    name: 'Japan APPI',
-    country: 'Japan',
-    category: 'Data Protection',
-    status: 'review' as const,
-    lastChecked: '2026-02-20',
-    details: 'Cross-border transfer provisions under review after 2025 amendment.',
-    riskLevel: 'Medium',
-  },
-  {
-    id: 'reg-6',
-    name: 'UAE Ad Standards',
-    country: 'UAE',
-    category: 'Ad Standards',
-    status: 'warning' as const,
-    lastChecked: '2026-02-21',
-    details: 'Certain creative assets flagged for local content review process.',
-    riskLevel: 'Medium',
-  },
-  {
-    id: 'reg-7',
-    name: 'Brazil LGPD',
-    country: 'Brazil',
-    category: 'Data Protection',
-    status: 'compliant' as const,
-    lastChecked: '2026-02-23',
-    details: 'ANPD registration complete. Privacy notice localized in Portuguese.',
-    riskLevel: 'Low',
-  },
-  {
-    id: 'reg-8',
-    name: 'Australia Privacy Act',
-    country: 'Australia',
-    category: 'Consumer Rights',
-    status: 'compliant' as const,
-    lastChecked: '2026-02-24',
-    details: 'APP compliance verified. Notifiable data breach plan in place.',
-    riskLevel: 'Low',
-  },
-  {
-    id: 'reg-9',
-    name: 'South Korea PIPA',
-    country: 'South Korea',
-    category: 'Data Protection',
-    status: 'review' as const,
-    lastChecked: '2026-02-19',
-    details: 'Pseudonymization requirements pending internal audit completion.',
-    riskLevel: 'High',
-  },
-  {
-    id: 'reg-10',
-    name: 'German Telemediengesetz',
-    country: 'Germany',
-    category: 'Ad Standards',
-    status: 'compliant' as const,
-    lastChecked: '2026-02-24',
-    details: 'Impressum and ad disclosure requirements met across all campaigns.',
-    riskLevel: 'Low',
-  },
-];
+interface ComplianceStatus {
+  overview: { name: string; value: number; color: string }[];
+  kpis: {
+    complianceScore: number;
+    complianceScoreChange: number;
+    activeRegulations: number;
+    activeRegulationsChange: number;
+    violations: number;
+    violationsChange: number;
+    pendingReviews: number;
+    pendingReviewsChange: number;
+  };
+  countryCompliance: { country: string; compliance: number }[];
+  flaggedCampaigns: {
+    id: string;
+    name: string;
+    market: string;
+    issue: string;
+    severity: 'warning' | 'review' | 'critical';
+    flaggedDate: string;
+    assignee: string;
+  }[];
+  dataProtection: {
+    label: string;
+    description: string;
+    status: 'compliant' | 'warning' | 'violation' | 'review';
+  }[];
+  adRestrictions: {
+    country: string;
+    categories: string[];
+    enforced: boolean;
+  }[];
+  auditLog: {
+    id: string;
+    timestamp: string;
+    action: string;
+    agent: string;
+    result: string;
+  }[];
+}
 
-const countryComplianceData = [
-  { country: 'EU', compliance: 94 },
-  { country: 'US', compliance: 98 },
-  { country: 'UK', compliance: 97 },
-  { country: 'Japan', compliance: 88 },
-  { country: 'UAE', compliance: 82 },
-  { country: 'Brazil', compliance: 95 },
-  { country: 'Australia', compliance: 96 },
-  { country: 'S. Korea', compliance: 85 },
-  { country: 'Germany', compliance: 99 },
-];
+interface CountryData {
+  code: string;
+  name: string;
+  flag: string;
+}
 
-const flaggedCampaigns = [
-  {
-    id: 'fc-1',
-    name: 'TikTok UAE Ramadan Promo',
-    market: 'UAE',
-    issue: 'Creative assets may violate local advertising content guidelines during religious period.',
-    severity: 'warning' as const,
-    flaggedDate: '2026-02-23',
-    assignee: 'Compliance Team A',
-  },
-  {
-    id: 'fc-2',
-    name: 'Google Ads South Korea Retargeting',
-    market: 'South Korea',
-    issue: 'Retargeting pixel implementation needs PIPA pseudonymization review before launch.',
-    severity: 'warning' as const,
-    flaggedDate: '2026-02-22',
-    assignee: 'Data Privacy Officer',
-  },
-  {
-    id: 'fc-3',
-    name: 'Meta EU Lookalike Audiences',
-    market: 'EU',
-    issue: 'Lookalike audience data sourcing requires updated GDPR consent flow verification.',
-    severity: 'review' as const,
-    flaggedDate: '2026-02-24',
-    assignee: 'Legal Review Board',
-  },
-];
-
-const dataProtectionItems = [
-  { label: 'Consent Management', description: 'Cookie consent and opt-in flows active across all markets', status: 'compliant' as const, icon: CheckCircle },
-  { label: 'Data Retention', description: 'Automated 24-month retention policy enforced. Purge jobs running weekly', status: 'compliant' as const, icon: CheckCircle },
-  { label: 'Right to Deletion', description: 'Self-service deletion portal live. Average fulfillment: 2.1 days', status: 'compliant' as const, icon: CheckCircle },
-  { label: 'Data Portability', description: 'Export functionality available. Format: JSON & CSV. Under GDPR Art. 20', status: 'compliant' as const, icon: CheckCircle },
-];
-
-const adRestrictions = [
-  { country: 'UAE', categories: ['Alcohol', 'Gambling', 'Religious sensitivity'], enforced: true },
-  { country: 'Germany', categories: ['Comparative advertising', 'Health claims'], enforced: true },
-  { country: 'South Korea', categories: ['Cosmetic surgery', 'Financial guarantees'], enforced: true },
-  { country: 'Brazil', categories: ['Tobacco', 'Alcohol (time-restricted)'], enforced: true },
-  { country: 'Australia', categories: ['Gambling (state-specific)', 'Therapeutic goods'], enforced: true },
-  { country: 'Japan', categories: ['Pharma (pre-approval)', 'Misleading discounts'], enforced: true },
-];
-
-const auditLog = [
-  {
-    id: 'audit-1',
-    timestamp: '2026-02-24 16:42',
-    action: 'GDPR consent flow validated',
-    agent: 'Compliance Checker',
-    result: 'Pass',
-  },
-  {
-    id: 'audit-2',
-    timestamp: '2026-02-24 14:18',
-    action: 'UAE ad creative review submitted',
-    agent: 'Creative Engine',
-    result: 'Pending',
-  },
-  {
-    id: 'audit-3',
-    timestamp: '2026-02-24 11:05',
-    action: 'CCPA opt-out mechanism tested',
-    agent: 'Compliance Checker',
-    result: 'Pass',
-  },
-  {
-    id: 'audit-4',
-    timestamp: '2026-02-23 22:30',
-    action: 'Data retention purge job completed',
-    agent: 'Data Pipeline',
-    result: 'Pass',
-  },
-  {
-    id: 'audit-5',
-    timestamp: '2026-02-23 17:55',
-    action: 'South Korea PIPA audit initiated',
-    agent: 'Compliance Checker',
-    result: 'In Progress',
-  },
-];
+interface AgentExecuteResult {
+  success: boolean;
+  message: string;
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -272,6 +136,13 @@ const getBarColor = (compliance: number) => {
   return '#ef4444';
 };
 
+const dataProtectionIconMap: Record<string, typeof CheckCircle> = {
+  compliant: CheckCircle,
+  warning: AlertTriangle,
+  violation: XCircle,
+  review: Clock,
+};
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -279,12 +150,89 @@ const getBarColor = (compliance: number) => {
 export default function Compliance() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
+  // ---- API calls ----
+  const {
+    data: rules,
+    loading: rulesLoading,
+    error: rulesError,
+    refetch: refetchRules,
+  } = useApiQuery<ComplianceRule[]>('/api/v1/agents/compliance/rules');
+
+  const {
+    data: status,
+    loading: statusLoading,
+    error: statusError,
+    refetch: refetchStatus,
+  } = useApiQuery<ComplianceStatus>('/api/v1/agents/compliance/status');
+
+  const {
+    data: _countries,
+    loading: countriesLoading,
+    error: countriesError,
+    refetch: refetchCountries,
+  } = useApiQuery<CountryData[]>('/api/v1/countries');
+
+  const {
+    mutate: runAudit,
+    loading: auditRunning,
+  } = useApiMutation<AgentExecuteResult>('/api/v1/agents/13/execute', 'GET');
+
+  // ---- Derived state ----
   const categories = ['All', 'Data Protection', 'Ad Standards', 'Consumer Rights', 'Tax'];
 
-  const filteredRegulations =
-    selectedCategory === 'All'
-      ? regulations
-      : regulations.filter((r) => r.category === selectedCategory);
+  const regulations = rules ?? [];
+
+  const filteredRegulations = useMemo(
+    () =>
+      selectedCategory === 'All'
+        ? regulations
+        : regulations.filter((r) => r.category === selectedCategory),
+    [regulations, selectedCategory],
+  );
+
+  const complianceOverview = status?.overview ?? [];
+  const countryComplianceData = status?.countryCompliance ?? [];
+  const flaggedCampaigns = status?.flaggedCampaigns ?? [];
+  const dataProtectionItems = status?.dataProtection ?? [];
+  const adRestrictions = status?.adRestrictions ?? [];
+  const auditLog = status?.auditLog ?? [];
+  const kpis = status?.kpis;
+
+  const violationCount =
+    kpis?.violations ?? regulations.filter((r) => r.status === 'violation').length;
+
+  // ---- Run Audit handler ----
+  const handleRunAudit = async () => {
+    await runAudit();
+    // Refresh data after audit completes
+    refetchRules();
+    refetchStatus();
+    refetchCountries();
+  };
+
+  // ---- Global loading state (for KPIs / header) ----
+  const isInitialLoading = rulesLoading && statusLoading && countriesLoading;
+
+  // ---- Global error ----
+  if (rulesError && statusError && countriesError) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Compliance & Regulatory"
+          subtitle="GDPR, CCPA & Local Ad Law Enforcement"
+          icon={<Shield className="w-5 h-5" />}
+        />
+        <ApiErrorDisplay
+          error={rulesError || statusError || countriesError || 'Failed to load compliance data'}
+          onRetry={() => {
+            refetchRules();
+            refetchStatus();
+            refetchCountries();
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -295,42 +243,86 @@ export default function Compliance() {
         icon={<Shield className="w-5 h-5" />}
         actions={
           <div className="flex items-center gap-3">
+            <button
+              onClick={handleRunAudit}
+              disabled={auditRunning}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {auditRunning ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Play className="w-4 h-4" />
+              )}
+              {auditRunning ? 'Running Audit...' : 'Run Audit'}
+            </button>
             <span className="flex items-center gap-1.5 text-sm text-green-600 font-medium bg-green-50 px-3 py-1 rounded-full">
               <CheckCircle className="w-4 h-4" />
-              0 Violations
+              {statusLoading ? '...' : `${violationCount} Violation${violationCount !== 1 ? 's' : ''}`}
             </span>
           </div>
         }
       />
 
       {/* KPI Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard
-          label="Compliance Score"
-          value="96"
-          change={2.1}
-          trend="up"
-          suffix="%"
-        />
-        <KPICard
-          label="Active Regulations"
-          value={14}
-          change={3}
-          trend="up"
-        />
-        <KPICard
-          label="Violations"
-          value={0}
-          change={0}
-          trend="stable"
-        />
-        <KPICard
-          label="Pending Reviews"
-          value={3}
-          change={1}
-          trend="down"
-        />
-      </div>
+      {isInitialLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <CardSkeleton key={i} lines={2} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <KPICard
+            label="Compliance Score"
+            value={kpis?.complianceScore ?? 0}
+            change={kpis?.complianceScoreChange ?? 0}
+            trend={
+              (kpis?.complianceScoreChange ?? 0) > 0
+                ? 'up'
+                : (kpis?.complianceScoreChange ?? 0) < 0
+                  ? 'down'
+                  : 'stable'
+            }
+            suffix="%"
+          />
+          <KPICard
+            label="Active Regulations"
+            value={kpis?.activeRegulations ?? regulations.length}
+            change={kpis?.activeRegulationsChange ?? 0}
+            trend={
+              (kpis?.activeRegulationsChange ?? 0) > 0
+                ? 'up'
+                : (kpis?.activeRegulationsChange ?? 0) < 0
+                  ? 'down'
+                  : 'stable'
+            }
+          />
+          <KPICard
+            label="Violations"
+            value={violationCount}
+            change={kpis?.violationsChange ?? 0}
+            trend={
+              (kpis?.violationsChange ?? 0) > 0
+                ? 'up'
+                : (kpis?.violationsChange ?? 0) < 0
+                  ? 'down'
+                  : 'stable'
+            }
+          />
+          <KPICard
+            label="Pending Reviews"
+            value={kpis?.pendingReviews ?? regulations.filter((r) => r.status === 'review').length}
+            change={kpis?.pendingReviewsChange ?? 0}
+            trend={
+              (kpis?.pendingReviewsChange ?? 0) > 0
+                ? 'up'
+                : (kpis?.pendingReviewsChange ?? 0) < 0
+                  ? 'down'
+                  : 'stable'
+            }
+          />
+        </div>
+      )}
 
       {/* Compliance Overview Pie + Country Compliance Bar */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -340,50 +332,58 @@ export default function Compliance() {
           subtitle="Current regulation status distribution"
           actions={<Shield className="w-4 h-4 text-surface-400" />}
         >
-          <div className="flex items-center gap-6">
-            <div className="h-64 flex-1">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={complianceOverview}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={4}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {complianceOverview.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value: number) => `${value}%`}
-                    contentStyle={{
-                      borderRadius: '8px',
-                      border: '1px solid #e5e7eb',
-                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+          {statusLoading ? (
+            <CardSkeleton lines={6} />
+          ) : statusError ? (
+            <ApiErrorDisplay error={statusError} onRetry={refetchStatus} />
+          ) : complianceOverview.length === 0 ? (
+            <EmptyState title="No overview data" message="Compliance overview data is not available yet." />
+          ) : (
+            <div className="flex items-center gap-6">
+              <div className="h-64 flex-1">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={complianceOverview}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={4}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {complianceOverview.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number) => `${value}%`}
+                      contentStyle={{
+                        borderRadius: '8px',
+                        border: '1px solid #e5e7eb',
+                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="space-y-3 min-w-[140px]">
+                {complianceOverview.map((item) => (
+                  <div key={item.name} className="flex items-center gap-2">
+                    <span
+                      className="w-3 h-3 rounded-full shrink-0"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-sm text-surface-600">{item.name}</span>
+                    <span className="text-sm font-semibold text-surface-900 ml-auto">
+                      {item.value}%
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="space-y-3 min-w-[140px]">
-              {complianceOverview.map((item) => (
-                <div key={item.name} className="flex items-center gap-2">
-                  <span
-                    className="w-3 h-3 rounded-full shrink-0"
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <span className="text-sm text-surface-600">{item.name}</span>
-                  <span className="text-sm font-semibold text-surface-900 ml-auto">
-                    {item.value}%
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+          )}
         </Card>
 
         {/* Country Compliance BarChart */}
@@ -392,40 +392,48 @@ export default function Compliance() {
           subtitle="Compliance % by country"
           actions={<Globe className="w-4 h-4 text-surface-400" />}
         >
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={countryComplianceData}
-                margin={{ top: 5, right: 10, left: 0, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis
-                  dataKey="country"
-                  tick={{ fontSize: 11 }}
-                  stroke="#9ca3af"
-                />
-                <YAxis
-                  domain={[70, 100]}
-                  tick={{ fontSize: 12 }}
-                  stroke="#9ca3af"
-                  tickFormatter={(v) => `${v}%`}
-                />
-                <Tooltip
-                  formatter={(value: number) => `${value}%`}
-                  contentStyle={{
-                    borderRadius: '8px',
-                    border: '1px solid #e5e7eb',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
-                  }}
-                />
-                <Bar dataKey="compliance" radius={[4, 4, 0, 0]} name="Compliance">
-                  {countryComplianceData.map((entry, index) => (
-                    <Cell key={`bar-${index}`} fill={getBarColor(entry.compliance)} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {statusLoading ? (
+            <CardSkeleton lines={6} />
+          ) : statusError ? (
+            <ApiErrorDisplay error={statusError} onRetry={refetchStatus} />
+          ) : countryComplianceData.length === 0 ? (
+            <EmptyState title="No country data" message="Country compliance data is not available yet." />
+          ) : (
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={countryComplianceData}
+                  margin={{ top: 5, right: 10, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="country"
+                    tick={{ fontSize: 11 }}
+                    stroke="#9ca3af"
+                  />
+                  <YAxis
+                    domain={[70, 100]}
+                    tick={{ fontSize: 12 }}
+                    stroke="#9ca3af"
+                    tickFormatter={(v) => `${v}%`}
+                  />
+                  <Tooltip
+                    formatter={(value: number) => `${value}%`}
+                    contentStyle={{
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
+                    }}
+                  />
+                  <Bar dataKey="compliance" radius={[4, 4, 0, 0]} name="Compliance">
+                    {countryComplianceData.map((entry, index) => (
+                      <Cell key={`bar-${index}`} fill={getBarColor(entry.compliance)} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </Card>
       </div>
 
@@ -457,58 +465,73 @@ export default function Compliance() {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-surface-200">
-                <th className="text-left py-3 px-3 font-semibold text-surface-600">Regulation</th>
-                <th className="text-left py-3 px-3 font-semibold text-surface-600">Country</th>
-                <th className="text-left py-3 px-3 font-semibold text-surface-600">Category</th>
-                <th className="text-left py-3 px-3 font-semibold text-surface-600">Status</th>
-                <th className="text-left py-3 px-3 font-semibold text-surface-600">Last Checked</th>
-                <th className="text-left py-3 px-3 font-semibold text-surface-600">Details</th>
-                <th className="text-left py-3 px-3 font-semibold text-surface-600">Risk Level</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRegulations.map((reg) => (
-                <tr
-                  key={reg.id}
-                  className="border-b border-surface-100 hover:bg-surface-50 transition-colors"
-                >
-                  <td className="py-3 px-3 font-medium text-surface-900">{reg.name}</td>
-                  <td className="py-3 px-3 text-surface-600">{reg.country}</td>
-                  <td className="py-3 px-3">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        categoryColors[reg.category] || 'bg-surface-100 text-surface-600'
-                      }`}
-                    >
-                      {reg.category}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3">
-                    <StatusBadge status={reg.status} />
-                  </td>
-                  <td className="py-3 px-3 text-surface-500">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      {reg.lastChecked}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 text-surface-500 max-w-xs truncate">{reg.details}</td>
-                  <td className="py-3 px-3">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${riskBg[reg.riskLevel]} ${riskColors[reg.riskLevel]}`}
-                    >
-                      {reg.riskLevel}
-                    </span>
-                  </td>
+        {rulesLoading ? (
+          <TableSkeleton rows={7} columns={7} />
+        ) : rulesError ? (
+          <ApiErrorDisplay error={rulesError} onRetry={refetchRules} />
+        ) : filteredRegulations.length === 0 ? (
+          <EmptyState
+            title="No regulations found"
+            message={
+              selectedCategory === 'All'
+                ? 'No compliance regulations are being tracked yet.'
+                : `No regulations found for the "${selectedCategory}" category.`
+            }
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-surface-200">
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Regulation</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Country</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Category</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Status</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Last Checked</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Details</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Risk Level</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filteredRegulations.map((reg) => (
+                  <tr
+                    key={reg.id}
+                    className="border-b border-surface-100 hover:bg-surface-50 transition-colors"
+                  >
+                    <td className="py-3 px-3 font-medium text-surface-900">{reg.name}</td>
+                    <td className="py-3 px-3 text-surface-600">{reg.country}</td>
+                    <td className="py-3 px-3">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          categoryColors[reg.category] || 'bg-surface-100 text-surface-600'
+                        }`}
+                      >
+                        {reg.category}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3">
+                      <StatusBadge status={reg.status} />
+                    </td>
+                    <td className="py-3 px-3 text-surface-500">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        {reg.lastChecked}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-surface-500 max-w-xs truncate">{reg.details}</td>
+                    <td className="py-3 px-3">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${riskBg[reg.riskLevel]} ${riskColors[reg.riskLevel]}`}
+                      >
+                        {reg.riskLevel}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
 
       {/* Flagged Campaigns */}
@@ -518,43 +541,55 @@ export default function Compliance() {
         actions={
           <span className="flex items-center gap-1 text-xs text-yellow-600 font-medium bg-yellow-50 px-2 py-0.5 rounded-full">
             <AlertTriangle className="w-3 h-3" />
-            {flaggedCampaigns.length} flagged
+            {statusLoading ? '...' : `${flaggedCampaigns.length} flagged`}
           </span>
         }
       >
-        <div className="space-y-3">
-          {flaggedCampaigns.map((campaign) => (
-            <div
-              key={campaign.id}
-              className="flex items-start gap-4 rounded-lg border border-surface-200 p-4 hover:border-surface-300 transition-colors"
-            >
-              <div className="w-10 h-10 bg-yellow-50 rounded-lg flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-5 h-5 text-yellow-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h4 className="text-sm font-semibold text-surface-900">{campaign.name}</h4>
-                  <StatusBadge status={campaign.severity} />
+        {statusLoading ? (
+          <CardSkeleton lines={5} />
+        ) : statusError ? (
+          <ApiErrorDisplay error={statusError} onRetry={refetchStatus} />
+        ) : flaggedCampaigns.length === 0 ? (
+          <EmptyState
+            title="No flagged campaigns"
+            message="All campaigns are currently compliant. No flags have been raised."
+            icon={<CheckCircle className="w-6 h-6" />}
+          />
+        ) : (
+          <div className="space-y-3">
+            {flaggedCampaigns.map((campaign) => (
+              <div
+                key={campaign.id}
+                className="flex items-start gap-4 rounded-lg border border-surface-200 p-4 hover:border-surface-300 transition-colors"
+              >
+                <div className="w-10 h-10 bg-yellow-50 rounded-lg flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-yellow-600" />
                 </div>
-                <p className="text-sm text-surface-500 mb-2">{campaign.issue}</p>
-                <div className="flex items-center gap-4 text-xs text-surface-400">
-                  <span className="flex items-center gap-1">
-                    <Globe className="w-3 h-3" />
-                    {campaign.market}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {campaign.flaggedDate}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Shield className="w-3 h-3" />
-                    {campaign.assignee}
-                  </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="text-sm font-semibold text-surface-900">{campaign.name}</h4>
+                    <StatusBadge status={campaign.severity} />
+                  </div>
+                  <p className="text-sm text-surface-500 mb-2">{campaign.issue}</p>
+                  <div className="flex items-center gap-4 text-xs text-surface-400">
+                    <span className="flex items-center gap-1">
+                      <Globe className="w-3 h-3" />
+                      {campaign.market}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {campaign.flaggedDate}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Shield className="w-3 h-3" />
+                      {campaign.assignee}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </Card>
 
       {/* Data Protection + Ad Restrictions Row */}
@@ -565,28 +600,57 @@ export default function Compliance() {
           subtitle="GDPR & global privacy requirements"
           actions={<Lock className="w-4 h-4 text-surface-400" />}
         >
-          <div className="space-y-4">
-            {dataProtectionItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <div
-                  key={item.label}
-                  className="flex items-start gap-3 rounded-lg border border-surface-200 p-3"
-                >
-                  <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                    <Icon className="w-4 h-4 text-green-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <h4 className="text-sm font-semibold text-surface-900">{item.label}</h4>
-                      <StatusBadge status={item.status} />
+          {statusLoading ? (
+            <CardSkeleton lines={5} />
+          ) : statusError ? (
+            <ApiErrorDisplay error={statusError} onRetry={refetchStatus} />
+          ) : dataProtectionItems.length === 0 ? (
+            <EmptyState
+              title="No data protection info"
+              message="Data protection compliance details are not available."
+            />
+          ) : (
+            <div className="space-y-4">
+              {dataProtectionItems.map((item) => {
+                const Icon = dataProtectionIconMap[item.status] || CheckCircle;
+                const iconColor =
+                  item.status === 'compliant'
+                    ? 'text-green-600'
+                    : item.status === 'warning'
+                      ? 'text-yellow-600'
+                      : item.status === 'violation'
+                        ? 'text-red-600'
+                        : 'text-blue-600';
+                const iconBg =
+                  item.status === 'compliant'
+                    ? 'bg-green-50'
+                    : item.status === 'warning'
+                      ? 'bg-yellow-50'
+                      : item.status === 'violation'
+                        ? 'bg-red-50'
+                        : 'bg-blue-50';
+                return (
+                  <div
+                    key={item.label}
+                    className="flex items-start gap-3 rounded-lg border border-surface-200 p-3"
+                  >
+                    <div
+                      className={`w-8 h-8 ${iconBg} rounded-lg flex items-center justify-center shrink-0 mt-0.5`}
+                    >
+                      <Icon className={`w-4 h-4 ${iconColor}`} />
                     </div>
-                    <p className="text-xs text-surface-500">{item.description}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <h4 className="text-sm font-semibold text-surface-900">{item.label}</h4>
+                        <StatusBadge status={item.status} />
+                      </div>
+                      <p className="text-xs text-surface-500">{item.description}</p>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </Card>
 
         {/* Ad Restriction Enforcement */}
@@ -595,47 +659,58 @@ export default function Compliance() {
           subtitle="Restricted categories by country"
           actions={<XCircle className="w-4 h-4 text-surface-400" />}
         >
-          <div className="space-y-3">
-            {adRestrictions.map((restriction) => (
-              <div
-                key={restriction.country}
-                className="rounded-lg border border-surface-200 p-3"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-surface-400" />
-                    <span className="text-sm font-semibold text-surface-900">
-                      {restriction.country}
+          {statusLoading ? (
+            <CardSkeleton lines={5} />
+          ) : statusError ? (
+            <ApiErrorDisplay error={statusError} onRetry={refetchStatus} />
+          ) : adRestrictions.length === 0 ? (
+            <EmptyState
+              title="No restrictions data"
+              message="Ad restriction enforcement data is not available."
+            />
+          ) : (
+            <div className="space-y-3">
+              {adRestrictions.map((restriction) => (
+                <div
+                  key={restriction.country}
+                  className="rounded-lg border border-surface-200 p-3"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-surface-400" />
+                      <span className="text-sm font-semibold text-surface-900">
+                        {restriction.country}
+                      </span>
+                    </div>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                        restriction.enforced
+                          ? 'bg-green-50 text-green-700'
+                          : 'bg-red-50 text-red-700'
+                      }`}
+                    >
+                      {restriction.enforced ? (
+                        <CheckCircle className="w-3 h-3" />
+                      ) : (
+                        <XCircle className="w-3 h-3" />
+                      )}
+                      {restriction.enforced ? 'Enforced' : 'Not Enforced'}
                     </span>
                   </div>
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                      restriction.enforced
-                        ? 'bg-green-50 text-green-700'
-                        : 'bg-red-50 text-red-700'
-                    }`}
-                  >
-                    {restriction.enforced ? (
-                      <CheckCircle className="w-3 h-3" />
-                    ) : (
-                      <XCircle className="w-3 h-3" />
-                    )}
-                    {restriction.enforced ? 'Enforced' : 'Not Enforced'}
-                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {restriction.categories.map((cat) => (
+                      <span
+                        key={cat}
+                        className="px-2 py-0.5 rounded bg-red-50 text-red-600 text-xs font-medium"
+                      >
+                        {cat}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {restriction.categories.map((cat) => (
-                    <span
-                      key={cat}
-                      className="px-2 py-0.5 rounded bg-red-50 text-red-600 text-xs font-medium"
-                    >
-                      {cat}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </Card>
       </div>
 
@@ -645,44 +720,69 @@ export default function Compliance() {
         subtitle="Latest automated compliance checks"
         actions={<FileText className="w-4 h-4 text-surface-400" />}
       >
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-surface-200">
-                <th className="text-left py-3 px-3 font-semibold text-surface-600">Timestamp</th>
-                <th className="text-left py-3 px-3 font-semibold text-surface-600">Action</th>
-                <th className="text-left py-3 px-3 font-semibold text-surface-600">Agent</th>
-                <th className="text-left py-3 px-3 font-semibold text-surface-600">Result</th>
-              </tr>
-            </thead>
-            <tbody>
-              {auditLog.map((entry) => (
-                <tr
-                  key={entry.id}
-                  className="border-b border-surface-100 hover:bg-surface-50 transition-colors"
-                >
-                  <td className="py-3 px-3 text-surface-500 whitespace-nowrap">
-                    <span className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" />
-                      {entry.timestamp}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 font-medium text-surface-900">{entry.action}</td>
-                  <td className="py-3 px-3 text-surface-600">{entry.agent}</td>
-                  <td className="py-3 px-3">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        auditResultStyles[entry.result] || 'bg-surface-100 text-surface-600'
-                      }`}
-                    >
-                      {entry.result}
-                    </span>
-                  </td>
+        {statusLoading ? (
+          <TableSkeleton rows={5} columns={4} />
+        ) : statusError ? (
+          <ApiErrorDisplay error={statusError} onRetry={refetchStatus} />
+        ) : auditLog.length === 0 ? (
+          <EmptyState
+            title="No audit entries"
+            message="No compliance audit logs have been recorded yet. Run an audit to generate entries."
+            action={
+              <button
+                onClick={handleRunAudit}
+                disabled={auditRunning}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {auditRunning ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Play className="w-4 h-4" />
+                )}
+                {auditRunning ? 'Running...' : 'Run Audit'}
+              </button>
+            }
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-surface-200">
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Timestamp</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Action</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Agent</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Result</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {auditLog.map((entry) => (
+                  <tr
+                    key={entry.id}
+                    className="border-b border-surface-100 hover:bg-surface-50 transition-colors"
+                  >
+                    <td className="py-3 px-3 text-surface-500 whitespace-nowrap">
+                      <span className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5" />
+                        {entry.timestamp}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 font-medium text-surface-900">{entry.action}</td>
+                    <td className="py-3 px-3 text-surface-600">{entry.agent}</td>
+                    <td className="py-3 px-3">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          auditResultStyles[entry.result] || 'bg-surface-100 text-surface-600'
+                        }`}
+                      >
+                        {entry.result}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
     </div>
   );
