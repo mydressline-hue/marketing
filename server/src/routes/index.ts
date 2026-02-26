@@ -18,6 +18,11 @@ import queueRoutes from './queue.routes';
 import ratelimitRoutes from './ratelimit.routes';
 import notificationsRoutes from './notifications.routes';
 import apikeysRoutes from './apikeys.routes';
+import finalOutputsRoutes from './final-outputs.routes';
+import finalOutputsStrategyRoutes from './final-outputs-strategy.routes';
+import finalOutputsConfidenceRoutes from './final-outputs-confidence.routes';
+import finalOutputsBudgetRoutes from './final-outputs-budget.routes';
+import finalOutputsWeaknessRoutes from './final-outputs-weakness.routes';
 
 const router = Router();
 
@@ -40,6 +45,11 @@ router.use('/queue', queueRoutes);
 router.use('/ratelimits', ratelimitRoutes);
 router.use('/notifications', notificationsRoutes);
 router.use('/apikeys', apikeysRoutes);
+router.use('/final-outputs', finalOutputsRoutes);
+router.use('/final-outputs', finalOutputsStrategyRoutes);
+router.use('/final-outputs', finalOutputsConfidenceRoutes);
+router.use('/final-outputs/budget-model', finalOutputsBudgetRoutes);
+router.use('/final-outputs/weakness-report', finalOutputsWeaknessRoutes);
 
 // Health check
 router.get('/health', (_req, res) => {
