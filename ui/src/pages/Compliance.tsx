@@ -358,7 +358,7 @@ export default function Compliance() {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: number) => `${value}%`}
+                      formatter={(value: number | undefined) => `${value ?? 0}%`}
                       contentStyle={{
                         borderRadius: '8px',
                         border: '1px solid #e5e7eb',
@@ -418,7 +418,7 @@ export default function Compliance() {
                     tickFormatter={(v) => `${v}%`}
                   />
                   <Tooltip
-                    formatter={(value: number) => `${value}%`}
+                    formatter={(value: number | undefined) => `${value ?? 0}%`}
                     contentStyle={{
                       borderRadius: '8px',
                       border: '1px solid #e5e7eb',

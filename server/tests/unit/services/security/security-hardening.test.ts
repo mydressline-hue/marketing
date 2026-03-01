@@ -31,6 +31,13 @@ jest.mock('../../../../src/utils/helpers', () => ({
   decrypt: jest.fn(),
 }));
 
+jest.mock('../../../../src/config/env', () => ({
+  env: {
+    ENCRYPTION_KEY: 'test-encryption-key-32-chars-!!',
+    NODE_ENV: 'test',
+  },
+}));
+
 jest.mock('../../../../src/services/audit.service', () => ({
   AuditService: { log: jest.fn().mockResolvedValue(undefined) },
 }));

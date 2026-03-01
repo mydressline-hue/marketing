@@ -30,6 +30,7 @@ import { TableSkeleton, ChartSkeleton } from '../components/shared/LoadingSkelet
 import { ApiErrorDisplay } from '../components/shared/ErrorBoundary';
 import EmptyState from '../components/shared/EmptyState';
 import { useApiQuery, useApiMutation } from '../hooks/useApi';
+import api from '../services/api';
 import type { CampaignData } from '../types';
 
 // ---------------------------------------------------------------------------
@@ -321,12 +322,12 @@ export default function PaidAds() {
   // -----------------------------------------------------------------------
 
   const { mutate: createCampaign, loading: createLoading } =
-    useApiMutation<CampaignData>('/api/v1/campaigns', 'POST');
+    useApiMutation<CampaignData>('/v1/campaigns', { method: 'POST' });
 
   const { mutate: updateCampaign, loading: updateLoading } =
     useApiMutation<CampaignData>(
-      editingCampaign ? `/api/v1/campaigns/${editingCampaign.id}` : '/api/v1/campaigns',
-      'PUT',
+      editingCampaign ? `/v1/campaigns/${editingCampaign.id}` : '/v1/campaigns',
+      { method: 'PUT' },
     );
 
   // -----------------------------------------------------------------------
@@ -359,11 +360,7 @@ export default function PaidAds() {
     async (campaign: CampaignData) => {
       const newStatus = campaign.status === 'active' ? 'paused' : 'active';
       try {
-        await fetch(`/api/v1/campaigns/${campaign.id}/status`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus }),
-        });
+        await api.put(`/v1/campaigns/${campaign.id}/status`, { status: newStatus });
         refetchCampaigns();
       } catch {
         // Silently fail - error will be visible if refetch shows stale data

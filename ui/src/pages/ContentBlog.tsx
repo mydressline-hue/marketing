@@ -141,7 +141,7 @@ export default function ContentBlog() {
     loading: contentLoading,
     error: contentError,
     refetch: refetchContent,
-  } = useApiQuery<ContentListResponse>('/api/v1/content');
+  } = useApiQuery<ContentListResponse>('/v1/content');
 
   const {
     data: statsData,
@@ -154,12 +154,12 @@ export default function ContentBlog() {
   const {
     mutate: createContent,
     loading: createLoading,
-  } = useApiMutation<ContentEntry>('/api/v1/content', 'POST');
+  } = useApiMutation<ContentEntry>('/v1/content', { method: 'POST' });
 
   const {
     mutate: generateContent,
     loading: generateLoading,
-  } = useApiMutation<ContentEntry>('/api/v1/agents/5/execute', 'POST');
+  } = useApiMutation<ContentEntry>('/v1/agents/content-blog/run', { method: 'POST' });
 
   // --- Derived data ---
   const contentItems = contentData?.items ?? [];
@@ -390,7 +390,7 @@ export default function ContentBlog() {
                       borderRadius: '8px',
                       fontSize: '13px',
                     }}
-                    formatter={(value: number) => [value.toLocaleString(), 'Sessions']}
+                    formatter={(value: number | undefined) => [(value ?? 0).toLocaleString(), 'Sessions']}
                   />
                   <Line
                     type="monotone"
@@ -446,7 +446,7 @@ export default function ContentBlog() {
                       borderRadius: '8px',
                       fontSize: '13px',
                     }}
-                    formatter={(value: number) => [`#${value}`, 'Position']}
+                    formatter={(value: number | undefined) => [`#${value ?? 0}`, 'Position']}
                   />
                   <Bar dataKey="position" fill="#10b981" radius={[0, 4, 4, 0]} />
                 </BarChart>

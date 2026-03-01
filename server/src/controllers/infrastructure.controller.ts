@@ -165,7 +165,7 @@ export const getMonitoringDashboard = asyncHandler(async (_req: Request, res: Re
  * Get data quality report with scores and issues.
  */
 export const getDataQualityReport = asyncHandler(async (_req: Request, res: Response) => {
-  const result = await DataQualityService.generateDataQualityReport();
+  const result = await DataQualityService.getReport();
 
   res.json({
     success: true,
@@ -195,7 +195,7 @@ export const validateTableSchema = asyncHandler(async (req: Request, res: Respon
 export const getDataLineage = asyncHandler(async (req: Request, res: Response) => {
   const { table } = req.params;
 
-  const result = await DataQualityService.getDataLineage(table);
+  const result = await DataQualityService.getLineage(table);
 
   res.json({
     success: true,
@@ -208,7 +208,7 @@ export const getDataLineage = asyncHandler(async (req: Request, res: Response) =
  * Detect PII fields across all tables.
  */
 export const detectPii = asyncHandler(async (_req: Request, res: Response) => {
-  const result = await DataQualityService.detectPIIFields();
+  const result = await DataQualityService.detectPii();
 
   res.json({
     success: true,
@@ -223,7 +223,7 @@ export const detectPii = asyncHandler(async (_req: Request, res: Response) => {
 export const anonymizePii = asyncHandler(async (req: Request, res: Response) => {
   const { table, columns } = req.body;
 
-  const result = await DataQualityService.anonymizePII(table, columns);
+  const result = await DataQualityService.anonymizePii(table, columns);
 
   res.json({
     success: true,
@@ -238,7 +238,7 @@ export const anonymizePii = asyncHandler(async (req: Request, res: Response) => 
 export const getUserConsent = asyncHandler(async (req: Request, res: Response) => {
   const { userId } = req.params;
 
-  const result = await DataQualityService.getConsentStatus(userId);
+  const result = await DataQualityService.getConsent(userId);
 
   res.json({
     success: true,
@@ -496,7 +496,7 @@ export const enforceLogRetention = asyncHandler(async (req: Request, res: Respon
  * Public health check -- no authentication required.
  */
 export const healthCheck = asyncHandler(async (_req: Request, res: Response) => {
-  const result = await ObservabilityService.healthCheck();
+  const result = await FailoverService.healthCheck();
 
   res.json({
     success: true,
