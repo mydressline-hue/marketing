@@ -129,26 +129,25 @@ export default function CountryStrategy() {
   }, [countries, selectedCountryId]);
 
   // Fetch selected country detail + strategy
-  const countryEndpoint = selectedCountryId
-    ? `/v1/countries/${selectedCountryId}`
-    : null;
-  const strategyEndpoint = selectedCountryId
-    ? `/v1/countries/${selectedCountryId}/strategy`
-    : null;
+  const countryEndpoint = `/v1/countries/${selectedCountryId ?? ''}`;
 
   const {
     data: countryDetailRaw,
     loading: detailLoading,
     error: detailError,
     refetch: refetchDetail,
-  } = useApiQuery<CountryDetailResponse | CountryDetail>(countryEndpoint);
+  } = useApiQuery<CountryDetailResponse | CountryDetail>(countryEndpoint, {
+    enabled: !!selectedCountryId,
+  });
 
   const {
     data: strategyRaw,
     loading: strategyLoading,
     error: strategyError,
     refetch: refetchStrategy,
-  } = useApiQuery<CountryStrategyResponse | CountryDetail>(strategyEndpoint);
+  } = useApiQuery<CountryStrategyResponse | CountryDetail>(countryEndpoint, {
+    enabled: !!selectedCountryId,
+  });
 
   // Normalize detail response
   const countryDetail: CountryDetail | null = countryDetailRaw
@@ -435,7 +434,7 @@ export default function CountryStrategy() {
                         width={60}
                       />
                       <Tooltip
-                        formatter={(value: number) => [`${value}%`, 'Allocation']}
+                        formatter={(value: number | undefined) => [`${value ?? 0}%`, 'Allocation']}
                         contentStyle={{
                           borderRadius: '8px',
                           border: '1px solid #e2e8f0',
@@ -447,7 +446,7 @@ export default function CountryStrategy() {
                         radius={[0, 6, 6, 0]}
                         barSize={28}
                         fill="#6366f1"
-                        label={{ position: 'right', fill: '#475569', fontSize: 12, formatter: (v: number) => `${v}%` }}
+                        label={{ position: 'right', fill: '#475569', fontSize: 12, formatter: (v: number | string | undefined) => `${v ?? 0}%` }}
                       />
                     </BarChart>
                   </ResponsiveContainer>

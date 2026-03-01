@@ -65,7 +65,7 @@ export default function Orchestrator() {
     loading: agentsLoading,
     error: agentsError,
     refetch: refetchAgents,
-  } = useApiQuery<AgentDetail[]>('/v1/agents/status');
+  } = useApiQuery<AgentDetail[]>('/v1/agents');
 
   const {
     data: decisions,
@@ -79,13 +79,13 @@ export default function Orchestrator() {
     loading: crossChallengeLoading,
     error: crossChallengeError,
     refetch: refetchCrossChallenge,
-  } = useApiQuery<CrossChallengeResult>('/v1/agents/orchestrator/cross-challenge');
+  } = useApiQuery<CrossChallengeResult>('/v1/agents/challenge/run');
 
   // Mutation for running orchestration cycle
   const {
     mutate: executeOrchestration,
     loading: orchestrating,
-  } = useApiMutation<OrchestrationResult>('/v1/agents/orchestrator/execute', 'POST');
+  } = useApiMutation<OrchestrationResult>('/v1/agents/orchestrate', { method: 'POST' });
 
   // WebSocket for live agent updates
   const { connected, subscribe } = useWebSocket();

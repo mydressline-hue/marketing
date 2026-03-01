@@ -10,6 +10,7 @@ import { KPISkeleton, CardSkeleton } from '../components/shared/LoadingSkeleton'
 import { ApiErrorDisplay } from '../components/shared/ErrorBoundary';
 import EmptyState from '../components/shared/EmptyState';
 import { useApiQuery, useApiMutation } from '../hooks/useApi';
+import api from '../services/api';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useApp } from '../context/AppContext';
 
@@ -79,8 +80,8 @@ export default function KillSwitch() {
   } = useApiQuery<HistoryEvent[]>('/v1/killswitch/history');
 
   // Mutations
-  const { mutate: activateKillSwitch, loading: activating } = useApiMutation<ActivateResult>('/v1/killswitch/activate', 'POST');
-  const { mutate: deactivateKillSwitch, loading: deactivating } = useApiMutation<ActivateResult>('/v1/killswitch/deactivate', 'POST');
+  const { mutate: activateKillSwitch, loading: activating } = useApiMutation<ActivateResult>('/v1/killswitch/activate', { method: 'POST' });
+  const { mutate: deactivateKillSwitch, loading: deactivating } = useApiMutation<ActivateResult>('/v1/killswitch/deactivate', { method: 'POST' });
 
   // WebSocket for instant state propagation
   const { connected, subscribe } = useWebSocket();
@@ -166,11 +167,7 @@ export default function KillSwitch() {
     // Use a dynamic endpoint for updating trigger
     const endpoint = `/v1/killswitch/triggers/${trigger.id}`;
     try {
-      await fetch(`/api${endpoint}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...trigger, enabled: !trigger.enabled }),
-      });
+      await api.put(endpoint, { ...trigger, enabled: !trigger.enabled });
       refetchTriggers();
     } catch {
       // Error handled by refetch

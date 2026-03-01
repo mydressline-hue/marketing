@@ -14,7 +14,7 @@ import PageHeader from '../components/shared/PageHeader';
 import Card from '../components/shared/Card';
 import KPICard from '../components/shared/KPICard';
 import StatusBadge from '../components/shared/StatusBadge';
-import { CardSkeleton, GallerySkeleton, ListSkeleton } from '../components/shared/LoadingSkeleton';
+import { CardSkeleton, KPIRowSkeleton, GallerySkeleton, ListSkeleton } from '../components/shared/LoadingSkeleton';
 import { ApiErrorDisplay } from '../components/shared/ErrorBoundary';
 import EmptyState from '../components/shared/EmptyState';
 import { useApiQuery, useApiMutation } from '../hooks/useApi';
@@ -111,18 +111,18 @@ export default function CreativeStudio() {
     loading: creativesLoading,
     error: creativesError,
     refetch: refetchCreatives,
-  } = useApiQuery<CreativesApiResponse>('/api/v1/creatives');
+  } = useApiQuery<CreativesApiResponse>('/v1/creatives');
 
   const {
     mutate: generateCreative,
     loading: generating,
     error: generateError,
-  } = useApiMutation<AgentExecuteResponse>('/api/v1/agents/6/execute');
+  } = useApiMutation<AgentExecuteResponse>('/v1/agents/creative-studio/run', { method: 'POST' });
 
   const {
     mutate: createCreative,
     loading: creating,
-  } = useApiMutation<CreativeItem>('/api/v1/creatives');
+  } = useApiMutation<CreativeItem>('/v1/creatives', { method: 'POST' });
 
   // --- Derived Data ---
   const kpis = creativesData?.kpis ?? [];
@@ -241,7 +241,7 @@ export default function CreativeStudio() {
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {creativesLoading ? (
-          <CardSkeleton count={4} />
+          <KPIRowSkeleton count={4} />
         ) : (
           kpis.map((kpi) => (
             <KPICard key={kpi.label} {...kpi} />

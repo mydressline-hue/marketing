@@ -123,6 +123,10 @@ export interface ApiErrorDisplayProps {
   className?: string;
   /** Render in a more compact layout with less padding. */
   compact?: boolean;
+  /** Custom title to display instead of the auto-detected one. */
+  title?: string;
+  /** Custom message to display instead of the error message. */
+  message?: string;
 }
 
 /**
@@ -140,7 +144,9 @@ export function ApiErrorDisplay({
   onRetry,
   onDismiss,
   className = '',
-  compact = false,
+  compact: _compact = false,
+  title: titleOverride,
+  message: messageOverride,
 }: ApiErrorDisplayProps) {
   if (!error) return null;
 
@@ -149,13 +155,15 @@ export function ApiErrorDisplay({
   const statusMatch = error.message.match(/API Error:\s*(\d{3})/);
   const status = statusMatch ? parseInt(statusMatch[1], 10) : null;
 
-  let title = 'Request failed';
-  if (status) {
+  let title = titleOverride ?? 'Request failed';
+  if (!titleOverride && status) {
     if (status === 401 || status === 403) title = 'Access denied';
     else if (status === 404) title = 'Not found';
     else if (status === 429) title = 'Too many requests';
     else if (status >= 500) title = 'Server error';
   }
+
+  const displayMessage = messageOverride ?? error.message;
 
   return (
     <div
@@ -166,7 +174,7 @@ export function ApiErrorDisplay({
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-danger-800">{title}</p>
         <p className="text-sm text-danger-700 mt-0.5 truncate">
-          {error.message}
+          {displayMessage}
         </p>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">

@@ -159,20 +159,20 @@ export default function BrandConsistency() {
     loading: statusLoading,
     error: statusError,
     refetch: refetchStatus,
-  } = useApiQuery<BrandStatusResponse>('/api/v1/agents/brand-consistency/status');
+  } = useApiQuery<BrandStatusResponse>('/v1/agents/brand-consistency/status');
 
   const {
     data: checksData,
     loading: checksLoading,
     error: checksError,
     refetch: refetchChecks,
-  } = useApiQuery<BrandChecksResponse>('/api/v1/agents/brand-consistency/checks');
+  } = useApiQuery<BrandChecksResponse>('/v1/agents/brand-consistency/checks');
 
   // Agent execution mutation
   const {
     mutate: runAgent,
     loading: agentRunning,
-  } = useApiMutation<AgentExecuteResponse>('/api/v1/agents/16/execute');
+  } = useApiMutation<AgentExecuteResponse>('/v1/agents/brand-consistency/run', { method: 'POST' });
 
   const handleRunAgent = async () => {
     const result = await runAgent();

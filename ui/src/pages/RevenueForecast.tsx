@@ -183,11 +183,11 @@ export default function RevenueForecast() {
   const [activeScenario, setActiveScenario] = useState('base');
 
   // ---- API queries ---------------------------------------------------------
-  const forecast = useApiQuery<ForecastData>('/api/v1/advanced-ai/simulation/forecast');
-  const projections = useApiQuery<ProjectionsData>('/api/v1/advanced-ai/commander/projections');
+  const forecast = useApiQuery<ForecastData>('/v1/advanced-ai/simulation/forecast');
+  const projections = useApiQuery<ProjectionsData>('/v1/advanced-ai/commander/projections');
 
   // ---- Mutations -----------------------------------------------------------
-  const forecastAgent = useApiMutation<ForecastAgentResult>('/api/v1/agents/19/execute');
+  const forecastAgent = useApiMutation<ForecastAgentResult>('/v1/agents/revenue-forecast/run', { method: 'POST' });
 
   // ---- Derived data --------------------------------------------------------
   const data = forecast.data;

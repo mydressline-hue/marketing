@@ -149,10 +149,10 @@ export default function OrganicSocial() {
 
   // ---- Mutations -----------------------------------------------------------
   const { mutate: createPost, loading: createLoading } =
-    useApiMutation<SocialPost>('/v1/content', 'POST');
+    useApiMutation<SocialPost>('/v1/content', { method: 'POST' });
 
   const { mutate: runAgent, loading: agentLoading } =
-    useApiMutation<AgentExecuteResponse>('/v1/agents/4/execute', 'POST');
+    useApiMutation<AgentExecuteResponse>('/v1/agents/organic-social/run', { method: 'POST' });
 
   // ---- Derived data --------------------------------------------------------
   const posts = socialData?.posts ?? [];

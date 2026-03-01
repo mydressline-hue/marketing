@@ -150,20 +150,20 @@ export default function DataEngineering() {
     loading: monitoringLoading,
     error: monitoringError,
     refetch: refetchMonitoring,
-  } = useApiQuery<MonitoringResponse>('/api/v1/infrastructure/monitoring');
+  } = useApiQuery<MonitoringResponse>('/v1/infrastructure/monitoring');
 
   const {
     data: qualityData,
     loading: qualityLoading,
     error: qualityError,
     refetch: refetchQuality,
-  } = useApiQuery<DataQualityResponse>('/api/v1/infrastructure/dataquality');
+  } = useApiQuery<DataQualityResponse>('/v1/infrastructure/data-quality');
 
   // Agent execution mutation
   const {
     mutate: runAgent,
     loading: agentRunning,
-  } = useApiMutation<AgentExecuteResponse>('/api/v1/agents/17/execute');
+  } = useApiMutation<AgentExecuteResponse>('/v1/agents/data-engineering/run', { method: 'POST' });
 
   const handleRunAgent = async () => {
     const result = await runAgent();
@@ -389,7 +389,7 @@ export default function DataEngineering() {
                     stroke="#9ca3af"
                   />
                   <Tooltip
-                    formatter={(value: number) => [formatEvents(value), 'Events']}
+                    formatter={(value: number | undefined) => [formatEvents(value ?? 0), 'Events']}
                     contentStyle={{
                       borderRadius: '8px',
                       border: '1px solid #e5e7eb',
@@ -435,7 +435,7 @@ export default function DataEngineering() {
                     domain={[0, 0.04]}
                   />
                   <Tooltip
-                    formatter={(value: number) => [`${value.toFixed(3)}%`, 'Error Rate']}
+                    formatter={(value: number | undefined) => [`${(value ?? 0).toFixed(3)}%`, 'Error Rate']}
                     contentStyle={{
                       borderRadius: '8px',
                       border: '1px solid #e5e7eb',

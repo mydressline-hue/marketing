@@ -198,7 +198,7 @@ export default function Analytics() {
   });
 
   // Agent mutation for on-demand analytics execution
-  const agentMutation = useApiMutation<AgentExecutionResult>('/v1/agents/7/execute');
+  const agentMutation = useApiMutation<AgentExecutionResult>('/v1/agents/analytics/run', { method: 'POST' });
 
   // -----------------------------------------------------------------------
   // Derived data with safe fallbacks
@@ -499,9 +499,9 @@ export default function Analytics() {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: number | undefined, name: string) => [
+                      formatter={(value: number | undefined, name?: string) => [
                         `${value ?? 0}%`,
-                        name,
+                        name ?? '',
                       ]}
                       contentStyle={{
                         borderRadius: '8px',
@@ -704,9 +704,9 @@ export default function Analytics() {
                       width={110}
                     />
                     <Tooltip
-                      formatter={(value: number | undefined, name: string) => [
+                      formatter={(value: number | undefined, name?: string) => [
                         formatCurrency(value ?? 0),
-                        name,
+                        name ?? '',
                       ]}
                       contentStyle={{
                         borderRadius: '8px',
@@ -783,12 +783,13 @@ export default function Analytics() {
                         border: '1px solid #e5e7eb',
                         boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
                       }}
-                      formatter={(value: number | undefined, name: string) => {
+                      formatter={(value: number | undefined, name?: string) => {
                         const v = value ?? 0;
-                        if (name === 'LTV/CAC Ratio') return [`${v}x`, name];
-                        if (name === 'LTV') return [`$${v}`, name];
-                        if (name === 'CAC') return [`$${v}`, name];
-                        return [v, name];
+                        const n = name ?? '';
+                        if (n === 'LTV/CAC Ratio') return [`${v}x`, n];
+                        if (n === 'LTV') return [`$${v}`, n];
+                        if (n === 'CAC') return [`$${v}`, n];
+                        return [v, n];
                       }}
                     />
                     <Legend

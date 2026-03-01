@@ -189,13 +189,13 @@ export default function Security() {
   const [selectedTab, setSelectedTab] = useState<'overview' | 'keys' | 'access' | 'audit'>('overview');
 
   // ---- API queries ---------------------------------------------------------
-  const security = useApiQuery<SecurityData>('/api/v1/infrastructure/security');
-  const apiKeysQuery = useApiQuery<ApiKeysData>('/api/v1/apikeys');
-  const auditQuery = useApiQuery<AuditData>('/api/v1/audit');
+  const security = useApiQuery<SecurityData>('/v1/infrastructure/security');
+  const apiKeysQuery = useApiQuery<ApiKeysData>('/v1/settings/api-keys');
+  const auditQuery = useApiQuery<AuditData>('/v1/audit');
 
   // ---- Mutations -----------------------------------------------------------
-  const scanAgent = useApiMutation<SecurityAgentResult>('/api/v1/agents/18/execute');
-  const rotateKey = useApiMutation<{ success: boolean }>('/api/v1/apikeys', 'PUT');
+  const scanAgent = useApiMutation<SecurityAgentResult>('/v1/agents/security/run', { method: 'POST' });
+  const rotateKey = useApiMutation<{ success: boolean }>('/v1/settings/api-keys', { method: 'PUT' });
 
   // ---- Derived data --------------------------------------------------------
   const secData = security.data;

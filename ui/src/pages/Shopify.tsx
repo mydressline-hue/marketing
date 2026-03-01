@@ -142,28 +142,28 @@ export default function Shopify() {
     loading: productsLoading,
     error: productsError,
     refetch: refetchProducts,
-  } = useApiQuery<Product[]>('/api/v1/products');
+  } = useApiQuery<Product[]>('/v1/products');
 
   const {
     data: syncStatus,
     loading: syncLoading,
     error: syncError,
     refetch: refetchSync,
-  } = useApiQuery<SyncStatus>('/api/v1/integrations/shopify/products');
+  } = useApiQuery<SyncStatus>('/v1/integrations/shopify/products');
 
   const {
     data: webhooks,
     loading: webhooksLoading,
     error: webhooksError,
     refetch: refetchWebhooks,
-  } = useApiQuery<Webhook[]>('/api/v1/integrations/shopify/webhooks');
+  } = useApiQuery<Webhook[]>('/v1/integrations/shopify/webhooks');
 
   // ---- API mutations ----
   const { mutate: triggerSync, loading: isSyncing } =
-    useApiMutation<SyncResponse>('/api/v1/integrations/shopify/sync');
+    useApiMutation<SyncResponse>('/v1/integrations/shopify/sync', { method: 'POST' });
 
   const { mutate: runAgent, loading: agentRunning } =
-    useApiMutation<unknown>('/api/v1/agents/11/execute');
+    useApiMutation<unknown>('/v1/agents/shopify/run', { method: 'POST' });
 
   // ---- Handlers ----
   const handleManualSync = useCallback(async () => {

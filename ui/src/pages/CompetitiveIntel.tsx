@@ -207,7 +207,7 @@ export default function CompetitiveIntel() {
   const {
     mutate: runAgent,
     loading: agentRunning,
-  } = useApiMutation<{ status: string }>('/v1/agents/14/execute');
+  } = useApiMutation<{ status: string }>('/v1/agents/competitive-intel/run', { method: 'POST' });
 
   // ------ Derived data ------
   const competitors = competitorData?.competitors ?? [];

@@ -159,7 +159,7 @@ export default function ABTesting() {
     loading: testsLoading,
     error: testsError,
     refetch: refetchTests,
-  } = useApiQuery<ABTestListResponse>('/api/v1/agents/ab-testing/tests');
+  } = useApiQuery<ABTestListResponse>('/v1/agents/ab-testing/tests');
 
   const tests = testsResponse?.tests ?? [];
   const summary = testsResponse?.summary;
@@ -179,7 +179,7 @@ export default function ABTesting() {
     error: detailError,
     refetch: refetchDetail,
   } = useApiQuery<ABTestDetailResponse>(
-    `/api/v1/agents/ab-testing/tests/${effectiveSelectedId ?? ''}`,
+    `/v1/agents/ab-testing/tests/${effectiveSelectedId ?? ''}`,
     { enabled: !!effectiveSelectedId },
   );
 
@@ -191,7 +191,7 @@ export default function ABTesting() {
     loading: analysisLoading,
     error: analysisError,
     refetch: refetchAnalysis,
-  } = useApiQuery<AIAnalysisResponse>('/api/v1/agents/9/execute');
+  } = useApiQuery<AIAnalysisResponse>('/v1/agents/ab-testing/decisions');
 
   const aiRecommendations = analysisResponse?.recommendations ?? [];
 
@@ -202,7 +202,7 @@ export default function ABTesting() {
     mutate: createTest,
     loading: createLoading,
     error: createError,
-  } = useApiMutation<CreateTestResponse>('/api/v1/agents/ab-testing/tests');
+  } = useApiMutation<CreateTestResponse>('/v1/agents/ab-testing/tests', { method: 'POST' });
 
   // -------------------------------------------------------------------------
   // Filtering
@@ -675,9 +675,9 @@ export default function ABTesting() {
                     tickFormatter={(val) => `${val}%`}
                   />
                   <Tooltip
-                    formatter={(value: number | undefined, name: string) => {
+                    formatter={(value: number | undefined, name?: string) => {
                       if (name === 'conversionRate') return [`${value ?? 0}%`, 'Conversion Rate'];
-                      return [(value ?? 0).toLocaleString(), name];
+                      return [(value ?? 0).toLocaleString(), name ?? ''];
                     }}
                     contentStyle={{
                       borderRadius: '8px',

@@ -1092,7 +1092,7 @@ export class DataQualityService {
   }
 
   /** Alias for anonymizePII. */
-  static async anonymizePii(table: string, columns: string[]) {
+  static async anonymizePii(table: string, columns: Array<{ column: string; pii_type: PIIField['pii_type'] }>) {
     return DataQualityService.anonymizePII(table, columns);
   }
 

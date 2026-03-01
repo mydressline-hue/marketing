@@ -192,16 +192,16 @@ export default function FraudDetection() {
   const {
     mutate: runAgent,
     loading: agentRunning,
-  } = useApiMutation<{ status: string }>('/v1/agents/15/execute');
+  } = useApiMutation<{ status: string }>('/v1/agents/fraud-detection/run', { method: 'POST' });
 
   const {
     mutate: resolveAlert,
     loading: resolving,
-  } = useApiMutation<{ status: string }>('/v1/alerts?type=fraud', 'PUT');
+  } = useApiMutation<{ status: string }>('/v1/alerts?type=fraud', { method: 'PUT' });
 
   const {
     mutate: toggleRuleApi,
-  } = useApiMutation<{ status: string }>('/v1/agents/fraud-detection/rules', 'PUT');
+  } = useApiMutation<{ status: string }>('/v1/agents/fraud-detection/rules', { method: 'PUT' });
 
   // ------ Derived data ------
   const fraudAlerts = alertsData?.alerts ?? [];

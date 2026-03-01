@@ -156,26 +156,26 @@ export default function Compliance() {
     loading: rulesLoading,
     error: rulesError,
     refetch: refetchRules,
-  } = useApiQuery<ComplianceRule[]>('/api/v1/agents/compliance/rules');
+  } = useApiQuery<ComplianceRule[]>('/v1/agents/compliance/rules');
 
   const {
     data: status,
     loading: statusLoading,
     error: statusError,
     refetch: refetchStatus,
-  } = useApiQuery<ComplianceStatus>('/api/v1/agents/compliance/status');
+  } = useApiQuery<ComplianceStatus>('/v1/agents/compliance/status');
 
   const {
     data: _countries,
     loading: countriesLoading,
     error: countriesError,
     refetch: refetchCountries,
-  } = useApiQuery<CountryData[]>('/api/v1/countries');
+  } = useApiQuery<CountryData[]>('/v1/countries');
 
   const {
     mutate: runAudit,
     loading: auditRunning,
-  } = useApiMutation<AgentExecuteResult>('/api/v1/agents/13/execute');
+  } = useApiMutation<AgentExecuteResult>('/v1/agents/compliance/run', { method: 'POST' });
 
   // ---- Derived state ----
   const categories = ['All', 'Data Protection', 'Ad Standards', 'Consumer Rights', 'Tax'];

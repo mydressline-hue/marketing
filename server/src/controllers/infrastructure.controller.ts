@@ -509,7 +509,7 @@ export const healthCheck = asyncHandler(async (_req: Request, res: Response) => 
  * Detailed health check with subsystem statuses (admin only).
  */
 export const detailedHealthCheck = asyncHandler(async (_req: Request, res: Response) => {
-  const result = await FailoverService.getRecoveryStatus();
+  const result = await FailoverService.detailedHealthCheck();
 
   res.json({
     success: true,

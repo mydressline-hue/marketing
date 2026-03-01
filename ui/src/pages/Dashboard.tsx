@@ -1,10 +1,7 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Globe,
   TrendingUp,
-  DollarSign,
-  Users,
-  Activity,
   BarChart3,
   Zap,
   AlertTriangle,
@@ -19,9 +16,6 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
 } from 'recharts';
 import KPICard from '../components/shared/KPICard';
 import Card from '../components/shared/Card';
@@ -71,7 +65,6 @@ interface AlertItem {
 // ---------------------------------------------------------------------------
 
 const POLL_INTERVAL = 30_000; // 30 seconds
-const CHART_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#3b82f6', '#ec4899'];
 
 // ---------------------------------------------------------------------------
 // Helpers

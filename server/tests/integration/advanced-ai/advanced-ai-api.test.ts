@@ -556,8 +556,9 @@ describe('Advanced AI API Integration Tests', () => {
       it('should validate required params and return 400 for missing body', async () => {
         const token = generateTestToken('admin');
 
+        const { ValidationError } = jest.requireActual('../../../src/utils/errors') as { ValidationError: new (msg: string) => Error };
         mockSimulation.runCampaignSimulation.mockRejectedValueOnce(
-          Object.assign(new Error('Validation failed'), { statusCode: 400, code: 'VALIDATION_ERROR', isOperational: true }),
+          new ValidationError('Validation failed'),
         );
 
         const response = await request(app)

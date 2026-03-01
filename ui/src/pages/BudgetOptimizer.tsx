@@ -182,7 +182,7 @@ export default function BudgetOptimizer() {
   const {
     mutate: runOptimizeAgent,
     loading: optimizing,
-  } = useApiMutation<AgentResult>('/v1/agents/8/execute', { method: 'POST' });
+  } = useApiMutation<AgentResult>('/v1/agents/budget-optimizer/run', { method: 'POST' });
 
   // ---- Apply single recommendation ---------------------------------------
   const {

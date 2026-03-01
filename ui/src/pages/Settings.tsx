@@ -110,8 +110,8 @@ export default function SettingsPage() {
   } = useApiQuery<ApiKeysResponse>('/v1/settings/api-keys');
 
   // Mutations
-  const { mutate: saveSettings, loading: saving } = useApiMutation<SystemSettings>('/v1/settings', 'PUT');
-  const { mutate: saveApiKeys, loading: savingKeys } = useApiMutation<ApiKeysResponse>('/v1/settings/api-keys', 'PUT');
+  const { mutate: saveSettings, loading: saving } = useApiMutation<SystemSettings>('/v1/settings', { method: 'PUT' });
+  const { mutate: saveApiKeys, loading: savingKeys } = useApiMutation<ApiKeysResponse>('/v1/settings/api-keys', { method: 'PUT' });
 
   // Sync fetched settings to local state
   useEffect(() => {

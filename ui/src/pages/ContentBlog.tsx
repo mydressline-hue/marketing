@@ -148,7 +148,7 @@ export default function ContentBlog() {
     loading: statsLoading,
     error: statsError,
     refetch: refetchStats,
-  } = useApiQuery<ContentStatsResponse>('/api/v1/content?stats=true');
+  } = useApiQuery<ContentStatsResponse>('/v1/content?stats=true');
 
   // --- API Mutations ---
   const {

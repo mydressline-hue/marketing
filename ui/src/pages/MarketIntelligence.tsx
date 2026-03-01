@@ -125,13 +125,13 @@ export default function MarketIntelligence() {
     loading: _agentStatusLoading,
     error: _agentStatusError,
     refetch: refetchAgentStatus,
-  } = useApiQuery<AgentStatusResponse>('/v1/agents/status/market-intelligence');
+  } = useApiQuery<AgentStatusResponse>('/v1/agents/market-intelligence');
 
   const {
     mutate: runAnalysis,
     loading: analysisRunning,
     error: analysisError,
-  } = useApiMutation<AgentExecutionResponse>('/v1/agents/1/execute');
+  } = useApiMutation<AgentExecutionResponse>('/v1/agents/market-intelligence/run', { method: 'POST' });
 
   const handleRunAnalysis = async () => {
     try {

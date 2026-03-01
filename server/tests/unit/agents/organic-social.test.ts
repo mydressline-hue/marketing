@@ -205,6 +205,10 @@ describe('OrganicSocialAgent', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockQuery.mockReset();
+    mockCacheGet.mockReset();
+    mockCacheSet.mockReset();
+    mockQuery.mockResolvedValue({ rows: [] });
     mockCacheGet.mockResolvedValue(null);
     mockCacheSet.mockResolvedValue(undefined);
     agent = new OrganicSocialAgent();

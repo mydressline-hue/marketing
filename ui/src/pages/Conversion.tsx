@@ -237,7 +237,7 @@ export default function Conversion() {
     mutate: runConversionAgent,
     loading: agentRunning,
     error: agentError,
-  } = useApiMutation<AgentExecutionResponse>('/v1/agents/10/execute');
+  } = useApiMutation<AgentExecutionResponse>('/v1/agents/conversion/run', { method: 'POST' });
 
   // ---- Agent execution handler ----
 
@@ -485,7 +485,7 @@ export default function Conversion() {
                       border: '1px solid #e5e7eb',
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
                     }}
-                    formatter={(value: number, name: string) => [`${value}%`, name]}
+                    formatter={(value: number | undefined, name?: string) => [`${value ?? 0}%`, name ?? '']}
                   />
                   <Bar dataKey="productView" name="Product View" fill="#818cf8" radius={[2, 2, 0, 0]} />
                   <Bar dataKey="addToCart" name="Add to Cart" fill="#6366f1" radius={[2, 2, 0, 0]} />
@@ -884,7 +884,7 @@ export default function Conversion() {
                         border: '1px solid #e5e7eb',
                         boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
                       }}
-                      formatter={(value: number, name: string) => [`${value}/100`, name]}
+                      formatter={(value: number | undefined, name?: string) => [`${value ?? 0}/100`, name ?? '']}
                     />
                     <Bar dataKey="impact" name="Impact" fill="#6366f1" radius={[0, 4, 4, 0]} />
                     <Bar dataKey="effort" name="Effort" fill="#f59e0b" radius={[0, 4, 4, 0]} />

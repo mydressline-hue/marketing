@@ -518,7 +518,7 @@ export default function Localization() {
   } = useApiQuery<TranslationRecord[]>('/v1/content?type=translation');
 
   const { mutate: runAgent, loading: agentRunning } =
-    useApiMutation<AgentExecutionResult>('/v1/agents/12/execute');
+    useApiMutation<AgentExecutionResult>('/v1/agents/localization/run', { method: 'POST' });
 
   const countries = useMemo(() => countriesRaw || [], [countriesRaw]);
   const translations = useMemo(() => translationsRaw || [], [translationsRaw]);
