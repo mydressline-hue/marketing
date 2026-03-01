@@ -91,7 +91,11 @@ describe('CompetitiveIntelAgent', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockCacheGet.mockResolvedValue(null); // default: cache miss
+    mockQuery.mockReset();
+    mockCacheGet.mockReset();
+    mockCacheSet.mockReset();
+    mockQuery.mockResolvedValue({ rows: [] });
+    mockCacheGet.mockResolvedValue(null);
     mockCacheSet.mockResolvedValue(undefined);
     agent = new CompetitiveIntelAgent();
   });
