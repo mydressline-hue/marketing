@@ -156,20 +156,21 @@ function setupFullProcessMocks() {
   // Mock callAI so it doesn't actually call the Anthropic module
   const agent = new OrganicSocialAgent();
 
-  // Replace callAI with a controlled mock
+  const inferredPattern = JSON.stringify({
+    bestDays: ['Monday', 'Wednesday', 'Friday'],
+    bestHours: [9, 12, 18],
+    topContentTypes: ['reel', 'carousel', 'image'],
+    averageEngagementRate: 0,
+  });
+
+  // Replace callAI with a controlled mock.
+  // analyzeEngagementPatterns is called multiple times (cache returns null each time),
+  // so we need to provide inferEngagementPatterns responses for each invocation.
   (agent as any).callAI = jest.fn()
-    .mockResolvedValueOnce(  // inferEngagementPatterns (called when no historical data)
-      JSON.stringify({
-        bestDays: ['Monday', 'Wednesday', 'Friday'],
-        bestHours: [9, 12, 18],
-        topContentTypes: ['reel', 'carousel', 'image'],
-        averageEngagementRate: 0,
-      }),
-    )
-    .mockResolvedValueOnce(  // inferPostingTimes
-      JSON.stringify(['09:00 Europe/Berlin', '12:00 Europe/Berlin', '18:00 Europe/Berlin']),
-    )
-    .mockResolvedValueOnce(  // generatePostSchedule -> callAI
+    .mockResolvedValueOnce(inferredPattern)   // 1st inferEngagementPatterns (from process -> analyzeEngagementPatterns)
+    .mockResolvedValueOnce(inferredPattern)   // 2nd inferEngagementPatterns (from getOptimalPostingTimes -> analyzeEngagementPatterns)
+    .mockResolvedValueOnce(inferredPattern)   // 3rd inferEngagementPatterns (from generatePostSchedule -> analyzeEngagementPatterns)
+    .mockResolvedValueOnce(                   // generatePostSchedule -> callAI for schedule generation
       JSON.stringify([
         {
           content: 'Summer fashion highlights',
@@ -297,19 +298,27 @@ describe('OrganicSocialAgent', () => {
     it('generates a social plan and flags uncertainty on missing data', async () => {
       const agentFull = setupFullProcessMocks();
 
-      // Mock DB: loadScheduledPosts returns empty
-      mockQuery
-        .mockResolvedValueOnce({ rows: [] })                      // loadScheduledPosts
-        .mockResolvedValueOnce({ rows: [{ count: '0' }] })        // queryEngagementData count
-        .mockResolvedValueOnce({ rows: [COUNTRY_ROW] })           // loadCountryProfile (for inferEngagementPatterns)
-        .mockResolvedValueOnce({ rows: [COUNTRY_ROW] })           // loadCountryProfile (for getOptimalPostingTimes)
-        .mockResolvedValueOnce({ rows: [COUNTRY_ROW] })           // loadCountryProfile (for generatePostSchedule -> analyzeEngagementPatterns -> infer)
-        .mockResolvedValueOnce({ rows: [{ count: '0' }] })        // second analyzeEngagementPatterns count
-        .mockResolvedValueOnce({ rows: [COUNTRY_ROW] })           // loadCountryProfile inside infer
-        .mockResolvedValueOnce({ rows: [COUNTRY_ROW] })           // loadCountryProfile for tone guidance
-        .mockResolvedValueOnce({ rows: [COUNTRY_ROW] })           // loadCountryProfile for hashtag strategy
-        .mockResolvedValueOnce({ rows: [] })                      // persistState (INSERT)
-        .mockResolvedValueOnce({ rows: [] });                     // logDecision (INSERT)
+      // Mock DB: trace the actual call order through process()
+      // 1. loadScheduledPosts
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+      // 2. analyzeEngagementPatterns -> queryEngagementData count
+      mockQuery.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+      // 3. inferEngagementPatterns -> loadCountryProfile
+      mockQuery.mockResolvedValueOnce({ rows: [COUNTRY_ROW] });
+      // 4. getOptimalPostingTimes -> analyzeEngagementPatterns -> queryEngagementData count
+      mockQuery.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+      // 5. 2nd inferEngagementPatterns -> loadCountryProfile
+      mockQuery.mockResolvedValueOnce({ rows: [COUNTRY_ROW] });
+      // 6. getOptimalPostingTimes -> loadCountryProfile
+      mockQuery.mockResolvedValueOnce({ rows: [COUNTRY_ROW] });
+      // 7. generatePostSchedule -> analyzeEngagementPatterns -> queryEngagementData count
+      mockQuery.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+      // 8. 3rd inferEngagementPatterns -> loadCountryProfile
+      mockQuery.mockResolvedValueOnce({ rows: [COUNTRY_ROW] });
+      // 9. process -> loadCountryProfile for tone guidance
+      mockQuery.mockResolvedValueOnce({ rows: [COUNTRY_ROW] });
+      // 10. generateHashtagStrategy -> loadCountryProfile
+      mockQuery.mockResolvedValueOnce({ rows: [COUNTRY_ROW] });
 
       // Stub persistState and logDecision to simplify
       (agentFull as any).persistState = jest.fn().mockResolvedValue(undefined);

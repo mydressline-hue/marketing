@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   AlertTriangle,
   Shield,
@@ -113,7 +113,7 @@ const typeLabels: Record<FraudAlert['type'], string> = {
   budget_misuse: 'Budget Misuse',
 };
 
-const typeIcons: Record<FraudAlert['type'], JSX.Element> = {
+const typeIcons: Record<FraudAlert['type'], React.ReactElement> = {
   click_fraud: <Ban className="w-4 h-4 text-red-500" />,
   bot_traffic: <Activity className="w-4 h-4 text-orange-500" />,
   conversion_anomaly: <AlertTriangle className="w-4 h-4 text-yellow-500" />,
@@ -127,7 +127,7 @@ const severityColors: Record<string, string> = {
   low: 'bg-green-100 text-green-700 border-green-200',
 };
 
-const anomalyStatusConfig: Record<string, { border: string; bg: string; iconBg: string; icon: JSX.Element; badge: string; badgeBg: string; badgeLabel: string }> = {
+const anomalyStatusConfig: Record<string, { border: string; bg: string; iconBg: string; icon: React.ReactElement; badge: string; badgeBg: string; badgeLabel: string }> = {
   normal: {
     border: 'border-green-200',
     bg: 'bg-green-50/50',
