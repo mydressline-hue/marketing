@@ -113,7 +113,7 @@ export class ErrorBoundary extends Component<
 // ApiErrorDisplay – inline error banner for API failures
 // ---------------------------------------------------------------------------
 
-interface ApiErrorDisplayProps {
+export interface ApiErrorDisplayProps {
   error: Error | null;
   /** Called when the user clicks the retry button. */
   onRetry?: () => void;
@@ -121,6 +121,8 @@ interface ApiErrorDisplayProps {
   onDismiss?: () => void;
   /** Additional CSS classes on the outer container. */
   className?: string;
+  /** Render in a more compact layout with less padding. */
+  compact?: boolean;
 }
 
 /**
@@ -138,6 +140,7 @@ export function ApiErrorDisplay({
   onRetry,
   onDismiss,
   className = '',
+  compact = false,
 }: ApiErrorDisplayProps) {
   if (!error) return null;
 

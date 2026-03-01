@@ -69,7 +69,7 @@ export function authenticate(
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw new AuthenticationError('Missing or invalid authorization header');
+    return next(new AuthenticationError('Missing or invalid authorization header'));
   }
 
   const token = authHeader.split(' ')[1];
@@ -90,12 +90,12 @@ export function authenticate(
     next();
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      throw new AuthenticationError('Token has expired');
+      return next(new AuthenticationError('Token has expired'));
     }
     if (error instanceof jwt.JsonWebTokenError) {
-      throw new AuthenticationError('Invalid token');
+      return next(new AuthenticationError('Invalid token'));
     }
-    throw new AuthenticationError('Authentication failed');
+    return next(new AuthenticationError('Authentication failed'));
   }
 }
 

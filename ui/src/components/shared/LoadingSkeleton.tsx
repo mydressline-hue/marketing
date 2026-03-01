@@ -14,12 +14,14 @@
 
 interface SkeletonBlockProps {
   className?: string;
+  style?: React.CSSProperties;
 }
 
-function SkeletonBlock({ className = '' }: SkeletonBlockProps) {
+function SkeletonBlock({ className = '', style }: SkeletonBlockProps) {
   return (
     <div
       className={`animate-pulse rounded bg-surface-200 ${className}`}
+      style={style}
       aria-hidden="true"
     />
   );
@@ -60,9 +62,12 @@ export function KPIRowSkeleton({ count = 4 }: { count?: number }) {
 interface TableSkeletonProps {
   rows?: number;
   columns?: number;
+  /** Alias for `columns`. */
+  cols?: number;
 }
 
-export function TableSkeleton({ rows = 5, columns = 6 }: TableSkeletonProps) {
+export function TableSkeleton({ rows = 5, columns: columnsProp, cols }: TableSkeletonProps) {
+  const columns = columnsProp ?? cols ?? 6;
   return (
     <div className="bg-white rounded-xl border border-surface-200 overflow-hidden">
       {/* Header */}
@@ -101,11 +106,17 @@ interface CardSkeletonProps {
   hasHeader?: boolean;
   /** Approximate content height. Defaults to `h-40`. */
   contentHeight?: string;
+  /** Number of skeleton text lines to display inside the card. */
+  lines?: number;
+  /** Whether to show a chart-like skeleton inside the card. */
+  showChart?: boolean;
 }
 
 export function CardSkeleton({
   hasHeader = true,
   contentHeight = 'h-40',
+  lines,
+  showChart = false,
 }: CardSkeletonProps) {
   return (
     <div className="bg-white rounded-xl border border-surface-200">
@@ -115,8 +126,27 @@ export function CardSkeleton({
           <SkeletonBlock className="h-8 w-20 rounded-md" />
         </div>
       )}
-      <div className={`p-5 ${contentHeight}`}>
-        <SkeletonBlock className="h-full w-full rounded-lg" />
+      <div className={`p-5 ${lines == null && !showChart ? contentHeight : ''}`}>
+        {showChart ? (
+          <div className="h-64 flex items-end gap-2">
+            {[40, 65, 50, 80, 55, 70, 45, 90, 60, 75].map((h, i) => (
+              <div key={i} className="flex-1 flex flex-col justify-end h-full">
+                <SkeletonBlock className="w-full rounded-t" style={{ height: `${h}%` }} />
+              </div>
+            ))}
+          </div>
+        ) : lines != null ? (
+          <div className="space-y-3">
+            {Array.from({ length: lines }, (_, i) => (
+              <SkeletonBlock
+                key={i}
+                className={`h-4 rounded ${i === 0 ? 'w-3/4' : i === lines - 1 ? 'w-1/2' : 'w-full'}`}
+              />
+            ))}
+          </div>
+        ) : (
+          <SkeletonBlock className="h-full w-full rounded-lg" />
+        )}
       </div>
     </div>
   );

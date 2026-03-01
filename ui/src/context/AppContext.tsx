@@ -44,13 +44,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Fetch kill switch state on mount
   const { data: killSwitchData } = useApiQuery<KillSwitchState>(
-    'killswitch-status',
     '/killswitch/status',
-    {
-      onSuccess: (data) => {
-        setState((s) => ({ ...s, killSwitch: { ...s.killSwitch, ...data } }));
-      },
-    }
   );
 
   // Sync kill switch data when it arrives
@@ -62,13 +56,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Fetch alerts on mount
   const { data: alertsData } = useApiQuery<AlertItem[]>(
-    'alerts',
     '/alerts',
-    {
-      onSuccess: (data) => {
-        setState((s) => ({ ...s, alerts: data }));
-      },
-    }
   );
 
   // Sync alerts data when it arrives
@@ -79,24 +67,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [alertsData]);
 
   // WebSocket subscription for real-time updates
-  const { subscribe } = useWebSocket({ enabled: true });
+  const { subscribe } = useWebSocket({ autoConnect: true });
 
   useEffect(() => {
-    const unsubKillSwitch = subscribe('killswitch:update', (payload) => {
-      const update = payload as Partial<KillSwitchState>;
+    const unsubKillSwitch = subscribe('killswitch:update', (msg) => {
+      const update = msg.data as Partial<KillSwitchState>;
       setState((s) => ({ ...s, killSwitch: { ...s.killSwitch, ...update } }));
     });
 
-    const unsubAlert = subscribe('alert:new', (payload) => {
-      const alert = payload as AlertItem;
+    const unsubAlert = subscribe('alert:new', (msg) => {
+      const alert = msg.data as AlertItem;
       setState((s) => ({
         ...s,
         alerts: [alert, ...s.alerts].slice(0, 100),
       }));
     });
 
-    const unsubAlertDismiss = subscribe('alert:dismiss', (payload) => {
-      const { id } = payload as { id: string };
+    const unsubAlertDismiss = subscribe('alert:dismiss', (msg) => {
+      const { id } = msg.data as { id: string };
       setState((s) => ({
         ...s,
         alerts: s.alerts.map((a) => (a.id === id ? { ...a, acknowledged: true } : a)),

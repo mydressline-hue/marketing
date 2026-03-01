@@ -29,7 +29,7 @@ import StatusBadge from '../components/shared/StatusBadge';
 import ConfidenceScore from '../components/shared/ConfidenceScore';
 import PageHeader from '../components/shared/PageHeader';
 import { useApiQuery } from '../hooks/useApi';
-import { useWebSocket } from '../hooks/useApi';
+import { useWebSocket } from '../hooks/useWebSocket';
 import { KPISkeleton, ChartSkeleton, CardSkeleton } from '../components/shared/LoadingSkeleton';
 import { ApiErrorDisplay } from '../components/shared/ErrorBoundary';
 
@@ -115,28 +115,28 @@ export default function Dashboard() {
     loading: overviewLoading,
     error: overviewError,
     refetch: refetchOverview,
-  } = useApiQuery<DashboardOverview>('/v1/dashboard/overview', { pollInterval: POLL_INTERVAL });
+  } = useApiQuery<DashboardOverview>('/v1/dashboard/overview', { refetchInterval: POLL_INTERVAL });
 
   const {
     data: spendSummary,
     loading: spendLoading,
     error: spendError,
     refetch: refetchSpend,
-  } = useApiQuery<SpendSummary>('/v1/campaigns/spend/summary', { pollInterval: POLL_INTERVAL });
+  } = useApiQuery<SpendSummary>('/v1/campaigns/spend/summary', { refetchInterval: POLL_INTERVAL });
 
   const {
     data: agentsData,
     loading: agentsLoading,
     error: agentsError,
     refetch: refetchAgents,
-  } = useApiQuery<AgentStatusItem[]>('/v1/agents/status', { pollInterval: POLL_INTERVAL });
+  } = useApiQuery<AgentStatusItem[]>('/v1/agents/status', { refetchInterval: POLL_INTERVAL });
 
   const {
     data: alertsData,
     loading: alertsLoading,
     error: alertsError,
     refetch: refetchAlerts,
-  } = useApiQuery<AlertItem[]>('/v1/alerts?limit=5', { pollInterval: POLL_INTERVAL });
+  } = useApiQuery<AlertItem[]>('/v1/alerts?limit=5', { refetchInterval: POLL_INTERVAL });
 
   // ---- WebSocket for real-time updates ----
   const { connected, subscribe } = useWebSocket();
@@ -146,15 +146,15 @@ export default function Dashboard() {
   const [realtimeAlerts, setRealtimeAlerts] = useState<AlertItem[] | null>(null);
 
   useEffect(() => {
-    const unsubAgents = subscribe('agent_status', (payload) => {
-      const update = payload as AgentStatusItem[];
+    const unsubAgents = subscribe('agent_status', (msg) => {
+      const update = msg.data as AgentStatusItem[];
       if (Array.isArray(update)) {
         setRealtimeAgents(update);
       }
     });
 
-    const unsubAlerts = subscribe('alert', (payload) => {
-      const newAlert = payload as AlertItem;
+    const unsubAlerts = subscribe('alert', (msg) => {
+      const newAlert = msg.data as AlertItem;
       setRealtimeAlerts((prev) => {
         const current = prev ?? alertsData ?? [];
         return [newAlert, ...current].slice(0, 5);
@@ -277,7 +277,7 @@ export default function Dashboard() {
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#9ca3af" />
                   <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} stroke="#9ca3af" />
                   <Tooltip
-                    formatter={(value: number) => formatCurrency(value)}
+                    formatter={(value: number | undefined) => formatCurrency(value ?? 0)}
                     contentStyle={{
                       borderRadius: '8px',
                       border: '1px solid #e5e7eb',
@@ -330,7 +330,7 @@ export default function Dashboard() {
                   <XAxis dataKey="channel" tick={{ fontSize: 12 }} stroke="#9ca3af" />
                   <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} stroke="#9ca3af" />
                   <Tooltip
-                    formatter={(value: number) => formatCurrency(value)}
+                    formatter={(value: number | undefined) => formatCurrency(value ?? 0)}
                     contentStyle={{
                       borderRadius: '8px',
                       border: '1px solid #e5e7eb',

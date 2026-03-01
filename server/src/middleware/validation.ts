@@ -26,7 +26,7 @@ export function validate(schema: ZodSchema, source: RequestSource = 'body') {
 
     if (!result.success) {
       const fieldErrors = formatZodErrors(result.error);
-      throw new ValidationError('Validation failed', fieldErrors);
+      return next(new ValidationError('Validation failed', fieldErrors));
     }
 
     // Replace the source with the parsed (and potentially transformed) data

@@ -91,7 +91,14 @@ async function testRedisConnection(): Promise<boolean> {
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      await redis.connect();
+      // Only call connect() if the client is not already connected or connecting.
+      // ioredis with lazyConnect requires an explicit connect() call, but
+      // subsequent retries should not call connect() again if the client is
+      // already in a connecting/connected state.
+      const status = redis.status;
+      if (status === 'wait' || status === 'end' || status === 'close') {
+        await redis.connect();
+      }
       await redis.ping();
       console.log('Redis connection established successfully.');
       return true;
