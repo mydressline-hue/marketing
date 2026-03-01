@@ -633,14 +633,13 @@ describe('RBAC Workflow (E2E)', () => {
   // =======================================================================
   describe('Step 5: API key management (admin only)', () => {
     it('should allow admin to view API key configuration', async () => {
-      // SettingsService.getApiKeyConfig
-      mockPool.query.mockResolvedValueOnce({
-        rows: [
-          { platform: 'google', is_configured: true },
-          { platform: 'meta', is_configured: false },
-        ],
-        rowCount: 2,
-      });
+      // SettingsService.getApiKeyConfig makes 6 SettingsService.get() calls:
+      //   1. shopify_api_key
+      //   2-6. platform_google_ads, platform_meta_ads, platform_tiktok_ads, platform_shopify, platform_klaviyo
+      // Each does a pool.query that returns { rows: [] } (not configured)
+      for (let i = 0; i < 6; i++) {
+        mockPool.query.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+      }
 
       const res = await request(app)
         .get(`${API}/settings/api-keys`)

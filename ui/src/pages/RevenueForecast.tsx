@@ -30,7 +30,7 @@ import Card from '../components/shared/Card';
 import KPICard from '../components/shared/KPICard';
 import ConfidenceScore from '../components/shared/ConfidenceScore';
 import { useApiQuery, useApiMutation } from '../hooks/useApi';
-import { ChartSkeleton, CardSkeleton, KPISkeleton, TableSkeleton } from '../components/shared/LoadingSkeleton';
+import { ChartSkeleton, CardSkeleton, KPIRowSkeleton, TableSkeleton } from '../components/shared/LoadingSkeleton';
 import { ApiErrorDisplay } from '../components/shared/ErrorBoundary';
 import EmptyState from '../components/shared/EmptyState';
 
@@ -235,7 +235,7 @@ export default function RevenueForecast() {
 
       {/* KPI Row */}
       {forecast.loading ? (
-        <KPISkeleton count={4} />
+        <KPIRowSkeleton count={4} />
       ) : forecast.error ? (
         <ApiErrorDisplay error={forecast.error} onRetry={forecast.refetch} />
       ) : data ? (
@@ -378,7 +378,7 @@ export default function RevenueForecast() {
                   }}
                 />
                 {/* Forecast region indicator */}
-                {data.revenueProjectionData.map((entry, index) => {
+                {data.revenueProjectionData.map((_entry, index) => {
                   if (index === 6) {
                     return (
                       <text
@@ -519,8 +519,8 @@ export default function RevenueForecast() {
                       />
                       <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} stroke="#9ca3af" />
                       <Tooltip
-                        formatter={(value: number, name: string) => [
-                          formatCurrency(value),
+                        formatter={(value: number | undefined, name?: string) => [
+                          formatCurrency(value ?? 0),
                           name === 'cumulativeRevenue' ? 'Cumulative Revenue' : 'Cumulative Cost',
                         ]}
                         labelFormatter={(label) => `Day ${label}`}
@@ -668,8 +668,8 @@ export default function RevenueForecast() {
                   <XAxis type="number" tickFormatter={formatCurrency} tick={{ fontSize: 11 }} stroke="#9ca3af" />
                   <YAxis type="category" dataKey="country" tick={{ fontSize: 11 }} stroke="#9ca3af" width={100} />
                   <Tooltip
-                    formatter={(value: number, name: string) => [
-                      formatCurrency(value),
+                    formatter={(value: number | undefined, name?: string) => [
+                      formatCurrency(value ?? 0),
                       name === 'revenue' ? 'Current Revenue' : 'Projected Revenue',
                     ]}
                     contentStyle={{

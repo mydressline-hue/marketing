@@ -141,24 +141,29 @@ const CustomPieLabel = ({
   outerRadius,
   percent,
 }: {
-  cx: number;
-  cy: number;
-  midAngle: number | undefined;
-  innerRadius: number;
-  outerRadius: number;
-  percent: number;
+  cx?: number;
+  cy?: number;
+  midAngle?: number;
+  innerRadius?: number;
+  outerRadius?: number;
+  percent?: number;
 }) => {
   const RADIAN = Math.PI / 180;
   const angle = midAngle ?? 0;
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const x = cx + radius * Math.cos(-angle * RADIAN);
-  const y = cy + radius * Math.sin(-angle * RADIAN);
+  const ir = innerRadius ?? 0;
+  const or = outerRadius ?? 0;
+  const cxVal = cx ?? 0;
+  const cyVal = cy ?? 0;
+  const pct = percent ?? 0;
+  const radius = ir + (or - ir) * 0.5;
+  const x = cxVal + radius * Math.cos(-angle * RADIAN);
+  const y = cyVal + radius * Math.sin(-angle * RADIAN);
 
-  if (percent < 0.06) return null;
+  if (pct < 0.06) return null;
 
   return (
     <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={12} fontWeight={600}>
-      {`${(percent * 100).toFixed(0)}%`}
+      {`${(pct * 100).toFixed(0)}%`}
     </text>
   );
 };
@@ -711,8 +716,8 @@ export default function BudgetOptimizer() {
                     stroke="#9ca3af"
                   />
                   <Tooltip
-                    formatter={(value: number | null | undefined) =>
-                      value != null ? formatCurrencyFull(value) : 'N/A'
+                    formatter={(value: string | number | undefined) =>
+                      value != null ? formatCurrencyFull(Number(value)) : 'N/A'
                     }
                     contentStyle={{
                       borderRadius: '8px',

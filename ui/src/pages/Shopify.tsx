@@ -719,8 +719,8 @@ export default function Shopify() {
                     border: '1px solid #e5e7eb',
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
                   }}
-                  formatter={(value: number, name: string) =>
-                    name === 'Revenue' ? `$${value.toLocaleString()}` : value
+                  formatter={(value: number | undefined, name?: string) =>
+                    name === 'Revenue' ? `$${(value ?? 0).toLocaleString()}` : (value ?? 0)
                   }
                 />
                 <Line
@@ -792,7 +792,7 @@ export default function Shopify() {
                       border: '1px solid #e5e7eb',
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
                     }}
-                    formatter={(value: number) => value.toLocaleString()}
+                    formatter={(value: number | undefined) => (value ?? 0).toLocaleString()}
                   />
                   <Bar
                     dataKey="count"

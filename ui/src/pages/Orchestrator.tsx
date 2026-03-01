@@ -7,7 +7,7 @@ import PageHeader from '../components/shared/PageHeader';
 import Card from '../components/shared/Card';
 import StatusBadge from '../components/shared/StatusBadge';
 import ConfidenceScore from '../components/shared/ConfidenceScore';
-import { KPISkeleton, CardSkeleton, TableSkeleton, ChartSkeleton } from '../components/shared/LoadingSkeleton';
+import { KPIRowSkeleton, CardSkeleton, TableSkeleton, ChartSkeleton } from '../components/shared/LoadingSkeleton';
 import { ApiErrorDisplay } from '../components/shared/ErrorBoundary';
 import EmptyState from '../components/shared/EmptyState';
 import { useApiQuery, useApiMutation } from '../hooks/useApi';
@@ -162,7 +162,7 @@ export default function Orchestrator() {
 
       {/* KPI cards */}
       {isLoading ? (
-        <KPISkeleton count={4} />
+        <KPIRowSkeleton count={4} />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white rounded-xl border border-surface-200 p-5">
@@ -285,8 +285,8 @@ export default function Orchestrator() {
         <div className="space-y-6">
           {crossChallengeLoading ? (
             <>
-              <ChartSkeleton height={250} />
-              <ChartSkeleton height={250} />
+              <ChartSkeleton height="h-64" />
+              <ChartSkeleton height="h-64" />
             </>
           ) : crossChallengeError ? (
             <ApiErrorDisplay error={crossChallengeError} onRetry={refetchCrossChallenge} />

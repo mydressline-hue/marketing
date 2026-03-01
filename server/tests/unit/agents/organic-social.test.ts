@@ -274,7 +274,8 @@ describe('OrganicSocialAgent', () => {
 
   describe('process — input validation', () => {
     it('returns failure output when countryId is missing', async () => {
-      const input = buildInput({ parameters: {} });
+      const input = buildInput();
+      delete (input.parameters as Record<string, unknown>).countryId;
 
       // Stub out persistState and logDecision to avoid DB calls
       (agent as any).persistState = jest.fn().mockResolvedValue(undefined);

@@ -446,7 +446,7 @@ export default function CountryStrategy() {
                         radius={[0, 6, 6, 0]}
                         barSize={28}
                         fill="#6366f1"
-                        label={{ position: 'right', fill: '#475569', fontSize: 12, formatter: (v: number | string | undefined) => `${v ?? 0}%` }}
+                        label={{ position: 'right', fill: '#475569', fontSize: 12, formatter: (v: unknown) => `${v ?? 0}%` }}
                       />
                     </BarChart>
                   </ResponsiveContainer>

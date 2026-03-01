@@ -679,7 +679,7 @@ export default function PaidAds() {
             }
           />
         ) : (
-          <DataTable columns={columns} data={filteredCampaigns as unknown as Record<string, unknown>[]} />
+          <DataTable columns={columns as any} data={filteredCampaigns as unknown as Record<string, unknown>[]} />
         )}
       </Card>
 
@@ -727,8 +727,8 @@ export default function PaidAds() {
                         border: '1px solid #e5e7eb',
                         boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
                       }}
-                      formatter={(value: number, name: string) =>
-                        name === 'spend' ? [`$${value.toLocaleString()}`, 'Spend'] : [value, 'Conversions']
+                      formatter={(value: number | undefined, name?: string) =>
+                        name === 'spend' ? [`$${(value ?? 0).toLocaleString()}`, 'Spend'] : [value ?? 0, 'Conversions']
                       }
                     />
                     <Line
@@ -793,7 +793,7 @@ export default function PaidAds() {
                       border: '1px solid #e5e7eb',
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
                     }}
-                    formatter={(value: number) => [`${value.toFixed(2)}x`, 'ROAS']}
+                    formatter={(value: number | undefined) => [`${(value ?? 0).toFixed(2)}x`, 'ROAS']}
                   />
                   <Bar dataKey="roas" radius={[6, 6, 0, 0]} name="ROAS">
                     {platformRoas.map((_, index) => {

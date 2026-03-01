@@ -27,7 +27,7 @@ import Card from '../components/shared/Card';
 import KPICard from '../components/shared/KPICard';
 import StatusBadge from '../components/shared/StatusBadge';
 import { useApiQuery, useApiMutation } from '../hooks/useApi';
-import { TableSkeleton, ChartSkeleton, CardSkeleton, KPISkeleton } from '../components/shared/LoadingSkeleton';
+import { TableSkeleton, ChartSkeleton, CardSkeleton, KPIRowSkeleton } from '../components/shared/LoadingSkeleton';
 import { ApiErrorDisplay } from '../components/shared/ErrorBoundary';
 import EmptyState from '../components/shared/EmptyState';
 
@@ -248,7 +248,7 @@ export default function Security() {
 
       {/* KPI Row */}
       {security.loading ? (
-        <KPISkeleton count={4} />
+        <KPIRowSkeleton count={4} />
       ) : security.error ? (
         <ApiErrorDisplay error={security.error} onRetry={security.refetch} />
       ) : secData ? (
@@ -667,7 +667,7 @@ export default function Security() {
                           border: '1px solid #e5e7eb',
                           boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
                         }}
-                        formatter={(value: number) => [value.toLocaleString(), 'Requests']}
+                        formatter={(value: number | undefined) => [(value ?? 0).toLocaleString(), 'Requests']}
                       />
                       <Bar dataKey="requests" fill="#6366f1" radius={[4, 4, 0, 0]} name="Requests" />
                     </BarChart>

@@ -904,8 +904,16 @@ Return a JSON object with fields: name, type, budget, targeting, expectedMetrics
     const directRevenue = Number((campaign as unknown as CampaignRow).revenue) || 0;
     const effectiveRevenue = revenue > 0 ? revenue : directRevenue;
 
-    if (effectiveRevenue === 0) return 0;
-    return Math.round((effectiveRevenue / spent) * 100) / 100;
+    if (effectiveRevenue > 0) {
+      return Math.round((effectiveRevenue / spent) * 100) / 100;
+    }
+
+    // Fall back to pre-computed ROAS on the metrics object if available
+    if (metrics && typeof (metrics as CampaignMetrics).roas === 'number') {
+      return (metrics as CampaignMetrics).roas;
+    }
+
+    return 0;
   }
 
   /**
