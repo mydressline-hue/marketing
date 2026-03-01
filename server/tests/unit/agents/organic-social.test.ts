@@ -731,6 +731,7 @@ describe('OrganicSocialAgent', () => {
     it('produces low confidence when all factors are weak', async () => {
       const input = buildInput();
 
+      // All callAI calls return a generic pattern with empty/zero values
       (agent as any).callAI = jest.fn()
         .mockResolvedValue(JSON.stringify({
           bestDays: [],
@@ -739,30 +740,15 @@ describe('OrganicSocialAgent', () => {
           averageEngagementRate: 0,
         }));
 
-      // loadScheduledPosts -> empty
-      mockQuery.mockResolvedValueOnce({ rows: [] });
-      // queryEngagementData -> no posts
-      mockQuery.mockResolvedValueOnce({ rows: [{ count: '0' }] });
-      // loadCountryProfile (for inferEngagementPatterns) -> not found
-      mockQuery.mockResolvedValueOnce({ rows: [] });
-      // loadCountryProfile for getOptimalPostingTimes -> not found
-      mockQuery.mockResolvedValueOnce({ rows: [] });
-      // loadCountryProfile for tone -> not found
-      mockQuery.mockResolvedValueOnce({ rows: [] });
-
-      // generateHashtagStrategy: loadCountryProfile
-      mockQuery.mockResolvedValueOnce({ rows: [] });
-
       (agent as any).persistState = jest.fn().mockResolvedValue(undefined);
       (agent as any).logDecision = jest.fn().mockResolvedValue(undefined);
 
-      // Mock second analyze call chain
-      mockCacheGet.mockResolvedValue(null);
-
-      // For the nested calls that happen during generatePostSchedule
-      // analyzeEngagementPatterns (second call, no cache)
-      mockQuery.mockResolvedValueOnce({ rows: [{ count: '0' }] }); // count
-      mockQuery.mockResolvedValueOnce({ rows: [] }); // loadCountryProfile for infer
+      // All DB queries will use the default mockResolvedValue({ rows: [] })
+      // which returns empty rows. This means:
+      // - loadScheduledPosts returns empty (no posts)
+      // - queryEngagementData count returns 0 (triggers AI inference)
+      // - loadCountryProfile returns null (no country profile)
+      // All the above produce the "low confidence" scenario.
 
       const output = await agent.process(input);
 

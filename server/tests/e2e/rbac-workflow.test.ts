@@ -160,6 +160,7 @@ describe('RBAC Workflow (E2E)', () => {
   describe('Step 1: Admin has full access', () => {
     it('should allow admin to CREATE a campaign', async () => {
       mockPool.query
+        .mockResolvedValueOnce({ rows: [{ max_level: 0 }], rowCount: 1 }) // kill switch check
         .mockResolvedValueOnce({ rows: [{ id: 'c0000000-0000-4000-8000-000000000001' }], rowCount: 1 }) // country exists
         .mockResolvedValueOnce({ rows: [mockCampaignRow], rowCount: 1 });     // INSERT campaign
 
@@ -272,6 +273,7 @@ describe('RBAC Workflow (E2E)', () => {
   describe('Step 2: Campaign Manager permissions', () => {
     it('should allow campaign_manager to CREATE campaigns', async () => {
       mockPool.query
+        .mockResolvedValueOnce({ rows: [{ max_level: 0 }], rowCount: 1 }) // kill switch check
         .mockResolvedValueOnce({ rows: [{ id: 'c0000000-0000-4000-8000-000000000001' }], rowCount: 1 })
         .mockResolvedValueOnce({ rows: [mockCampaignRow], rowCount: 1 });
 
