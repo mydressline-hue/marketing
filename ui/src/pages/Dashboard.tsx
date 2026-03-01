@@ -129,7 +129,7 @@ export default function Dashboard() {
     loading: agentsLoading,
     error: agentsError,
     refetch: refetchAgents,
-  } = useApiQuery<AgentStatusItem[]>('/v1/agents/status', { refetchInterval: POLL_INTERVAL });
+  } = useApiQuery<AgentStatusItem[]>('/v1/agents', { refetchInterval: POLL_INTERVAL });
 
   const {
     data: alertsData,

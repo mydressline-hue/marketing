@@ -970,6 +970,50 @@ export class MonitoringService {
   }
 
   // -------------------------------------------------------------------------
+  // Convenience aliases (used by the infrastructure controller)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Alias for monitorSpend -- used by the infrastructure controller layer.
+   */
+  static async getSpendMonitoring(...args: Parameters<typeof MonitoringService.monitorSpend>) {
+    return MonitoringService.monitorSpend(...args);
+  }
+
+  /**
+   * Alias for getActiveAlerts -- used by the infrastructure controller layer.
+   */
+  static async getAlerts(...args: Parameters<typeof MonitoringService.getActiveAlerts>) {
+    return MonitoringService.getActiveAlerts(...args);
+  }
+
+  /**
+   * High-level anomaly aggregation -- used by the infrastructure controller layer.
+   */
+  static async getAnomalies() {
+    const [ctr, cpc, conversion] = await Promise.all([
+      MonitoringService.detectCTRAnomaly(),
+      MonitoringService.detectCPCAnomaly(),
+      MonitoringService.detectConversionAnomaly(),
+    ]);
+    return [...ctr, ...cpc, ...conversion];
+  }
+
+  /**
+   * Alias for configureAlert -- used by the infrastructure controller layer.
+   */
+  static async updateAlertConfig(...args: Parameters<typeof MonitoringService.configureAlert>) {
+    return MonitoringService.configureAlert(...args);
+  }
+
+  /**
+   * Alias for getMonitoringDashboard -- used by the infrastructure controller layer.
+   */
+  static async getDashboard() {
+    return MonitoringService.getMonitoringDashboard();
+  }
+
+  // -------------------------------------------------------------------------
   // Private helpers
   // -------------------------------------------------------------------------
 

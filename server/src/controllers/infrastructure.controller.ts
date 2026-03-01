@@ -25,7 +25,7 @@ import { FailoverService } from '../services/failover/FailoverService';
 export const getSpendMonitoring = asyncHandler(async (req: Request, res: Response) => {
   const { startDate, endDate, country, channel } = req.query;
 
-  const result = await MonitoringService.monitorSpend();
+  const result = await MonitoringService.getSpendMonitoring();
 
   res.json({
     success: true,
@@ -38,17 +38,7 @@ export const getSpendMonitoring = asyncHandler(async (req: Request, res: Respons
  * Get detected anomalies across spend, performance, and system metrics.
  */
 export const getAnomalies = asyncHandler(async (_req: Request, res: Response) => {
-  const [ctrAnomalies, cpcAnomalies, conversionAnomalies] = await Promise.all([
-    MonitoringService.detectCTRAnomaly(),
-    MonitoringService.detectCPCAnomaly(),
-    MonitoringService.detectConversionAnomaly(),
-  ]);
-
-  const result = {
-    ctr: ctrAnomalies,
-    cpc: cpcAnomalies,
-    conversion_rate: conversionAnomalies,
-  };
+  const result = await MonitoringService.getAnomalies();
 
   res.json({
     success: true,
@@ -63,7 +53,7 @@ export const getAnomalies = asyncHandler(async (_req: Request, res: Response) =>
 export const getAlerts = asyncHandler(async (req: Request, res: Response) => {
   const { severity, page, limit } = req.query;
 
-  const result = await MonitoringService.getActiveAlerts({
+  const result = await MonitoringService.getAlerts({
     severity: severity as string | undefined,
     page: page ? parseInt(page as string, 10) : 1,
     limit: limit ? parseInt(limit as string, 10) : 20,
@@ -145,7 +135,7 @@ export const updateAlertConfig = asyncHandler(async (req: Request, res: Response
   const userId = req.user!.id;
   const configUpdate = req.body;
 
-  const result = await MonitoringService.configureAlert(configUpdate);
+  const result = await MonitoringService.updateAlertConfig(configUpdate);
 
   res.json({
     success: true,
@@ -158,7 +148,7 @@ export const updateAlertConfig = asyncHandler(async (req: Request, res: Response
  * Get aggregated monitoring dashboard data.
  */
 export const getMonitoringDashboard = asyncHandler(async (_req: Request, res: Response) => {
-  const result = await MonitoringService.getMonitoringDashboard();
+  const result = await MonitoringService.getDashboard();
 
   res.json({
     success: true,

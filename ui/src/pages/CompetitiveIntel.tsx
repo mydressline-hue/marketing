@@ -390,7 +390,7 @@ export default function CompetitiveIntel() {
                   <XAxis type="number" tick={{ fontSize: 12 }} stroke="#9ca3af" tickFormatter={(v) => `${v}%`} />
                   <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} stroke="#9ca3af" width={100} />
                   <Tooltip
-                    formatter={(value: number) => [`${value}%`, 'Market Share']}
+                    formatter={(value: number | undefined) => [`${value ?? 0}%`, 'Market Share']}
                     contentStyle={{
                       borderRadius: '8px',
                       border: '1px solid #e5e7eb',

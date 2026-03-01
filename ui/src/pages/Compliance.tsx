@@ -175,7 +175,7 @@ export default function Compliance() {
   const {
     mutate: runAudit,
     loading: auditRunning,
-  } = useApiMutation<AgentExecuteResult>('/api/v1/agents/13/execute', 'GET');
+  } = useApiMutation<AgentExecuteResult>('/api/v1/agents/13/execute');
 
   // ---- Derived state ----
   const categories = ['All', 'Data Protection', 'Ad Standards', 'Consumer Rights', 'Tax'];

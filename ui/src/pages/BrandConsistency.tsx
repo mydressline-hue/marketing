@@ -311,7 +311,7 @@ export default function BrandConsistency() {
                       border: '1px solid #e5e7eb',
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
                     }}
-                    formatter={(value: number) => [`${value}%`, 'Score']}
+                    formatter={(value: number | undefined) => [`${value ?? 0}%`, 'Score']}
                   />
                 </RadarChart>
               </ResponsiveContainer>
@@ -500,7 +500,7 @@ export default function BrandConsistency() {
                       border: '1px solid #e5e7eb',
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
                     }}
-                    formatter={(value: number) => [`${value}%`, 'Compliance']}
+                    formatter={(value: number | undefined) => [`${value ?? 0}%`, 'Compliance']}
                   />
                   <Bar dataKey="compliance" radius={[4, 4, 0, 0]}>
                     {marketComplianceData.map((entry, index) => {

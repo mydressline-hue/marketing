@@ -28,7 +28,7 @@ import KPICard from '../components/shared/KPICard';
 import StatusBadge from '../components/shared/StatusBadge';
 import ProgressBar from '../components/shared/ProgressBar';
 import { useApiQuery, useApiMutation } from '../hooks/useApi';
-import { TableSkeleton, ChartSkeleton, KPISkeleton } from '../components/shared/LoadingSkeleton';
+import { TableSkeleton, ChartSkeleton, KPIRowSkeleton } from '../components/shared/LoadingSkeleton';
 import { ApiErrorDisplay } from '../components/shared/ErrorBoundary';
 import EmptyState from '../components/shared/EmptyState';
 
@@ -143,15 +143,16 @@ const CustomPieLabel = ({
 }: {
   cx: number;
   cy: number;
-  midAngle: number;
+  midAngle: number | undefined;
   innerRadius: number;
   outerRadius: number;
   percent: number;
 }) => {
   const RADIAN = Math.PI / 180;
+  const angle = midAngle ?? 0;
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  const x = cx + radius * Math.cos(-angle * RADIAN);
+  const y = cy + radius * Math.sin(-angle * RADIAN);
 
   if (percent < 0.06) return null;
 
@@ -181,13 +182,13 @@ export default function BudgetOptimizer() {
   const {
     mutate: runOptimizeAgent,
     loading: optimizing,
-  } = useApiMutation<AgentResult>('/v1/agents/8/execute', 'POST');
+  } = useApiMutation<AgentResult>('/v1/agents/8/execute', { method: 'POST' });
 
   // ---- Apply single recommendation ---------------------------------------
   const {
     mutate: applyRecommendation,
     loading: applyingRec,
-  } = useApiMutation<AgentResult>('/v1/budget/optimize', 'POST');
+  } = useApiMutation<AgentResult>('/v1/budget/optimize', { method: 'POST' });
 
   // ---- Derived data (safe even when null) --------------------------------
   const allocations = budgetData?.allocations ?? [];
@@ -270,7 +271,7 @@ export default function BudgetOptimizer() {
 
       {/* KPI Row */}
       {budgetLoading ? (
-        <KPISkeleton count={4} />
+        <KPIRowSkeleton count={4} />
       ) : kpis ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <KPICard
@@ -302,7 +303,7 @@ export default function BudgetOptimizer() {
           />
         </div>
       ) : (
-        <KPISkeleton count={4} />
+        <KPIRowSkeleton count={4} />
       )}
 
       {/* Budget Allocation Pie + Channel Table */}
@@ -349,7 +350,7 @@ export default function BudgetOptimizer() {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: number) => formatCurrencyFull(value)}
+                      formatter={(value: number | undefined) => formatCurrencyFull(value ?? 0)}
                       contentStyle={{
                         borderRadius: '8px',
                         border: '1px solid #e5e7eb',
@@ -710,8 +711,8 @@ export default function BudgetOptimizer() {
                     stroke="#9ca3af"
                   />
                   <Tooltip
-                    formatter={(value: number | null) =>
-                      value !== null ? formatCurrencyFull(value) : 'N/A'
+                    formatter={(value: number | null | undefined) =>
+                      value != null ? formatCurrencyFull(value) : 'N/A'
                     }
                     contentStyle={{
                       borderRadius: '8px',

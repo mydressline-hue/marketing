@@ -108,9 +108,9 @@ const platformTabs = ['All', 'Google', 'Meta', 'TikTok', 'Bing', 'Snapchat'] as 
 
 // Map platform tab label -> API endpoint for platform-specific queries
 const platformEndpoints: Record<string, string> = {
-  Google: '/api/v1/integrations/ads/google/campaigns',
-  Meta: '/api/v1/integrations/ads/meta/campaigns',
-  TikTok: '/api/v1/integrations/ads/tiktok/campaigns',
+  Google: '/v1/integrations/ads/google/campaigns',
+  Meta: '/v1/integrations/ads/meta/campaigns',
+  TikTok: '/v1/integrations/ads/tiktok/campaigns',
 };
 
 // ---------------------------------------------------------------------------
@@ -285,7 +285,7 @@ export default function PaidAds() {
     if (activePlatform !== 'All' && platformEndpoints[activePlatform]) {
       return platformEndpoints[activePlatform];
     }
-    return '/api/v1/campaigns';
+    return '/v1/campaigns';
   }, [activePlatform]);
 
   const {
@@ -300,21 +300,21 @@ export default function PaidAds() {
     loading: metricsLoading,
     error: metricsError,
     refetch: refetchMetrics,
-  } = useApiQuery<CampaignMetrics>('/api/v1/campaigns/metrics');
+  } = useApiQuery<CampaignMetrics>('/v1/campaigns/metrics');
 
   const {
     data: recommendationsData,
     loading: recommendationsLoading,
     error: recommendationsError,
     refetch: refetchRecommendations,
-  } = useApiQuery<RecommendationsResponse>('/api/v1/campaigns/recommendations');
+  } = useApiQuery<RecommendationsResponse>('/v1/campaigns/recommendations');
 
   const {
     data: retargetingData,
     loading: retargetingLoading,
     error: retargetingError,
     refetch: refetchRetargeting,
-  } = useApiQuery<RetargetingResponse>('/api/v1/campaigns/retargeting');
+  } = useApiQuery<RetargetingResponse>('/v1/campaigns/retargeting');
 
   // -----------------------------------------------------------------------
   // API mutations

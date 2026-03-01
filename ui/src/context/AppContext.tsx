@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 import type { KillSwitchState, AlertItem } from '../types';
 import { useApiQuery } from '../hooks/useApi';
 import { useWebSocket } from '../hooks/useWebSocket';
+import api from '../services/api';
 
 interface AppState {
   sidebarOpen: boolean;
@@ -44,7 +45,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Fetch kill switch state on mount
   const { data: killSwitchData } = useApiQuery<KillSwitchState>(
-    '/killswitch/status',
+    '/v1/killswitch/status',
   );
 
   // Sync kill switch data when it arrives
@@ -56,7 +57,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Fetch alerts on mount
   const { data: alertsData } = useApiQuery<AlertItem[]>(
-    '/alerts',
+    '/v1/alerts',
   );
 
   // Sync alerts data when it arrives
@@ -113,11 +114,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState(s => ({ ...s, killSwitch: { ...s.killSwitch, ...partial } }));
 
     // Sync to backend
-    fetch('/api/v1/killswitch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(partial),
-    }).catch((err) => {
+    api.post('/v1/killswitch/activate', partial).catch((err) => {
       console.error('[AppContext] Failed to sync kill switch state:', err);
     });
   }, []);
@@ -127,11 +124,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState(s => ({ ...s, alerts: [alert, ...s.alerts].slice(0, 100) }));
 
     // Sync to backend
-    fetch('/api/v1/alerts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(alert),
-    }).catch((err) => {
+    api.post('/v1/alerts', alert).catch((err) => {
       console.error('[AppContext] Failed to sync alert:', err);
     });
   }, []);
@@ -143,11 +136,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       alerts: s.alerts.map(a => a.id === id ? { ...a, acknowledged: true } : a),
     }));
 
-    // Sync to backend
-    fetch(`/api/v1/alerts/${id}/dismiss`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    }).catch((err) => {
+    // Sync to backend (backend uses PATCH for dismiss)
+    api.put(`/v1/alerts/${id}/dismiss`, {}).catch((err) => {
       console.error('[AppContext] Failed to dismiss alert:', err);
     });
   }, []);

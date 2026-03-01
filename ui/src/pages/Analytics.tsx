@@ -783,11 +783,12 @@ export default function Analytics() {
                         border: '1px solid #e5e7eb',
                         boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
                       }}
-                      formatter={(value: number, name: string) => {
-                        if (name === 'LTV/CAC Ratio') return [`${value}x`, name];
-                        if (name === 'LTV') return [`$${value}`, name];
-                        if (name === 'CAC') return [`$${value}`, name];
-                        return [value, name];
+                      formatter={(value: number | undefined, name: string) => {
+                        const v = value ?? 0;
+                        if (name === 'LTV/CAC Ratio') return [`${v}x`, name];
+                        if (name === 'LTV') return [`$${v}`, name];
+                        if (name === 'CAC') return [`$${v}`, name];
+                        return [v, name];
                       }}
                     />
                     <Legend
