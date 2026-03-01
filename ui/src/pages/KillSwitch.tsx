@@ -6,7 +6,7 @@ import {
 import PageHeader from '../components/shared/PageHeader';
 import Card from '../components/shared/Card';
 import StatusBadge from '../components/shared/StatusBadge';
-import { KPISkeleton, CardSkeleton } from '../components/shared/LoadingSkeleton';
+import { CardSkeleton } from '../components/shared/LoadingSkeleton';
 import { ApiErrorDisplay } from '../components/shared/ErrorBoundary';
 import EmptyState from '../components/shared/EmptyState';
 import { useApiQuery, useApiMutation } from '../hooks/useApi';

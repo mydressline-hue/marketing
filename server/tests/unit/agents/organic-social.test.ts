@@ -345,11 +345,16 @@ describe('OrganicSocialAgent', () => {
   describe('process — with historical engagement data', () => {
     it('uses DB engagement data and produces higher confidence', async () => {
       const agentWithData = new OrganicSocialAgent();
+
+      const cachedEngagementPattern = {
+        bestDays: ['Wednesday'],
+        bestHours: [10, 14],
+        topContentTypes: ['reel'],
+        averageEngagementRate: 3.45,
+      };
+
       (agentWithData as any).callAI = jest.fn()
-        .mockResolvedValueOnce(  // getOptimalPostingTimes (AI not called if historical data exists)
-          JSON.stringify(['09:00 Europe/Berlin']),
-        )
-        .mockResolvedValueOnce(  // generatePostSchedule
+        .mockResolvedValueOnce(  // generatePostSchedule -> callAI for schedule
           JSON.stringify([
             {
               content: 'New arrivals just dropped!',
@@ -381,42 +386,39 @@ describe('OrganicSocialAgent', () => {
       (agentWithData as any).persistState = jest.fn().mockResolvedValue(undefined);
       (agentWithData as any).logDecision = jest.fn().mockResolvedValue(undefined);
 
-      // loadScheduledPosts returns 2 posts
-      mockQuery.mockResolvedValueOnce({ rows: [SOCIAL_POST_ROW, SOCIAL_POST_ROW_2] });
+      // Set up cacheGet sequence matching the actual call order:
+      // #1: engagement_patterns -> null (miss, will query DB)
+      // #2: posting_times -> null (miss)
+      // #3: engagement_patterns -> HIT (second call from getOptimalPostingTimes)
+      // #4: country -> null (miss, loadCountryProfile in getOptimalPostingTimes)
+      // #5: engagement_patterns -> HIT (third call from generatePostSchedule)
+      // #6: country -> null (miss, loadCountryProfile for tone)
+      // #7: hashtags -> null (miss)
+      // #8: country -> null (miss, loadCountryProfile for hashtags)
+      mockCacheGet
+        .mockResolvedValueOnce(null)                  // #1 engagement_patterns miss
+        .mockResolvedValueOnce(null)                  // #2 posting_times miss
+        .mockResolvedValueOnce(cachedEngagementPattern) // #3 engagement_patterns hit
+        .mockResolvedValueOnce(null)                  // #4 country miss
+        .mockResolvedValueOnce(cachedEngagementPattern) // #5 engagement_patterns hit
+        .mockResolvedValueOnce(null)                  // #6 country miss (tone)
+        .mockResolvedValueOnce(null)                  // #7 hashtags miss
+        .mockResolvedValueOnce(null);                 // #8 country miss (hashtags)
 
-      // analyzeEngagementPatterns -> queryEngagementData chain
+      // DB query sequence matching the actual call order:
+      // 1. loadScheduledPosts
+      mockQuery.mockResolvedValueOnce({ rows: [SOCIAL_POST_ROW, SOCIAL_POST_ROW_2] });
+      // 2-6. analyzeEngagementPatterns -> queryEngagementData chain (5 queries)
       mockQuery.mockResolvedValueOnce({ rows: [{ count: '50' }] }); // totalPosts
       mockQuery.mockResolvedValueOnce({ rows: [{ day_name: 'Wednesday', avg_engagement: 45 }] }); // bestDays
       mockQuery.mockResolvedValueOnce({ rows: [{ hour: 10, avg_engagement: 55 }, { hour: 14, avg_engagement: 48 }] }); // bestHours
       mockQuery.mockResolvedValueOnce({ rows: [{ media_type: 'reel', avg_engagement: 60 }] }); // topContentTypes
       mockQuery.mockResolvedValueOnce({ rows: [{ avg_rate: '3.45' }] }); // avgEngagementRate
-
-      // loadCountryProfile for getOptimalPostingTimes
+      // 7. loadCountryProfile in getOptimalPostingTimes (cache miss #4)
       mockQuery.mockResolvedValueOnce({ rows: [COUNTRY_ROW] });
-
-      // generatePostSchedule -> analyzeEngagementPatterns (cached now)
-      // But the second analyzeEngagementPatterns call will go through the cache
-      // so we need to set up cached value
-      mockCacheGet.mockResolvedValueOnce(null)  // first cache miss for engagement patterns
-        .mockResolvedValueOnce(null)            // cache miss for country profile
-        .mockResolvedValueOnce(null)            // cache miss for posting times
-        .mockResolvedValueOnce({                // cache hit for engagement patterns on second call
-          bestDays: ['Wednesday'],
-          bestHours: [10, 14],
-          topContentTypes: ['reel'],
-          averageEngagementRate: 3.45,
-        })
-        .mockResolvedValueOnce(null)            // cache miss for country profile (tone)
-        .mockResolvedValueOnce(null)            // cache miss for hashtags
-        .mockResolvedValueOnce(null);           // cache miss for country in hashtag
-
-      // loadCountryProfile for generatePostSchedule
+      // 8. loadCountryProfile for tone (cache miss #6)
       mockQuery.mockResolvedValueOnce({ rows: [COUNTRY_ROW] });
-
-      // loadCountryProfile for tone
-      mockQuery.mockResolvedValueOnce({ rows: [COUNTRY_ROW] });
-
-      // loadCountryProfile for hashtags
+      // 9. loadCountryProfile for hashtags (cache miss #8)
       mockQuery.mockResolvedValueOnce({ rows: [COUNTRY_ROW] });
 
       const input = buildInput();

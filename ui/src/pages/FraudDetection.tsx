@@ -520,7 +520,7 @@ export default function FraudDetection() {
                     width={100}
                   />
                   <Tooltip
-                    formatter={(value: number) => [`${value}%`, 'Bot Traffic']}
+                    formatter={(value: number | undefined) => [`${value ?? 0}%`, 'Bot Traffic']}
                     contentStyle={{
                       borderRadius: '8px',
                       border: '1px solid #e5e7eb',

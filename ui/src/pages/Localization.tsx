@@ -645,7 +645,7 @@ export default function Localization() {
       >
         {hasError ? (
           <ApiErrorDisplay
-            error={countriesError || translationsError || 'Failed to load data'}
+            error={countriesError || translationsError || new Error('Failed to load data')}
             onRetry={handleSyncAll}
           />
         ) : isLoading ? (
@@ -819,7 +819,7 @@ export default function Localization() {
                     width={110}
                   />
                   <Tooltip
-                    formatter={(value: number) => [`${value}%`, 'Completeness']}
+                    formatter={(value: number | undefined) => [`${value ?? 0}%`, 'Completeness']}
                     contentStyle={{
                       borderRadius: '8px',
                       border: '1px solid #e5e7eb',

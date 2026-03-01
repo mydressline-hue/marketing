@@ -678,7 +678,7 @@ describe('RBAC Workflow (E2E)', () => {
   // =======================================================================
   describe('Step 6: Audit log verification', () => {
     it('should insert audit log on login', async () => {
-      const bcryptLib = require('bcrypt');
+      const bcryptLib = require('bcryptjs');
       const hashedPassword = await bcryptLib.hash('AdminPass1', 12);
 
       mockPool.query
@@ -739,6 +739,7 @@ describe('RBAC Workflow (E2E)', () => {
       const activeCampaign = { ...mockCampaignRow, status: 'active' };
 
       mockPool.query
+        .mockResolvedValueOnce({ rows: [{ max_level: 0 }], rowCount: 1 }) // kill switch check
         .mockResolvedValueOnce({ rows: [mockCampaignRow], rowCount: 1 }) // getById (draft)
         .mockResolvedValueOnce({ rows: [activeCampaign], rowCount: 1 }) // UPDATE status
         .mockResolvedValueOnce({ rows: [], rowCount: 1 }); // INSERT campaign_status_audit

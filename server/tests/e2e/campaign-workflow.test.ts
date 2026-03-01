@@ -626,8 +626,9 @@ describe('Campaign Management Workflow (E2E)', () => {
   // -----------------------------------------------------------------------
   describe('Bonus: Full status transition chain', () => {
     it('should walk through draft -> active -> paused -> active -> completed', async () => {
-      // draft -> active
+      // draft -> active (kill switch check needed for status = 'active')
       mockPool.query
+        .mockResolvedValueOnce({ rows: [{ max_level: 0 }], rowCount: 1 }) // kill switch
         .mockResolvedValueOnce({ rows: [{ ...mockCampaignRow, status: 'draft' }], rowCount: 1 })
         .mockResolvedValueOnce({ rows: [{ ...mockCampaignRow, status: 'active' }], rowCount: 1 })
         .mockResolvedValueOnce({ rows: [], rowCount: 1 });
@@ -638,7 +639,7 @@ describe('Campaign Management Workflow (E2E)', () => {
         .send({ status: 'active' });
       expect(res.body.data.status).toBe('active');
 
-      // active -> paused
+      // active -> paused (no kill switch check for 'paused')
       mockPool.query
         .mockResolvedValueOnce({ rows: [{ ...mockCampaignRow, status: 'active' }], rowCount: 1 })
         .mockResolvedValueOnce({ rows: [{ ...mockCampaignRow, status: 'paused' }], rowCount: 1 })
@@ -650,8 +651,9 @@ describe('Campaign Management Workflow (E2E)', () => {
         .send({ status: 'paused' });
       expect(res.body.data.status).toBe('paused');
 
-      // paused -> active
+      // paused -> active (kill switch check needed for status = 'active')
       mockPool.query
+        .mockResolvedValueOnce({ rows: [{ max_level: 0 }], rowCount: 1 }) // kill switch
         .mockResolvedValueOnce({ rows: [{ ...mockCampaignRow, status: 'paused' }], rowCount: 1 })
         .mockResolvedValueOnce({ rows: [{ ...mockCampaignRow, status: 'active' }], rowCount: 1 })
         .mockResolvedValueOnce({ rows: [], rowCount: 1 });
@@ -662,7 +664,7 @@ describe('Campaign Management Workflow (E2E)', () => {
         .send({ status: 'active' });
       expect(res.body.data.status).toBe('active');
 
-      // active -> completed
+      // active -> completed (no kill switch check for 'completed')
       mockPool.query
         .mockResolvedValueOnce({ rows: [{ ...mockCampaignRow, status: 'active' }], rowCount: 1 })
         .mockResolvedValueOnce({ rows: [{ ...mockCampaignRow, status: 'completed' }], rowCount: 1 })
