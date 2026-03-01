@@ -27,7 +27,7 @@ import StatusBadge from '../components/shared/StatusBadge';
 import ConfidenceScore from '../components/shared/ConfidenceScore';
 import ProgressBar from '../components/shared/ProgressBar';
 import { useApiQuery, useApiMutation } from '../hooks/useApi';
-import { TableSkeleton, CardSkeleton } from '../components/shared/LoadingSkeleton';
+import { CardSkeleton } from '../components/shared/LoadingSkeleton';
 import { ApiErrorDisplay } from '../components/shared/ErrorBoundary';
 import EmptyState from '../components/shared/EmptyState';
 
@@ -179,9 +179,8 @@ export default function ABTesting() {
     error: detailError,
     refetch: refetchDetail,
   } = useApiQuery<ABTestDetailResponse>(
-    effectiveSelectedId
-      ? `/api/v1/agents/ab-testing/tests/${effectiveSelectedId}`
-      : null,
+    `/api/v1/agents/ab-testing/tests/${effectiveSelectedId ?? ''}`,
+    { enabled: !!effectiveSelectedId },
   );
 
   // -------------------------------------------------------------------------
@@ -240,7 +239,6 @@ export default function ABTesting() {
       .split(',')
       .map((v) => v.trim())
       .filter(Boolean);
-    const splitPerVariant = Math.round(100 / variantNames.length);
     const trafficSplit = variantNames.map((_, i) =>
       i === 0 ? newTestTrafficSplit : Math.round((100 - newTestTrafficSplit) / (variantNames.length - 1)),
     );
@@ -630,7 +628,7 @@ export default function ABTesting() {
                     tickFormatter={(val) => `+${val}%`}
                   />
                   <Tooltip
-                    formatter={(value: number) => [`+${value}%`, 'Avg Improvement']}
+                    formatter={(value: number | undefined) => [`+${value ?? 0}%`, 'Avg Improvement']}
                     contentStyle={{
                       borderRadius: '8px',
                       border: '1px solid #e5e7eb',
@@ -677,9 +675,9 @@ export default function ABTesting() {
                     tickFormatter={(val) => `${val}%`}
                   />
                   <Tooltip
-                    formatter={(value: number, name: string) => {
-                      if (name === 'conversionRate') return [`${value}%`, 'Conversion Rate'];
-                      return [value.toLocaleString(), name];
+                    formatter={(value: number | undefined, name: string) => {
+                      if (name === 'conversionRate') return [`${value ?? 0}%`, 'Conversion Rate'];
+                      return [(value ?? 0).toLocaleString(), name];
                     }}
                     contentStyle={{
                       borderRadius: '8px',

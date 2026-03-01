@@ -203,10 +203,10 @@ export default function RevenueForecast() {
   const breakEvenPoint = data?.breakEvenData?.find(
     (d) => d.cumulativeRevenue >= d.cumulativeCost && d.day > 0,
   );
-  const breakEvenDay = breakEvenPoint?.day ?? 42;
+  const breakEvenDay = breakEvenPoint?.day ?? 0;
   const breakEvenRevenue = breakEvenPoint
     ? formatCurrency(breakEvenPoint.cumulativeRevenue)
-    : '$220K';
+    : '--';
 
   return (
     <div className="space-y-6">

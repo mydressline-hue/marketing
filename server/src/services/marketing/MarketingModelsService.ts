@@ -695,8 +695,62 @@ export class MarketingModelsService {
     const result = await pool.query('SELECT * FROM geo_lift_tests WHERE id = $1', [testId]);
     if (result.rows.length === 0) throw new NotFoundError('Geo lift test not found');
 
-    const incrementalLift = 0.15;
-    const confidenceLevel = 0.95;
+    const test = result.rows[0];
+    const testRegions = typeof test.test_regions === 'string' ? JSON.parse(test.test_regions) : (test.test_regions || []);
+    const controlRegions = typeof test.control_regions === 'string' ? JSON.parse(test.control_regions) : (test.control_regions || []);
+
+    // Query actual campaign performance in test vs control regions
+    const testPerf = await pool.query(
+      `SELECT COALESCE(SUM(revenue), 0) AS total_revenue,
+              COALESCE(SUM(spent), 0) AS total_spent,
+              COALESCE(SUM(conversions), 0) AS total_conversions,
+              COUNT(*) AS campaign_count
+       FROM campaigns c
+       JOIN countries co ON c.country_id = co.id
+       WHERE co.code = ANY($1)
+         AND ($2::date IS NULL OR c.start_date >= $2::date)
+         AND ($3::date IS NULL OR c.end_date <= $3::date)`,
+      [testRegions, test.start_date, test.end_date],
+    );
+
+    const controlPerf = await pool.query(
+      `SELECT COALESCE(SUM(revenue), 0) AS total_revenue,
+              COALESCE(SUM(spent), 0) AS total_spent,
+              COALESCE(SUM(conversions), 0) AS total_conversions,
+              COUNT(*) AS campaign_count
+       FROM campaigns c
+       JOIN countries co ON c.country_id = co.id
+       WHERE co.code = ANY($1)
+         AND ($2::date IS NULL OR c.start_date >= $2::date)
+         AND ($3::date IS NULL OR c.end_date <= $3::date)`,
+      [controlRegions, test.start_date, test.end_date],
+    );
+
+    const testRevenue = parseFloat(testPerf.rows[0]?.total_revenue) || 0;
+    const controlRevenue = parseFloat(controlPerf.rows[0]?.total_revenue) || 0;
+    const testConversions = parseInt(testPerf.rows[0]?.total_conversions, 10) || 0;
+    const controlConversions = parseInt(controlPerf.rows[0]?.total_conversions, 10) || 0;
+    const totalCampaigns = (parseInt(testPerf.rows[0]?.campaign_count, 10) || 0)
+      + (parseInt(controlPerf.rows[0]?.campaign_count, 10) || 0);
+
+    // Compute incremental lift from actual test vs control performance
+    const incrementalLift = controlRevenue > 0
+      ? Math.round(((testRevenue - controlRevenue) / controlRevenue) * 100) / 100
+      : 0;
+
+    // Compute confidence level based on sample size and effect consistency
+    const totalSamples = testConversions + controlConversions;
+    let confidenceLevel: number;
+    if (totalSamples >= 1000 && totalCampaigns >= 10) {
+      confidenceLevel = 0.95;
+    } else if (totalSamples >= 500 && totalCampaigns >= 5) {
+      confidenceLevel = 0.90;
+    } else if (totalSamples >= 100) {
+      confidenceLevel = 0.80;
+    } else {
+      confidenceLevel = Math.round(Math.min(0.5 + (totalSamples / 200) * 0.3, 0.75) * 100) / 100;
+    }
+
     const analysis = await pool.query(
       `UPDATE geo_lift_tests SET incremental_lift = $1, confidence_level = $2, status = $3
        WHERE id = $4 RETURNING *`,

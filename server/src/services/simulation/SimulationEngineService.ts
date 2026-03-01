@@ -364,9 +364,10 @@ export class SimulationEngineService {
     const increaseRatio = budgetIncrease / Math.max(currentBudget, 1);
 
     // Estimated competitors based on platform and CPC level
+    // Higher CPC implies a more competitive market with more bidders
     const estimatedCompetitors = Math.max(
       2,
-      Math.round(3 + avgCpc * 4 + Math.random() * 2),
+      Math.round(3 + avgCpc * 4),
     );
 
     // Aggressiveness based on budget increase magnitude

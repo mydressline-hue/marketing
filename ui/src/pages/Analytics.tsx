@@ -10,7 +10,6 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import {
-  AreaChart,
   Area,
   LineChart,
   Line,
@@ -187,15 +186,15 @@ export default function Analytics() {
   // -----------------------------------------------------------------------
 
   const spendQuery = useApiQuery<SpendSummary>('/v1/campaigns/spend/summary', {
-    refreshInterval: REFRESH_INTERVAL,
+    refetchInterval: REFRESH_INTERVAL,
   });
 
   const campaignsQuery = useApiQuery<CampaignRecord[]>('/v1/campaigns', {
-    refreshInterval: REFRESH_INTERVAL,
+    refetchInterval: REFRESH_INTERVAL,
   });
 
   const overviewQuery = useApiQuery<DashboardOverview>('/v1/dashboard/overview', {
-    refreshInterval: REFRESH_INTERVAL,
+    refetchInterval: REFRESH_INTERVAL,
   });
 
   // Agent mutation for on-demand analytics execution
@@ -500,8 +499,8 @@ export default function Analytics() {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: number, name: string) => [
-                        `${value}%`,
+                      formatter={(value: number | undefined, name: string) => [
+                        `${value ?? 0}%`,
                         name,
                       ]}
                       contentStyle={{
@@ -705,8 +704,8 @@ export default function Analytics() {
                       width={110}
                     />
                     <Tooltip
-                      formatter={(value: number, name: string) => [
-                        formatCurrency(value),
+                      formatter={(value: number | undefined, name: string) => [
+                        formatCurrency(value ?? 0),
                         name,
                       ]}
                       contentStyle={{
@@ -999,7 +998,7 @@ export default function Analytics() {
                   ? aiInsight
                   : agentMutation.loading
                     ? 'Analyzing attribution data...'
-                    : 'The Time Decay model most accurately reflects the customer journey for your vertical. Meta\u0027s contribution increases by 3.8pp under Position Based attribution, suggesting strong top-of-funnel influence that Last Click undervalues.'}
+                    : 'Click "Run Agent" to generate AI insights for your attribution data.'}
               </p>
             </div>
           </>
