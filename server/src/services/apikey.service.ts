@@ -126,13 +126,10 @@ export class ApiKeyService {
     );
 
     if (result.rowCount === 0) {
-      logger.warn('API key revocation failed -- key not found or not owned by user', {
-        keyId,
-        userId,
-      });
-    } else {
-      logger.info('API key revoked', { keyId, userId });
+      throw new NotFoundError('API key not found or not owned by user');
     }
+
+    logger.info('API key revoked', { keyId, userId });
   }
 
   /**

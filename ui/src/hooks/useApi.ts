@@ -33,7 +33,7 @@ export interface UseApiQueryResult<T> {
 }
 
 /** HTTP methods supported by `useApiMutation`. */
-export type MutationMethod = 'POST' | 'PUT' | 'DELETE';
+export type MutationMethod = 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 /** Options for the `useApiMutation` hook. */
 export interface UseApiMutationOptions {
@@ -178,11 +178,13 @@ export function useApiQuery<T = unknown>(
     };
   }, [enabled, fetchData]);
 
-  // Polling.
+  // Polling (pauses when tab is hidden to save bandwidth).
   useEffect(() => {
     if (refetchInterval > 0 && enabled) {
       intervalRef.current = setInterval(() => {
-        fetchData(true);
+        if (document.visibilityState === 'visible') {
+          fetchData(true);
+        }
       }, refetchInterval);
     }
     return () => {
@@ -244,6 +246,9 @@ export function useApiMutation<TResponse = unknown, TPayload = unknown>(
             break;
           case 'PUT':
             result = await api.put<TResponse>(endpoint, payload);
+            break;
+          case 'PATCH':
+            result = await api.patch<TResponse>(endpoint, payload);
             break;
           case 'DELETE':
             result = await api.delete<TResponse>(endpoint);

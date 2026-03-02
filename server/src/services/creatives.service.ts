@@ -104,24 +104,33 @@ export class CreativesService {
       ? `WHERE ${conditions.join(' AND ')}`
       : '';
 
-    const sortBy = pagination.sortBy ?? 'created_at';
-    const sortOrder = pagination.sortOrder ?? 'desc';
+    // Whitelist sort columns to prevent SQL injection
+    const ALLOWED_SORT_COLUMNS: Record<string, string> = {
+      created_at: 'created_at',
+      updated_at: 'updated_at',
+      name: 'name',
+      type: 'type',
+      fatigue_score: 'fatigue_score',
+      is_active: 'is_active',
+    };
+    const sortBy = ALLOWED_SORT_COLUMNS[pagination.sortBy ?? 'created_at'] ?? 'created_at';
+    const sortOrder = pagination.sortOrder === 'asc' ? 'ASC' : 'DESC';
     const offset = (pagination.page - 1) * pagination.limit;
 
-    // Count query
-    const countResult = await pool.query(
-      `SELECT COUNT(*) FROM creatives ${whereClause}`,
-      params,
-    );
+    // Count and data queries in parallel
+    const [countResult, dataResult] = await Promise.all([
+      pool.query(
+        `SELECT COUNT(*) FROM creatives ${whereClause}`,
+        params,
+      ),
+      pool.query(
+        `SELECT * FROM creatives ${whereClause}
+         ORDER BY ${sortBy} ${sortOrder}
+         LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
+        [...params, pagination.limit, offset],
+      ),
+    ]);
     const total = parseInt(countResult.rows[0].count, 10);
-
-    // Data query
-    const dataResult = await pool.query(
-      `SELECT * FROM creatives ${whereClause}
-       ORDER BY ${sortBy} ${sortOrder}
-       LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
-      [...params, pagination.limit, offset],
-    );
 
     return {
       data: dataResult.rows.map(mapRow),

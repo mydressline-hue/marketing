@@ -152,7 +152,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
 
     // Sync to backend (backend uses PATCH for dismiss)
-    api.put(`/v1/alerts/${id}/dismiss`, {}).catch((err) => {
+    api.patch(`/v1/alerts/${id}/dismiss`, {}).catch((err) => {
       console.error('[AppContext] Failed to dismiss alert:', err);
     });
   }, []);

@@ -19,9 +19,11 @@ import { AuthService } from '../services/auth.service';
  * Create a new user account and return tokens.
  */
 export const register = asyncHandler(async (req: Request, res: Response) => {
-  const { email, password, name, role } = req.body;
+  const { email, password, name } = req.body;
 
-  const result = await AuthService.register(email, password, name, role);
+  // Force 'user' role on self-registration to prevent privilege escalation.
+  // Admin role assignment must be done by an existing admin via user management.
+  const result = await AuthService.register(email, password, name, 'user');
 
   res.status(201).json({
     success: true,
