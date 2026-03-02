@@ -127,12 +127,13 @@ const funnelConversionRate = (from: number, to: number) =>
 // Custom tooltip for dual-axis chart
 // ---------------------------------------------------------------------------
 
-function RevenueSpendTooltip({ active, payload, label }: any) {
+interface TooltipPayloadEntry { dataKey: string; color: string; name: string; value: number; }
+function RevenueSpendTooltip({ active, payload, label }: { active?: boolean; payload?: TooltipPayloadEntry[]; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg shadow-lg p-3 text-sm">
       <p className="font-semibold text-surface-800 dark:text-surface-200 mb-1">{label}</p>
-      {payload.map((entry: any) => (
+      {payload.map((entry: TooltipPayloadEntry) => (
         <p key={entry.dataKey} style={{ color: entry.color }}>
           {entry.name}: {formatCurrency(entry.value)}
         </p>
@@ -153,11 +154,15 @@ function renderPieLabel({
   outerRadius,
   percent,
   name,
-}: any) {
+}: { cx: number; cy: number; midAngle?: number; innerRadius?: number; outerRadius?: number; percent?: number; name?: string }) {
   const RADIAN = Math.PI / 180;
-  const radius = innerRadius + (outerRadius - innerRadius) * 1.4;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  const mid = midAngle ?? 0;
+  const inner = innerRadius ?? 0;
+  const outer = outerRadius ?? 0;
+  const pct = percent ?? 0;
+  const radius = inner + (outer - inner) * 1.4;
+  const x = cx + radius * Math.cos(-mid * RADIAN);
+  const y = cy + radius * Math.sin(-mid * RADIAN);
 
   return (
     <text
@@ -169,7 +174,7 @@ function renderPieLabel({
       fontSize={12}
       fontWeight={500}
     >
-      {name} {(percent * 100).toFixed(0)}%
+      {name} {(pct * 100).toFixed(0)}%
     </text>
   );
 }

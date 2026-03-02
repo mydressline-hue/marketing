@@ -46,7 +46,7 @@ export default function EmptyState({
   const resolvedDescription = description ?? message;
 
   // Determine if the icon is a rendered element or a component reference.
-  const isElement = iconProp !== undefined && typeof iconProp === 'object' && iconProp !== null && '$$typeof' in (iconProp as any);
+  const isElement = iconProp !== undefined && typeof iconProp === 'object' && iconProp !== null && '$$typeof' in (iconProp as unknown as Record<string, unknown>);
   const IconComponent = (!isElement ? (iconProp as LucideIcon | undefined) : undefined) ?? Inbox;
 
   return (

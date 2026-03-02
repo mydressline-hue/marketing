@@ -56,7 +56,7 @@ describe('ErrorFallback', () => {
 
   it('has dark mode classes', () => {
     const error = new Error('Test');
-    const { container } = render(<ErrorFallback error={error} resetError={vi.fn()} />);
+    render(<ErrorFallback error={error} resetError={vi.fn()} />);
     const heading = screen.getByText('Something went wrong');
     expect(heading.className).toContain('dark:text-surface-100');
   });
@@ -90,7 +90,7 @@ describe('ErrorBoundary', () => {
       return <div>Recovered</div>;
     }
 
-    const { rerender } = render(
+    render(
       <ErrorBoundary>
         <ConditionalThrower />
       </ErrorBoundary>

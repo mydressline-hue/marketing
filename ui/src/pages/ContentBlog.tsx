@@ -162,7 +162,7 @@ export default function ContentBlog() {
   } = useApiMutation<ContentEntry>('/v1/agents/content-blog/run', { method: 'POST' });
 
   // --- Derived data ---
-  const contentItems = contentData?.items ?? [];
+  const contentItems = useMemo(() => contentData?.items ?? [], [contentData]);
   const totalItems = contentData?.total ?? contentItems.length;
   const kpis = statsData?.kpis ?? defaultKpis;
   const organicTrafficData = statsData?.organicTraffic ?? [];

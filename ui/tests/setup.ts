@@ -37,7 +37,7 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 // Mock scrollTo
-window.scrollTo = vi.fn() as any;
+window.scrollTo = vi.fn() as unknown as typeof window.scrollTo;
 
 // Mock WebSocket
 class MockWebSocket {
@@ -64,7 +64,7 @@ class MockWebSocket {
   });
 }
 
-global.WebSocket = MockWebSocket as any;
+global.WebSocket = MockWebSocket as unknown as typeof WebSocket;
 
 // Mock import.meta.env
 vi.stubEnv('VITE_API_BASE', '/api');

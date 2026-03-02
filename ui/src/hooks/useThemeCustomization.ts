@@ -97,7 +97,7 @@ function loadCustomization(): ThemeCustomization {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) return JSON.parse(stored);
-  } catch {}
+  } catch { /* stored value unparseable — use defaults */ }
   return { accentColor: 'blue', density: 'normal', fontSize: 15, borderRadius: 8 };
 }
 

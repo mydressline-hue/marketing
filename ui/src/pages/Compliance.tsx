@@ -179,7 +179,7 @@ export default function Compliance() {
   // ---- Derived state ----
   const categories = ['All', 'Data Protection', 'Ad Standards', 'Consumer Rights', 'Tax'];
 
-  const regulations = rules ?? [];
+  const regulations = useMemo(() => rules ?? [], [rules]);
 
   const filteredRegulations = useMemo(
     () =>

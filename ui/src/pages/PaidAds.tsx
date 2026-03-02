@@ -334,7 +334,7 @@ export default function PaidAds() {
   // Derived data
   // -----------------------------------------------------------------------
 
-  const campaigns = campaignsData?.campaigns ?? [];
+  const campaigns = useMemo(() => campaignsData?.campaigns ?? [], [campaignsData]);
   const dailyTrend = metricsData?.daily ?? [];
   const platformRoas = metricsData?.platformRoas ?? [];
   const totals = metricsData?.totals;

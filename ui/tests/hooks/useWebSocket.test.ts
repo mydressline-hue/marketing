@@ -6,8 +6,8 @@ import { useWebSocket } from '../../src/hooks/useWebSocket';
 // Helpers – we need to control the MockWebSocket behaviour per-test
 // ---------------------------------------------------------------------------
 
-let wsInstances: any[] = [];
-let OriginalWebSocket: any;
+let wsInstances: ControllableWebSocket[] = [];
+let OriginalWebSocket: typeof globalThis.WebSocket;
 
 class ControllableWebSocket {
   static OPEN = 1;
@@ -59,7 +59,7 @@ class ControllableWebSocket {
 beforeEach(() => {
   wsInstances = [];
   OriginalWebSocket = global.WebSocket;
-  global.WebSocket = ControllableWebSocket as any;
+  global.WebSocket = ControllableWebSocket as unknown as typeof WebSocket;
   vi.useFakeTimers();
 });
 
