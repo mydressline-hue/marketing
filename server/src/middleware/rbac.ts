@@ -58,6 +58,7 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     'write:content',
     'write:budget',
     'write:ab_tests',
+    'write:video',
   ],
   viewer: ['read:*'],
 };

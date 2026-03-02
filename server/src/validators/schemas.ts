@@ -356,3 +356,89 @@ export type EnqueueJobInput = z.infer<typeof enqueueJobSchema>;
 export type CreateApiKeyInput = z.infer<typeof createApiKeySchema>;
 export type UpdateApiKeyInput = z.infer<typeof updateApiKeySchema>;
 export type RecordSpendInput = z.infer<typeof recordSpendSchema>;
+
+// ---------------------------------------------------------------------------
+// Video pipeline schemas
+// ---------------------------------------------------------------------------
+
+const socialPlatformEnum = z.enum(
+  ['instagram', 'tiktok', 'facebook', 'youtube', 'twitter', 'linkedin'],
+  {
+    errorMap: () => ({
+      message:
+        'Platform must be one of: instagram, tiktok, facebook, youtube, twitter, linkedin',
+    }),
+  },
+);
+
+export const generateVideoSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  mode: z.enum(['image_to_video', 'text_to_video'], {
+    errorMap: () => ({
+      message: 'Mode must be image_to_video or text_to_video',
+    }),
+  }),
+  duration: z.union([z.literal(5), z.literal(10)], {
+    errorMap: () => ({ message: 'Duration must be 5 or 10 seconds' }),
+  }),
+  aspectRatio: z
+    .enum(['1:1', '16:9', '9:16', '4:3', '3:4'])
+    .default('9:16'),
+  prompt: z.string().min(1, 'Prompt is required'),
+  negativePrompt: z.string().optional(),
+  sourceImageUrl: z.string().url('Must be a valid URL').optional(),
+  productId: uuidString.optional(),
+  model: z.string().optional(),
+});
+
+export const runPipelineSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  mode: z.enum(['image_to_video', 'text_to_video'], {
+    errorMap: () => ({
+      message: 'Mode must be image_to_video or text_to_video',
+    }),
+  }),
+  duration: z.union([z.literal(5), z.literal(10)], {
+    errorMap: () => ({ message: 'Duration must be 5 or 10 seconds' }),
+  }),
+  aspectRatio: z
+    .enum(['1:1', '16:9', '9:16', '4:3', '3:4'])
+    .default('9:16'),
+  prompt: z.string().min(1, 'Prompt is required'),
+  negativePrompt: z.string().optional(),
+  sourceImageUrl: z.string().url('Must be a valid URL').optional(),
+  productId: uuidString.optional(),
+  model: z.string().optional(),
+  targetPlatforms: z
+    .array(socialPlatformEnum)
+    .min(1, 'At least one target platform is required'),
+  tone: z.string().optional(),
+  language: z.string().optional(),
+  targetAudience: z.string().optional(),
+  brandVoice: z.string().optional(),
+  scheduledAt: isoDateString.optional(),
+});
+
+export const generateEnhancementsSchema = z.object({
+  platforms: z
+    .array(socialPlatformEnum)
+    .min(1, 'At least one platform is required'),
+  productTitle: z.string().min(1, 'Product title is required'),
+  productDescription: z.string().min(1, 'Product description is required'),
+  tone: z.string().optional(),
+  language: z.string().optional(),
+  targetAudience: z.string().optional(),
+  brandVoice: z.string().optional(),
+});
+
+export const publishVideoSchema = z.object({
+  platforms: z
+    .array(socialPlatformEnum)
+    .min(1, 'At least one platform is required'),
+  scheduledAt: isoDateString.optional(),
+});
+
+export type GenerateVideoInput = z.infer<typeof generateVideoSchema>;
+export type RunPipelineInput = z.infer<typeof runPipelineSchema>;
+export type GenerateEnhancementsInput = z.infer<typeof generateEnhancementsSchema>;
+export type PublishVideoInput = z.infer<typeof publishVideoSchema>;

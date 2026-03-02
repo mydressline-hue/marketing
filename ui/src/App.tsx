@@ -28,6 +28,7 @@ const RevenueForecast = lazy(() => import('./pages/RevenueForecast'));
 const Orchestrator = lazy(() => import('./pages/Orchestrator'));
 const KillSwitch = lazy(() => import('./pages/KillSwitch'));
 const SettingsPage = lazy(() => import('./pages/Settings'));
+const VideoGeneration = lazy(() => import('./pages/VideoGeneration'));
 
 function LoadingSpinner() {
   return (
@@ -72,6 +73,7 @@ export default function App() {
                 <Route path="/revenue-forecast" element={<RevenueForecast />} />
                 <Route path="/orchestrator" element={<Orchestrator />} />
                 <Route path="/kill-switch" element={<KillSwitch />} />
+                <Route path="/video-generation" element={<VideoGeneration />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Routes>
             </Suspense>

@@ -2,7 +2,6 @@ import { useState, useCallback } from 'react';
 import {
   ShoppingBag,
   RefreshCw,
-  Package,
   CheckCircle,
   AlertTriangle,
   ExternalLink,
@@ -25,11 +24,11 @@ import Card from '../components/shared/Card';
 import KPICard from '../components/shared/KPICard';
 import StatusBadge from '../components/shared/StatusBadge';
 import ProgressBar from '../components/shared/ProgressBar';
-import DataTable from '../components/shared/DataTable';
 import { useApiQuery, useApiMutation } from '../hooks/useApi';
-import { TableSkeleton, CardSkeleton } from '../components/shared/LoadingSkeleton';
+import { CardSkeleton } from '../components/shared/LoadingSkeleton';
 import { ApiErrorDisplay } from '../components/shared/ErrorBoundary';
 import EmptyState from '../components/shared/EmptyState';
+import ProductsHub from '../components/products/ProductsHub';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -138,9 +137,6 @@ export default function Shopify() {
 
   // ---- API queries ----
   const {
-    data: products,
-    loading: productsLoading,
-    error: productsError,
     refetch: refetchProducts,
   } = useApiQuery<Product[]>('/v1/products');
 
@@ -188,7 +184,6 @@ export default function Shopify() {
   }, [runAgent, refetchProducts, refetchSync]);
 
   // ---- Derived data (safe defaults when API hasn't responded yet) ----
-  const productList = products ?? [];
   const sync = syncStatus ?? null;
   const webhookList = webhooks ?? [];
 
@@ -197,85 +192,6 @@ export default function Shopify() {
   const salesData = sync?.salesData ?? [];
   const conversionBarData = sync?.conversionFunnel ?? [];
   const upsellIntegrations = sync?.upsellIntegrations ?? [];
-
-  // ---- Product columns ----
-  const productColumns = [
-    {
-      key: 'title',
-      label: 'Product',
-      render: (item: Product) => (
-        <div>
-          <p className="font-medium text-surface-900 dark:text-surface-100">{item.title}</p>
-          <p className="text-xs text-surface-500 dark:text-surface-400">{item.sku}</p>
-        </div>
-      ),
-    },
-    {
-      key: 'status',
-      label: 'Status',
-      render: (item: Product) => <StatusBadge status={item.status} />,
-    },
-    {
-      key: 'inventory',
-      label: 'Inventory',
-      render: (item: Product) => (
-        <span
-          className={`font-medium ${
-            item.inventory <= 10
-              ? 'text-red-600'
-              : item.inventory <= 50
-                ? 'text-yellow-600'
-                : 'text-surface-900 dark:text-surface-100'
-          }`}
-        >
-          {item.inventory.toLocaleString()}
-        </span>
-      ),
-    },
-    {
-      key: 'variants',
-      label: 'Variants',
-      render: (item: Product) => (
-        <span className="text-surface-700 dark:text-surface-200">{item.variants}</span>
-      ),
-    },
-    {
-      key: 'synced',
-      label: 'Synced',
-      render: (item: Product) =>
-        item.synced ? (
-          <CheckCircle className="w-4 h-4 text-green-500" />
-        ) : (
-          <span className="text-red-400 text-sm font-medium">--</span>
-        ),
-    },
-    {
-      key: 'lastSync',
-      label: 'Last Sync',
-      render: (item: Product) => (
-        <span className="text-sm text-surface-500 dark:text-surface-400">{item.lastSync}</span>
-      ),
-    },
-    {
-      key: 'actions',
-      label: 'Actions',
-      render: (item: Product) => (
-        <div className="flex items-center gap-2">
-          <button className="text-xs text-primary-600 hover:text-primary-800 font-medium">
-            Sync
-          </button>
-          <a
-            href={`https://admin.shopify.com/products/${item.id}`}
-            target="_blank"
-            rel="noreferrer"
-            className="text-surface-400 hover:text-surface-600"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
-        </div>
-      ),
-    },
-  ];
 
   return (
     <div className="space-y-6">
@@ -480,38 +396,8 @@ export default function Shopify() {
         </Card>
       </div>
 
-      {/* Products Table */}
-      <Card
-        title="Products"
-        subtitle="Shopify product catalog sync status"
-        noPadding
-        actions={
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-surface-500 dark:text-surface-400">
-              {productList.length} total products
-            </span>
-            <Package className="w-4 h-4 text-surface-400" />
-          </div>
-        }
-      >
-        {productsLoading ? (
-          <TableSkeleton rows={6} columns={7} />
-        ) : productsError ? (
-          <ApiErrorDisplay
-            error={productsError}
-            onRetry={refetchProducts}
-            message="Failed to load products"
-          />
-        ) : productList.length === 0 ? (
-          <EmptyState
-            icon={<Package className="w-6 h-6 text-surface-400" />}
-            title="No products found"
-            description="Connect your Shopify store to sync products."
-          />
-        ) : (
-          <DataTable columns={productColumns} data={productList} />
-        )}
-      </Card>
+      {/* Products Hub -- AI Picker, Filtering, Collections & Analytics */}
+      <ProductsHub />
 
       {/* Inventory Alerts */}
       <Card

@@ -26,6 +26,7 @@ import campaignsRoutes from './routes/campaigns.routes';
 import countriesRoutes from './routes/countries.routes';
 import creativesRoutes from './routes/creatives.routes';
 import productsRoutes from './routes/products.routes';
+import productFeaturesRoutes from './routes/product-features.routes';
 import contentRoutes from './routes/content.routes';
 import alertsRoutes from './routes/alerts.routes';
 import settingsRoutes from './routes/settings.routes';
@@ -48,6 +49,7 @@ import finalOutputsStrategyRoutes from './routes/final-outputs-strategy.routes';
 import finalOutputsChannelsRoutes from './routes/final-outputs-channels.routes';
 import finalOutputsRoadmapRoutes from './routes/final-outputs-roadmap.routes';
 import finalOutputsValidationRoutes from './routes/final-outputs-validation.routes';
+import videoRoutes from './routes/video.routes';
 
 // ---------------------------------------------------------------------------
 // App
@@ -78,6 +80,7 @@ app.use(`${prefix}/campaigns`, campaignsRoutes);
 app.use(`${prefix}/countries`, countriesRoutes);
 app.use(`${prefix}/creatives`, creativesRoutes);
 app.use(`${prefix}/products`, productsRoutes);
+app.use(`${prefix}/products`, productFeaturesRoutes);
 app.use(`${prefix}/content`, contentRoutes);
 app.use(`${prefix}/alerts`, alertsRoutes);
 app.use(`${prefix}/settings`, settingsRoutes);
@@ -99,6 +102,7 @@ app.use(`${prefix}/final-outputs`, finalOutputsStrategyRoutes);
 app.use(`${prefix}/final-outputs/channel-allocation`, finalOutputsChannelsRoutes);
 app.use(`${prefix}/final-outputs`, finalOutputsRoadmapRoutes);
 app.use(`${prefix}/final-outputs`, finalOutputsValidationRoutes);
+app.use(`${prefix}/video`, videoRoutes);
 
 // ── Error handling ────────────────────────────────────────────────────────
 app.use(notFoundHandler);
