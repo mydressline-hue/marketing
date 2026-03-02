@@ -161,7 +161,7 @@ export default function ABTesting() {
     refetch: refetchTests,
   } = useApiQuery<ABTestListResponse>('/v1/agents/ab-testing/tests');
 
-  const tests = testsResponse?.tests ?? [];
+  const tests = useMemo(() => testsResponse?.tests ?? [], [testsResponse]);
   const summary = testsResponse?.summary;
   const improvementTrend = testsResponse?.improvementTrend ?? [];
 

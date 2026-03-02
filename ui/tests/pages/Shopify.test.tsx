@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { createElement } from 'react';
+import { createElement, type ReactNode } from 'react';
 
 vi.mock('../../src/hooks/useApi', () => ({
   useApiQuery: vi.fn(),
@@ -20,13 +20,13 @@ vi.mock('../../src/context/AppContext', () => ({
   })),
 }));
 vi.mock('recharts', () => ({
-  ResponsiveContainer: ({ children }: any) => createElement('div', null, children),
-  AreaChart: ({ children }: any) => createElement('div', null, children),
-  BarChart: ({ children }: any) => createElement('div', null, children),
-  LineChart: ({ children }: any) => createElement('div', null, children),
-  PieChart: ({ children }: any) => createElement('div', null, children),
-  RadarChart: ({ children }: any) => createElement('div', null, children),
-  ComposedChart: ({ children }: any) => createElement('div', null, children),
+  ResponsiveContainer: ({ children }: { children?: ReactNode }) => createElement('div', null, children),
+  AreaChart: ({ children }: { children?: ReactNode }) => createElement('div', null, children),
+  BarChart: ({ children }: { children?: ReactNode }) => createElement('div', null, children),
+  LineChart: ({ children }: { children?: ReactNode }) => createElement('div', null, children),
+  PieChart: ({ children }: { children?: ReactNode }) => createElement('div', null, children),
+  RadarChart: ({ children }: { children?: ReactNode }) => createElement('div', null, children),
+  ComposedChart: ({ children }: { children?: ReactNode }) => createElement('div', null, children),
   Area: () => null, Bar: () => null, Line: () => null, Pie: () => null, Radar: () => null,
   XAxis: () => null, YAxis: () => null, CartesianGrid: () => null, Tooltip: () => null,
   Legend: () => null, Cell: () => null, PolarGrid: () => null, PolarAngleAxis: () => null,
@@ -104,12 +104,12 @@ const mockWebhooks = [
 
 // Helper - Shopify uses 3 useApiQuery calls: products, syncStatus, webhooks
 function setupMocks(overrides: {
-  products?: { data: any; loading: boolean; error: any };
-  sync?: { data: any; loading: boolean; error: any };
-  webhooks?: { data: any; loading: boolean; error: any };
+  products?: { data: unknown; loading: boolean; error: Error | null };
+  sync?: { data: unknown; loading: boolean; error: Error | null };
+  webhooks?: { data: unknown; loading: boolean; error: Error | null };
 } = {}) {
   const defaultReturn = { data: null, loading: false, error: null, refetch: vi.fn() };
-  (useApiQuery as any)
+  (useApiQuery as ReturnType<typeof vi.fn>)
     .mockReturnValueOnce({ ...defaultReturn, ...overrides.products })
     .mockReturnValueOnce({ ...defaultReturn, ...overrides.sync })
     .mockReturnValueOnce({ ...defaultReturn, ...overrides.webhooks });

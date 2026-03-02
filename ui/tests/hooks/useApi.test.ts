@@ -31,7 +31,7 @@ describe('useApiQuery', () => {
   });
 
   it('should fetch data on mount', async () => {
-    (api.get as any).mockResolvedValue({ id: 1, name: 'test' });
+    vi.mocked(api.get).mockResolvedValue({ id: 1, name: 'test' });
     const { result } = renderHook(() => useApiQuery('/v1/test'), { wrapper });
 
     expect(result.current.loading).toBe(true);
@@ -41,7 +41,7 @@ describe('useApiQuery', () => {
   });
 
   it('should set error on fetch failure', async () => {
-    (api.get as any).mockRejectedValue(new Error('Network error'));
+    vi.mocked(api.get).mockRejectedValue(new Error('Network error'));
     const { result } = renderHook(() => useApiQuery('/v1/test'), { wrapper });
 
     await waitFor(() => expect(result.current.error).toBeTruthy());
@@ -60,19 +60,19 @@ describe('useApiQuery', () => {
   });
 
   it('should support refetch', async () => {
-    (api.get as any).mockResolvedValue({ count: 1 });
+    vi.mocked(api.get).mockResolvedValue({ count: 1 });
     const { result } = renderHook(() => useApiQuery('/v1/test'), { wrapper });
 
     await waitFor(() => expect(result.current.data).toEqual({ count: 1 }));
 
-    (api.get as any).mockResolvedValue({ count: 2 });
+    vi.mocked(api.get).mockResolvedValue({ count: 2 });
     await act(async () => { await result.current.refetch(); });
 
     await waitFor(() => expect(result.current.data).toEqual({ count: 2 }));
   });
 
   it('should serialize params into cache key', async () => {
-    (api.get as any).mockResolvedValue([]);
+    vi.mocked(api.get).mockResolvedValue([]);
     const { result } = renderHook(
       () => useApiQuery('/v1/test', { params: { country: 'US', page: 1 } }),
       { wrapper }
@@ -83,21 +83,21 @@ describe('useApiQuery', () => {
   });
 
   it('should handle params with undefined values', async () => {
-    (api.get as any).mockResolvedValue([]);
+    vi.mocked(api.get).mockResolvedValue([]);
     renderHook(
       () => useApiQuery('/v1/test', { params: { country: 'US', filter: undefined } }),
       { wrapper }
     );
 
     await waitFor(() => {
-      const calledWith = (api.get as any).mock.calls[0]?.[0] || '';
+      const calledWith = vi.mocked(api.get).mock.calls[0]?.[0] ?? '';
       expect(calledWith).toContain('country=US');
       expect(calledWith).not.toContain('filter');
     });
   });
 
   it('should use cache for subsequent calls with same key', async () => {
-    (api.get as any).mockResolvedValue({ cached: true });
+    vi.mocked(api.get).mockResolvedValue({ cached: true });
     const { result } = renderHook(() => useApiQuery('/v1/cached'), { wrapper });
 
     await waitFor(() => expect(result.current.data).toEqual({ cached: true }));
@@ -106,7 +106,7 @@ describe('useApiQuery', () => {
 
   it('should handle polling with refetchInterval', async () => {
     vi.useFakeTimers();
-    (api.get as any).mockResolvedValue({ polled: true });
+    vi.mocked(api.get).mockResolvedValue({ polled: true });
 
     renderHook(
       () => useApiQuery('/v1/test', { refetchInterval: 5000 }),
@@ -118,7 +118,7 @@ describe('useApiQuery', () => {
   });
 
   it('should skip cache when skipCache is true', async () => {
-    (api.get as any).mockResolvedValue({ fresh: true });
+    vi.mocked(api.get).mockResolvedValue({ fresh: true });
     const { result } = renderHook(
       () => useApiQuery('/v1/test', { skipCache: true }),
       { wrapper }
@@ -128,25 +128,25 @@ describe('useApiQuery', () => {
   });
 
   it('should return loading true initially', () => {
-    (api.get as any).mockImplementation(() => new Promise(() => {}));
+    vi.mocked(api.get).mockImplementation(() => new Promise(() => {}));
     const { result } = renderHook(() => useApiQuery('/v1/test'), { wrapper });
     expect(result.current.loading).toBe(true);
   });
 
   it('should handle empty response', async () => {
-    (api.get as any).mockResolvedValue(null);
+    vi.mocked(api.get).mockResolvedValue(null);
     const { result } = renderHook(() => useApiQuery('/v1/test'), { wrapper });
     await waitFor(() => expect(result.current.loading).toBe(false));
   });
 
   it('should handle array response', async () => {
-    (api.get as any).mockResolvedValue([1, 2, 3]);
+    vi.mocked(api.get).mockResolvedValue([1, 2, 3]);
     const { result } = renderHook(() => useApiQuery<number[]>('/v1/test'), { wrapper });
     await waitFor(() => expect(result.current.data).toEqual([1, 2, 3]));
   });
 
   it('should convert non-Error thrown values to Error', async () => {
-    (api.get as any).mockRejectedValue('string error');
+    vi.mocked(api.get).mockRejectedValue('string error');
     const { result } = renderHook(() => useApiQuery('/v1/test'), { wrapper });
     await waitFor(() => expect(result.current.error).toBeInstanceOf(Error));
   });
@@ -158,13 +158,13 @@ describe('useApiMutation', () => {
   });
 
   it('should execute POST mutation', async () => {
-    (api.post as any).mockResolvedValue({ id: 1 });
+    vi.mocked(api.post).mockResolvedValue({ id: 1 });
     const { result } = renderHook(
       () => useApiMutation('/v1/test', { method: 'POST' }),
       { wrapper }
     );
 
-    let response: any;
+    let response: unknown;
     await act(async () => { response = await result.current.mutate({ name: 'test' }); });
 
     expect(response).toEqual({ id: 1 });
@@ -172,7 +172,7 @@ describe('useApiMutation', () => {
   });
 
   it('should execute PUT mutation', async () => {
-    (api.put as any).mockResolvedValue({ updated: true });
+    vi.mocked(api.put).mockResolvedValue({ updated: true });
     const { result } = renderHook(
       () => useApiMutation('/v1/test', { method: 'PUT' }),
       { wrapper }
@@ -183,7 +183,7 @@ describe('useApiMutation', () => {
   });
 
   it('should execute DELETE mutation', async () => {
-    (api.delete as any).mockResolvedValue({ deleted: true });
+    vi.mocked(api.delete).mockResolvedValue({ deleted: true });
     const { result } = renderHook(
       () => useApiMutation('/v1/test', { method: 'DELETE' }),
       { wrapper }
@@ -194,13 +194,13 @@ describe('useApiMutation', () => {
   });
 
   it('should set loading during mutation', async () => {
-    let resolvePromise: (v: any) => void;
-    (api.post as any).mockImplementation(() => new Promise(r => { resolvePromise = r; }));
+    let resolvePromise: (v: unknown) => void;
+    vi.mocked(api.post).mockImplementation(() => new Promise(r => { resolvePromise = r; }));
     const { result } = renderHook(() => useApiMutation('/v1/test'), { wrapper });
 
     expect(result.current.loading).toBe(false);
 
-    let mutatePromise: Promise<any>;
+    let mutatePromise: Promise<unknown>;
     act(() => { mutatePromise = result.current.mutate({}); });
 
     expect(result.current.loading).toBe(true);
@@ -210,7 +210,7 @@ describe('useApiMutation', () => {
   });
 
   it('should handle mutation error', async () => {
-    (api.post as any).mockRejectedValue(new Error('Server error'));
+    vi.mocked(api.post).mockRejectedValue(new Error('Server error'));
     const { result } = renderHook(() => useApiMutation('/v1/test'), { wrapper });
 
     await act(async () => { await result.current.mutate({}); });
@@ -220,7 +220,7 @@ describe('useApiMutation', () => {
 
   it('should call onSuccess callback', async () => {
     const onSuccess = vi.fn();
-    (api.post as any).mockResolvedValue({ id: 1 });
+    vi.mocked(api.post).mockResolvedValue({ id: 1 });
     const { result } = renderHook(
       () => useApiMutation('/v1/test', { onSuccess }),
       { wrapper }
@@ -232,7 +232,7 @@ describe('useApiMutation', () => {
 
   it('should call onError callback', async () => {
     const onError = vi.fn();
-    (api.post as any).mockRejectedValue(new Error('fail'));
+    vi.mocked(api.post).mockRejectedValue(new Error('fail'));
     const { result } = renderHook(
       () => useApiMutation('/v1/test', { onError }),
       { wrapper }
@@ -243,7 +243,7 @@ describe('useApiMutation', () => {
   });
 
   it('should reset state', async () => {
-    (api.post as any).mockResolvedValue({ id: 1 });
+    vi.mocked(api.post).mockResolvedValue({ id: 1 });
     const { result } = renderHook(() => useApiMutation('/v1/test'), { wrapper });
 
     await act(async () => { await result.current.mutate({}); });
@@ -255,7 +255,7 @@ describe('useApiMutation', () => {
   });
 
   it('should default to POST method', async () => {
-    (api.post as any).mockResolvedValue({});
+    vi.mocked(api.post).mockResolvedValue({});
     const { result } = renderHook(() => useApiMutation('/v1/test'), { wrapper });
 
     await act(async () => { await result.current.mutate({}); });
@@ -263,16 +263,16 @@ describe('useApiMutation', () => {
   });
 
   it('should return null on error', async () => {
-    (api.post as any).mockRejectedValue(new Error('fail'));
+    vi.mocked(api.post).mockRejectedValue(new Error('fail'));
     const { result } = renderHook(() => useApiMutation('/v1/test'), { wrapper });
 
-    let response: any;
+    let response: unknown;
     await act(async () => { response = await result.current.mutate({}); });
     expect(response).toBeNull();
   });
 
   it('should convert non-Error to Error', async () => {
-    (api.post as any).mockRejectedValue('string error');
+    vi.mocked(api.post).mockRejectedValue('string error');
     const { result } = renderHook(() => useApiMutation('/v1/test'), { wrapper });
 
     await act(async () => { await result.current.mutate({}); });

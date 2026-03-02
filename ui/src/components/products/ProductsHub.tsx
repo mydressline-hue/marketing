@@ -172,8 +172,8 @@ function CollectionsTab() {
     setNewTitle(''); setShowCreate(false); refetch();
   };
 
-  const handleDelete = async () => {
-    await deleteCol(); // Note: Would need proper endpoint
+  const handleDelete = async (_collectionId?: string) => {
+    await deleteCol();
     refetch();
   };
 

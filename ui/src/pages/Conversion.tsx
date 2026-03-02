@@ -259,7 +259,7 @@ export default function Conversion() {
   const kpis = overviewData?.kpis;
   const funnelSteps = overviewData?.funnel?.steps ?? [];
   const dropOffs = overviewData?.funnel?.dropOffs ?? [];
-  const countryFunnelData = overviewData?.countryFunnel ?? [];
+  const countryFunnelData = useMemo(() => overviewData?.countryFunnel ?? [], [overviewData]);
   const heatmapInsights = overviewData?.heatmapInsights ?? [];
   const pageSpeedMetrics = overviewData?.pageSpeed?.metrics ?? [];
   const lighthouse = overviewData?.pageSpeed?.lighthouse;

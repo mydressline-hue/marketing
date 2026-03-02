@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { createElement } from 'react';
+import { createElement, type ReactNode } from 'react';
 
 vi.mock('../../src/hooks/useApi', () => ({
   useApiQuery: vi.fn(),
@@ -23,14 +23,14 @@ vi.mock('../../src/context/AppContext', () => ({
 }));
 
 vi.mock('recharts', () => ({
-  ResponsiveContainer: ({ children }: any) => createElement('div', { 'data-testid': 'responsive-container' }, children),
-  AreaChart: ({ children }: any) => createElement('div', { 'data-testid': 'area-chart' }, children),
-  BarChart: ({ children }: any) => createElement('div', { 'data-testid': 'bar-chart' }, children),
-  LineChart: ({ children }: any) => createElement('div', { 'data-testid': 'line-chart' }, children),
-  PieChart: ({ children }: any) => createElement('div', { 'data-testid': 'pie-chart' }, children),
-  RadarChart: ({ children }: any) => createElement('div', { 'data-testid': 'radar-chart' }, children),
-  ComposedChart: ({ children }: any) => createElement('div', null, children),
-  ScatterChart: ({ children }: any) => createElement('div', { 'data-testid': 'scatter-chart' }, children),
+  ResponsiveContainer: ({ children }: { children?: ReactNode }) => createElement('div', { 'data-testid': 'responsive-container' }, children),
+  AreaChart: ({ children }: { children?: ReactNode }) => createElement('div', { 'data-testid': 'area-chart' }, children),
+  BarChart: ({ children }: { children?: ReactNode }) => createElement('div', { 'data-testid': 'bar-chart' }, children),
+  LineChart: ({ children }: { children?: ReactNode }) => createElement('div', { 'data-testid': 'line-chart' }, children),
+  PieChart: ({ children }: { children?: ReactNode }) => createElement('div', { 'data-testid': 'pie-chart' }, children),
+  RadarChart: ({ children }: { children?: ReactNode }) => createElement('div', { 'data-testid': 'radar-chart' }, children),
+  ComposedChart: ({ children }: { children?: ReactNode }) => createElement('div', null, children),
+  ScatterChart: ({ children }: { children?: ReactNode }) => createElement('div', { 'data-testid': 'scatter-chart' }, children),
   Area: () => null, Bar: () => null, Line: () => null, Pie: () => null, Radar: () => null,
   Scatter: () => null,
   XAxis: () => null, YAxis: () => null, CartesianGrid: () => null, Tooltip: () => null,
@@ -108,14 +108,14 @@ const mockAgentStatus = {
 
 // Helper for mock setup
 function setupMocks(overrides: {
-  countries?: { data: any; loading: boolean; error: any };
-  agentStatus?: { data: any; loading: boolean; error: any };
+  countries?: { data: unknown; loading: boolean; error: unknown };
+  agentStatus?: { data: unknown; loading: boolean; error: unknown };
 } = {}) {
   const defaultReturn = { data: null, loading: false, error: null, refetch: vi.fn() };
   const countriesReturn = { ...defaultReturn, ...overrides.countries };
   const agentStatusReturn = { ...defaultReturn, ...overrides.agentStatus };
 
-  (useApiQuery as any)
+  vi.mocked(useApiQuery)
     .mockReturnValueOnce(countriesReturn)      // /v1/countries
     .mockReturnValueOnce(agentStatusReturn);   // /v1/agents/market-intelligence
 }

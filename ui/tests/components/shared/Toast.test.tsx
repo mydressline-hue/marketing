@@ -2,16 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { ToastProvider, useToast } from '../../../src/components/shared/Toast';
 
-// Helper component to trigger toasts from tests
-function ToastTrigger({ type, message, duration }: { type: 'success' | 'error' | 'warning' | 'info'; message: string; duration?: number }) {
-  const toast = useToast();
-  return (
-    <button onClick={() => toast.toast(type, message, duration)}>
-      Show Toast
-    </button>
-  );
-}
-
 function SuccessTrigger() {
   const toast = useToast();
   return <button onClick={() => toast.success('Success message')}>Success</button>;

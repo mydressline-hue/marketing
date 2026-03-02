@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { createElement } from 'react';
+import { createElement, type ReactNode } from 'react';
 
 // Mock hooks before importing the page component
 vi.mock('../../src/hooks/useApi', () => ({
@@ -24,13 +24,13 @@ vi.mock('../../src/context/AppContext', () => ({
 }));
 
 vi.mock('recharts', () => ({
-  ResponsiveContainer: ({ children }: any) => createElement('div', { 'data-testid': 'responsive-container' }, children),
-  AreaChart: ({ children }: any) => createElement('div', { 'data-testid': 'area-chart' }, children),
-  BarChart: ({ children }: any) => createElement('div', { 'data-testid': 'bar-chart' }, children),
-  LineChart: ({ children }: any) => createElement('div', { 'data-testid': 'line-chart' }, children),
-  PieChart: ({ children }: any) => createElement('div', { 'data-testid': 'pie-chart' }, children),
-  RadarChart: ({ children }: any) => createElement('div', { 'data-testid': 'radar-chart' }, children),
-  ComposedChart: ({ children }: any) => createElement('div', null, children),
+  ResponsiveContainer: ({ children }: { children?: ReactNode }) => createElement('div', { 'data-testid': 'responsive-container' }, children),
+  AreaChart: ({ children }: { children?: ReactNode }) => createElement('div', { 'data-testid': 'area-chart' }, children),
+  BarChart: ({ children }: { children?: ReactNode }) => createElement('div', { 'data-testid': 'bar-chart' }, children),
+  LineChart: ({ children }: { children?: ReactNode }) => createElement('div', { 'data-testid': 'line-chart' }, children),
+  PieChart: ({ children }: { children?: ReactNode }) => createElement('div', { 'data-testid': 'pie-chart' }, children),
+  RadarChart: ({ children }: { children?: ReactNode }) => createElement('div', { 'data-testid': 'radar-chart' }, children),
+  ComposedChart: ({ children }: { children?: ReactNode }) => createElement('div', null, children),
   Area: () => null, Bar: () => null, Line: () => null, Pie: () => null, Radar: () => null,
   XAxis: () => null, YAxis: () => null, CartesianGrid: () => null, Tooltip: () => null,
   Legend: () => null, Cell: () => null, PolarGrid: () => null, PolarAngleAxis: () => null,
@@ -90,10 +90,10 @@ const mockAlerts = [
 
 // Helper to configure mocks per call order
 function setupMocks(overrides: {
-  overview?: { data: any; loading: boolean; error: any };
-  spend?: { data: any; loading: boolean; error: any };
-  agents?: { data: any; loading: boolean; error: any };
-  alerts?: { data: any; loading: boolean; error: any };
+  overview?: { data: unknown; loading: boolean; error: unknown };
+  spend?: { data: unknown; loading: boolean; error: unknown };
+  agents?: { data: unknown; loading: boolean; error: unknown };
+  alerts?: { data: unknown; loading: boolean; error: unknown };
 } = {}) {
   const defaultReturn = { data: null, loading: false, error: null, refetch: vi.fn() };
 
@@ -102,7 +102,7 @@ function setupMocks(overrides: {
   const agentsReturn = { ...defaultReturn, ...overrides.agents };
   const alertsReturn = { ...defaultReturn, ...overrides.alerts };
 
-  (useApiQuery as any)
+  vi.mocked(useApiQuery)
     .mockReturnValueOnce(overviewReturn)   // /v1/dashboard/overview
     .mockReturnValueOnce(spendReturn)      // /v1/campaigns/spend/summary
     .mockReturnValueOnce(agentsReturn)     // /v1/agents
@@ -327,7 +327,7 @@ describe('Dashboard', () => {
 
   it('sets up WebSocket subscriptions for agent_status and alerts', () => {
     const mockSubscribe = vi.fn(() => vi.fn());
-    (useWebSocket as any).mockReturnValue({
+    vi.mocked(useWebSocket).mockReturnValue({
       connected: true,
       subscribe: mockSubscribe,
       lastMessage: null,
@@ -348,7 +348,7 @@ describe('Dashboard', () => {
   });
 
   it('displays "All systems operational" when WebSocket is connected', () => {
-    (useWebSocket as any).mockReturnValue({
+    vi.mocked(useWebSocket).mockReturnValue({
       connected: true,
       subscribe: vi.fn(() => vi.fn()),
       lastMessage: null,
@@ -368,7 +368,7 @@ describe('Dashboard', () => {
   });
 
   it('displays "Connecting..." when WebSocket is disconnected', () => {
-    (useWebSocket as any).mockReturnValue({
+    vi.mocked(useWebSocket).mockReturnValue({
       connected: false,
       subscribe: vi.fn(() => vi.fn()),
       lastMessage: null,
