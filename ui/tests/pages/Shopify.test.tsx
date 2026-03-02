@@ -33,6 +33,9 @@ vi.mock('recharts', () => ({
   PolarRadiusAxis: () => null, ScatterChart: () => null, Scatter: () => null, ZAxis: () => null,
   Funnel: () => null, FunnelChart: () => null,
 }));
+vi.mock('../../src/components/products/ProductsHub', () => ({
+  default: () => createElement('div', { 'data-testid': 'products-hub-mock' }, 'ProductsHub'),
+}));
 
 import { useApiQuery } from '../../src/hooks/useApi';
 import Shopify from '../../src/pages/Shopify';
@@ -193,16 +196,14 @@ describe('Shopify', () => {
     expect(screen.getByText('Blog & Content Sync')).toBeInTheDocument();
   });
 
-  it('renders products table with product names', () => {
+  it('renders products hub section', () => {
     setupMocks({
       products: { data: mockProducts, loading: false, error: null },
       sync: { data: mockSyncStatus, loading: false, error: null },
       webhooks: { data: mockWebhooks, loading: false, error: null },
     });
     renderPage();
-    expect(screen.getAllByText('Products').length).toBeGreaterThan(0);
-    expect(screen.getByText('Premium Headphones')).toBeInTheDocument();
-    expect(screen.getAllByText('Wireless Mouse').length).toBeGreaterThan(0);
+    expect(screen.getByTestId('products-hub-mock')).toBeInTheDocument();
   });
 
   it('renders inventory alerts section', () => {

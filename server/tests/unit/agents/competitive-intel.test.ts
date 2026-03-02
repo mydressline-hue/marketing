@@ -600,15 +600,13 @@ describe('CompetitiveIntelAgent', () => {
 
       // fetchAllCompetitors
       mockQuery.mockResolvedValueOnce({ rows: competitors });
-      // analyzeCompetitor x5 (each with fetchCompetitor)
+      // For each competitor: analyzeCompetitor (fetchCompetitor) then
+      // performGapAnalysis (fetchCompetitor + fetchOurMetrics spend + count)
       for (const comp of competitors) {
-        mockQuery.mockResolvedValueOnce({ rows: [comp] });
-      }
-      // performGapAnalysis x5 (fetchCompetitor + fetchOurMetrics each)
-      for (const comp of competitors) {
-        mockQuery.mockResolvedValueOnce({ rows: [comp] });
-        mockQuery.mockResolvedValueOnce({ rows: [{ total: '20000' }] });
-        mockQuery.mockResolvedValueOnce({ rows: [{ count: '30' }] });
+        mockQuery.mockResolvedValueOnce({ rows: [comp] }); // analyzeCompetitor -> fetchCompetitor
+        mockQuery.mockResolvedValueOnce({ rows: [comp] }); // gapAnalysis -> fetchCompetitor
+        mockQuery.mockResolvedValueOnce({ rows: [{ total: '20000' }] }); // fetchOurMetrics spend
+        mockQuery.mockResolvedValueOnce({ rows: [{ count: '30' }] }); // fetchOurMetrics count
       }
       // detectTrends - trend_signals
       mockQuery.mockResolvedValueOnce({ rows: [] });

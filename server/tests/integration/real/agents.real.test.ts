@@ -388,6 +388,12 @@ describe('Agent System Integration Tests', () => {
           input_data: {}, output_data: {}, confidence_score: 0.75,
           reasoning: 'Pattern detected', is_approved: true, created_at: '2026-01-01T00:00:00Z',
         }],
+      }).mockResolvedValueOnce({
+        rows: [{
+          id: 'dec-2', agent_type: 'fraud_detection', decision_type: 'alert',
+          input_data: {}, output_data: {}, confidence_score: 0.80,
+          reasoning: 'Secondary check', is_approved: true, created_at: '2026-01-01T00:00:00Z',
+        }],
       });
 
       const round = await AgentsService.runChallengeRound(['paid_ads', 'fraud_detection']);

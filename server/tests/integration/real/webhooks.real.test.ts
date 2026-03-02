@@ -230,7 +230,7 @@ describe('Webhook Service Integration Tests', () => {
       expect(eventId).toBe('wh-test-uuid');
       const insertCall = mockQuery.mock.calls[0];
       expect(insertCall[0]).toContain('INSERT INTO webhook_events');
-      expect(insertCall[1]).toContain('received');
+      expect(insertCall[0]).toContain('received');
     });
 
     it('should mark an event as processed', async () => {

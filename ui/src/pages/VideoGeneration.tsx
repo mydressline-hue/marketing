@@ -19,7 +19,6 @@ import {
 import PageHeader from '../components/shared/PageHeader';
 import Card from '../components/shared/Card';
 import KPICard from '../components/shared/KPICard';
-import StatusBadge from '../components/shared/StatusBadge';
 import { KPIRowSkeleton, ListSkeleton } from '../components/shared/LoadingSkeleton';
 import { ApiErrorDisplay } from '../components/shared/ErrorBoundary';
 import EmptyState from '../components/shared/EmptyState';
@@ -53,14 +52,6 @@ interface PipelineRun {
   targetPlatforms: string[];
   results: Record<string, unknown>;
   createdAt: string;
-}
-
-interface TextEnhancement {
-  id: string;
-  platform: string;
-  caption: string;
-  hashtags: string[];
-  callToAction: string;
 }
 
 interface VideoTasksResponse {
@@ -169,13 +160,12 @@ export default function VideoGeneration() {
 
   const completedCount = tasks.filter((t) => t.status === 'completed').length;
   const processingCount = tasks.filter((t) => ['submitted', 'processing'].includes(t.status)).length;
-  const failedCount = tasks.filter((t) => t.status === 'failed').length;
 
   const kpis: KPIData[] = [
-    { label: 'Total Videos', value: String(tasks.length), trend: 'up' as const, trendValue: '' },
-    { label: 'Completed', value: String(completedCount), trend: 'up' as const, trendValue: '' },
-    { label: 'Processing', value: String(processingCount), trend: 'neutral' as const, trendValue: '' },
-    { label: 'Pipeline Runs', value: String(pipelines.length), trend: 'up' as const, trendValue: '' },
+    { label: 'Total Videos', value: String(tasks.length), change: 0, trend: 'stable' },
+    { label: 'Completed', value: String(completedCount), change: 0, trend: 'up' },
+    { label: 'Processing', value: String(processingCount), change: 0, trend: 'stable' },
+    { label: 'Pipeline Runs', value: String(pipelines.length), change: 0, trend: 'up' },
   ];
 
   // Handlers
@@ -228,7 +218,7 @@ export default function VideoGeneration() {
       <PageHeader
         title="Video Generation"
         subtitle="Kling AI video pipeline — generate product videos, enhance text, publish to social platforms"
-        icon={Video}
+        icon={<Video className="w-5 h-5" />}
       />
 
       {/* KPIs */}
@@ -389,7 +379,7 @@ export default function VideoGeneration() {
             {tasksLoading ? (
               <ListSkeleton />
             ) : tasks.length === 0 ? (
-              <EmptyState icon={Video} message="No videos generated yet" />
+              <EmptyState icon={Video} title="No videos yet" message="No videos generated yet" />
             ) : (
               <div className="space-y-3">
                 {tasks.slice(0, 8).map((task) => (
@@ -631,7 +621,7 @@ export default function VideoGeneration() {
           {tasksLoading ? (
             <ListSkeleton />
           ) : tasks.length === 0 ? (
-            <EmptyState icon={Video} message="No video tasks yet. Generate your first video above." />
+            <EmptyState icon={Video} title="No video tasks" message="No video tasks yet. Generate your first video above." />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -696,7 +686,7 @@ export default function VideoGeneration() {
           {pipelinesLoading ? (
             <ListSkeleton />
           ) : pipelines.length === 0 ? (
-            <EmptyState icon={Send} message="No pipeline runs yet. Run your first full pipeline above." />
+            <EmptyState icon={Send} title="No pipeline runs" message="No pipeline runs yet. Run your first full pipeline above." />
           ) : (
             <div className="space-y-3">
               {pipelines.map((run) => (
@@ -725,7 +715,7 @@ export default function VideoGeneration() {
                   </div>
                   {run.results && typeof run.results === 'object' && 'videoUrl' in run.results && (
                     <div className="mt-2 text-xs text-primary-600 dark:text-primary-400">
-                      Video generated &middot; {(run.results as any).enhancementCount ?? 0} text enhancements
+                      Video generated &middot; {(run.results as Record<string, unknown>).enhancementCount as number ?? 0} text enhancements
                     </div>
                   )}
                 </div>
