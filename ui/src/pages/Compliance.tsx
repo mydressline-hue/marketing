@@ -104,10 +104,10 @@ interface AgentExecuteResult {
 // ---------------------------------------------------------------------------
 
 const categoryColors: Record<string, string> = {
-  'Data Protection': 'bg-blue-100 text-blue-700',
-  'Ad Standards': 'bg-purple-100 text-purple-700',
-  'Consumer Rights': 'bg-teal-100 text-teal-700',
-  Tax: 'bg-orange-100 text-orange-700',
+  'Data Protection': 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300',
+  'Ad Standards': 'bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300',
+  'Consumer Rights': 'bg-teal-100 text-teal-700 dark:bg-teal-500/10 dark:text-teal-300',
+  Tax: 'bg-orange-100 text-orange-700 dark:bg-orange-500/10 dark:text-orange-300',
 };
 
 const riskColors: Record<string, string> = {
@@ -117,16 +117,16 @@ const riskColors: Record<string, string> = {
 };
 
 const riskBg: Record<string, string> = {
-  Low: 'bg-green-50',
-  Medium: 'bg-yellow-50',
-  High: 'bg-red-50',
+  Low: 'bg-green-50 dark:bg-green-500/10',
+  Medium: 'bg-yellow-50 dark:bg-yellow-500/10',
+  High: 'bg-red-50 dark:bg-red-500/10',
 };
 
 const auditResultStyles: Record<string, string> = {
-  Pass: 'bg-green-100 text-green-700',
-  Pending: 'bg-yellow-100 text-yellow-700',
-  'In Progress': 'bg-blue-100 text-blue-700',
-  Fail: 'bg-red-100 text-red-700',
+  Pass: 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-300',
+  Pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-300',
+  'In Progress': 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300',
+  Fail: 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-300',
 };
 
 const getBarColor = (compliance: number) => {
@@ -255,7 +255,7 @@ export default function Compliance() {
               )}
               {auditRunning ? 'Running Audit...' : 'Run Audit'}
             </button>
-            <span className="flex items-center gap-1.5 text-sm text-green-600 font-medium bg-green-50 px-3 py-1 rounded-full">
+            <span className="flex items-center gap-1.5 text-sm text-green-600 font-medium bg-green-50 dark:bg-green-500/10 px-3 py-1 rounded-full">
               <CheckCircle className="w-4 h-4" />
               {statusLoading ? '...' : `${violationCount} Violation${violationCount !== 1 ? 's' : ''}`}
             </span>
@@ -375,8 +375,8 @@ export default function Compliance() {
                       className="w-3 h-3 rounded-full shrink-0"
                       style={{ backgroundColor: item.color }}
                     />
-                    <span className="text-sm text-surface-600">{item.name}</span>
-                    <span className="text-sm font-semibold text-surface-900 ml-auto">
+                    <span className="text-sm text-surface-600 dark:text-surface-300">{item.name}</span>
+                    <span className="text-sm font-semibold text-surface-900 dark:text-surface-100 ml-auto">
                       {item.value}%
                     </span>
                   </div>
@@ -456,7 +456,7 @@ export default function Compliance() {
               className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                 selectedCategory === cat
                   ? 'bg-primary-600 text-white'
-                  : 'bg-surface-100 text-surface-600 hover:bg-surface-200'
+                  : 'bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300 hover:bg-surface-200 dark:hover:bg-surface-600'
               }`}
             >
               {cat}
@@ -482,28 +482,28 @@ export default function Compliance() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-surface-200">
-                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Regulation</th>
-                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Country</th>
-                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Category</th>
-                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Status</th>
-                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Last Checked</th>
-                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Details</th>
-                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Risk Level</th>
+                <tr className="border-b border-surface-200 dark:border-surface-700">
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Regulation</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Country</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Category</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Status</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Last Checked</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Details</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Risk Level</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredRegulations.map((reg) => (
                   <tr
                     key={reg.id}
-                    className="border-b border-surface-100 hover:bg-surface-50 transition-colors"
+                    className="border-b border-surface-100 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
                   >
-                    <td className="py-3 px-3 font-medium text-surface-900">{reg.name}</td>
-                    <td className="py-3 px-3 text-surface-600">{reg.country}</td>
+                    <td className="py-3 px-3 font-medium text-surface-900 dark:text-surface-100">{reg.name}</td>
+                    <td className="py-3 px-3 text-surface-600 dark:text-surface-300">{reg.country}</td>
                     <td className="py-3 px-3">
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          categoryColors[reg.category] || 'bg-surface-100 text-surface-600'
+                          categoryColors[reg.category] || 'bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300'
                         }`}
                       >
                         {reg.category}
@@ -512,13 +512,13 @@ export default function Compliance() {
                     <td className="py-3 px-3">
                       <StatusBadge status={reg.status} />
                     </td>
-                    <td className="py-3 px-3 text-surface-500">
+                    <td className="py-3 px-3 text-surface-500 dark:text-surface-400">
                       <span className="flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5" />
                         {reg.lastChecked}
                       </span>
                     </td>
-                    <td className="py-3 px-3 text-surface-500 max-w-xs truncate">{reg.details}</td>
+                    <td className="py-3 px-3 text-surface-500 dark:text-surface-400 max-w-xs truncate">{reg.details}</td>
                     <td className="py-3 px-3">
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${riskBg[reg.riskLevel]} ${riskColors[reg.riskLevel]}`}
@@ -539,10 +539,11 @@ export default function Compliance() {
         title="High-Risk Campaign Flags"
         subtitle="Campaigns flagged for compliance review"
         actions={
-          <span className="flex items-center gap-1 text-xs text-yellow-600 font-medium bg-yellow-50 px-2 py-0.5 rounded-full">
+          <span className="flex items-center gap-1 text-xs text-yellow-600 font-medium bg-yellow-50 dark:bg-yellow-500/10 px-2 py-0.5 rounded-full">
             <AlertTriangle className="w-3 h-3" />
             {statusLoading ? '...' : `${flaggedCampaigns.length} flagged`}
           </span>
+
         }
       >
         {statusLoading ? (
@@ -560,17 +561,17 @@ export default function Compliance() {
             {flaggedCampaigns.map((campaign) => (
               <div
                 key={campaign.id}
-                className="flex items-start gap-4 rounded-lg border border-surface-200 p-4 hover:border-surface-300 transition-colors"
+                className="flex items-start gap-4 rounded-lg border border-surface-200 dark:border-surface-700 p-4 hover:border-surface-300 dark:hover:border-surface-600 transition-colors"
               >
-                <div className="w-10 h-10 bg-yellow-50 rounded-lg flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 bg-yellow-50 dark:bg-yellow-500/10 rounded-lg flex items-center justify-center shrink-0">
                   <AlertTriangle className="w-5 h-5 text-yellow-600" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <h4 className="text-sm font-semibold text-surface-900">{campaign.name}</h4>
+                    <h4 className="text-sm font-semibold text-surface-900 dark:text-surface-100">{campaign.name}</h4>
                     <StatusBadge status={campaign.severity} />
                   </div>
-                  <p className="text-sm text-surface-500 mb-2">{campaign.issue}</p>
+                  <p className="text-sm text-surface-500 dark:text-surface-400 mb-2">{campaign.issue}</p>
                   <div className="flex items-center gap-4 text-xs text-surface-400">
                     <span className="flex items-center gap-1">
                       <Globe className="w-3 h-3" />
@@ -632,7 +633,7 @@ export default function Compliance() {
                 return (
                   <div
                     key={item.label}
-                    className="flex items-start gap-3 rounded-lg border border-surface-200 p-3"
+                    className="flex items-start gap-3 rounded-lg border border-surface-200 dark:border-surface-700 p-3"
                   >
                     <div
                       className={`w-8 h-8 ${iconBg} rounded-lg flex items-center justify-center shrink-0 mt-0.5`}
@@ -641,10 +642,10 @@ export default function Compliance() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-0.5">
-                        <h4 className="text-sm font-semibold text-surface-900">{item.label}</h4>
+                        <h4 className="text-sm font-semibold text-surface-900 dark:text-surface-100">{item.label}</h4>
                         <StatusBadge status={item.status} />
                       </div>
-                      <p className="text-xs text-surface-500">{item.description}</p>
+                      <p className="text-xs text-surface-500 dark:text-surface-400">{item.description}</p>
                     </div>
                   </div>
                 );
@@ -673,20 +674,20 @@ export default function Compliance() {
               {adRestrictions.map((restriction) => (
                 <div
                   key={restriction.country}
-                  className="rounded-lg border border-surface-200 p-3"
+                  className="rounded-lg border border-surface-200 dark:border-surface-700 p-3"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Globe className="w-4 h-4 text-surface-400" />
-                      <span className="text-sm font-semibold text-surface-900">
+                      <span className="text-sm font-semibold text-surface-900 dark:text-surface-100">
                         {restriction.country}
                       </span>
                     </div>
                     <span
                       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                         restriction.enforced
-                          ? 'bg-green-50 text-green-700'
-                          : 'bg-red-50 text-red-700'
+                          ? 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400'
+                          : 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400'
                       }`}
                     >
                       {restriction.enforced ? (
@@ -701,7 +702,7 @@ export default function Compliance() {
                     {restriction.categories.map((cat) => (
                       <span
                         key={cat}
-                        className="px-2 py-0.5 rounded bg-red-50 text-red-600 text-xs font-medium"
+                        className="px-2 py-0.5 rounded bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 text-xs font-medium"
                       >
                         {cat}
                       </span>
@@ -747,31 +748,31 @@ export default function Compliance() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-surface-200">
-                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Timestamp</th>
-                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Action</th>
-                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Agent</th>
-                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Result</th>
+                <tr className="border-b border-surface-200 dark:border-surface-700">
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Timestamp</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Action</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Agent</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Result</th>
                 </tr>
               </thead>
               <tbody>
                 {auditLog.map((entry) => (
                   <tr
                     key={entry.id}
-                    className="border-b border-surface-100 hover:bg-surface-50 transition-colors"
+                    className="border-b border-surface-100 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
                   >
-                    <td className="py-3 px-3 text-surface-500 whitespace-nowrap">
+                    <td className="py-3 px-3 text-surface-500 dark:text-surface-400 whitespace-nowrap">
                       <span className="flex items-center gap-1.5">
                         <Clock className="w-3.5 h-3.5" />
                         {entry.timestamp}
                       </span>
                     </td>
-                    <td className="py-3 px-3 font-medium text-surface-900">{entry.action}</td>
-                    <td className="py-3 px-3 text-surface-600">{entry.agent}</td>
+                    <td className="py-3 px-3 font-medium text-surface-900 dark:text-surface-100">{entry.action}</td>
+                    <td className="py-3 px-3 text-surface-600 dark:text-surface-300">{entry.agent}</td>
                     <td className="py-3 px-3">
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          auditResultStyles[entry.result] || 'bg-surface-100 text-surface-600'
+                          auditResultStyles[entry.result] || 'bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300'
                         }`}
                       >
                         {entry.result}

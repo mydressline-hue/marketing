@@ -207,10 +207,10 @@ const getProgressColor = (pct: number): 'success' | 'primary' | 'warning' | 'dan
 };
 
 const severityStyles: Record<string, string> = {
-  critical: 'border-l-red-500 bg-red-50',
-  error: 'border-l-red-500 bg-red-50',
-  warning: 'border-l-yellow-500 bg-yellow-50',
-  info: 'border-l-blue-500 bg-blue-50',
+  critical: 'border-l-red-500 bg-red-50 dark:bg-red-500/10',
+  error: 'border-l-red-500 bg-red-50 dark:bg-red-500/10',
+  warning: 'border-l-yellow-500 bg-yellow-50 dark:bg-yellow-500/10',
+  info: 'border-l-blue-500 bg-blue-50 dark:bg-blue-500/10',
 };
 
 const severityIcon = (severity: string) => {
@@ -589,7 +589,7 @@ export default function Localization() {
             <button
               onClick={handleSyncAll}
               disabled={isLoading}
-              className="flex items-center gap-1.5 text-sm text-surface-600 bg-white border border-surface-200 rounded-lg px-3 py-1.5 hover:bg-surface-50 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 text-sm text-surface-600 dark:text-surface-300 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg px-3 py-1.5 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors disabled:opacity-50"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
               Sync All
@@ -636,7 +636,7 @@ export default function Localization() {
         subtitle="Translation completeness by target language"
         actions={
           !isLoading && !hasError ? (
-            <span className="text-xs text-surface-500">
+            <span className="text-xs text-surface-500 dark:text-surface-400">
               {languages.filter((l) => l.status === 'complete').length} of {languages.length}{' '}
               complete
             </span>
@@ -660,30 +660,30 @@ export default function Localization() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-surface-100">
-                  <th className="text-left font-medium text-surface-500 pb-3 pr-4">Language</th>
-                  <th className="text-left font-medium text-surface-500 pb-3 pr-4">
+                <tr className="border-b border-surface-100 dark:border-surface-700">
+                  <th className="text-left font-medium text-surface-500 dark:text-surface-400 pb-3 pr-4">Language</th>
+                  <th className="text-left font-medium text-surface-500 dark:text-surface-400 pb-3 pr-4">
                     Completeness
                   </th>
-                  <th className="text-left font-medium text-surface-500 pb-3 pr-4">Status</th>
-                  <th className="text-right font-medium text-surface-500 pb-3 pr-4">
+                  <th className="text-left font-medium text-surface-500 dark:text-surface-400 pb-3 pr-4">Status</th>
+                  <th className="text-right font-medium text-surface-500 dark:text-surface-400 pb-3 pr-4">
                     Items Translated
                   </th>
-                  <th className="text-left font-medium text-surface-500 pb-3 pr-4">
+                  <th className="text-left font-medium text-surface-500 dark:text-surface-400 pb-3 pr-4">
                     Last Updated
                   </th>
-                  <th className="text-right font-medium text-surface-500 pb-3 pr-4">
+                  <th className="text-right font-medium text-surface-500 dark:text-surface-400 pb-3 pr-4">
                     Quality Score
                   </th>
-                  <th className="text-right font-medium text-surface-500 pb-3">Actions</th>
+                  <th className="text-right font-medium text-surface-500 dark:text-surface-400 pb-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {languages.map((lang) => (
                   <tr
                     key={lang.code}
-                    className={`border-b border-surface-50 hover:bg-surface-50/50 transition-colors cursor-pointer ${
-                      selectedLang === lang.code ? 'bg-primary-50/40' : ''
+                    className={`border-b border-surface-50 dark:border-surface-700 hover:bg-surface-50/50 dark:hover:bg-surface-700/50 transition-colors cursor-pointer ${
+                      selectedLang === lang.code ? 'bg-primary-50/40 dark:bg-primary-500/10' : ''
                     }`}
                     onClick={() =>
                       setSelectedLang(selectedLang === lang.code ? null : lang.code)
@@ -693,8 +693,8 @@ export default function Localization() {
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{lang.flag}</span>
                         <div>
-                          <p className="font-medium text-surface-900">{lang.language}</p>
-                          <p className="text-xs text-surface-500">{lang.country}</p>
+                          <p className="font-medium text-surface-900 dark:text-surface-100">{lang.language}</p>
+                          <p className="text-xs text-surface-500 dark:text-surface-400">{lang.country}</p>
                         </div>
                       </div>
                     </td>
@@ -709,7 +709,7 @@ export default function Localization() {
                     <td className="py-3 pr-4">
                       <StatusBadge status={mapTranslationStatus(lang.status)} />
                     </td>
-                    <td className="py-3 pr-4 text-right text-surface-700">
+                    <td className="py-3 pr-4 text-right text-surface-700 dark:text-surface-200">
                       <span className="font-medium">
                         {lang.itemsTranslated.toLocaleString()}
                       </span>
@@ -718,7 +718,7 @@ export default function Localization() {
                         / {lang.totalItems.toLocaleString()}
                       </span>
                     </td>
-                    <td className="py-3 pr-4 text-surface-600">{lang.lastUpdated}</td>
+                    <td className="py-3 pr-4 text-surface-600 dark:text-surface-300">{lang.lastUpdated}</td>
                     <td className="py-3 pr-4 text-right">
                       <span
                         className={`font-semibold ${
@@ -752,21 +752,21 @@ export default function Localization() {
                           )}
                         </button>
                         <button
-                          className="p-1.5 rounded-md hover:bg-surface-100 text-surface-400 hover:text-surface-700 transition-colors"
+                          className="p-1.5 rounded-md hover:bg-surface-100 dark:hover:bg-surface-700 text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 transition-colors"
                           title="Edit translations"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
-                          className="p-1.5 rounded-md hover:bg-surface-100 text-surface-400 hover:text-surface-700 transition-colors"
+                          className="p-1.5 rounded-md hover:bg-surface-100 dark:hover:bg-surface-700 text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 transition-colors"
                           title="Preview"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
-                          className="p-1.5 rounded-md hover:bg-surface-100 text-surface-400 hover:text-surface-700 transition-colors"
+                          className="p-1.5 rounded-md hover:bg-surface-100 dark:hover:bg-surface-700 text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 transition-colors"
                           title="Re-sync"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -858,38 +858,38 @@ export default function Localization() {
                   key={ca.code}
                   className={`rounded-lg border p-3 transition-colors ${
                     selectedLang === ca.code
-                      ? 'border-primary-300 bg-primary-50/40'
-                      : 'border-surface-150 hover:border-surface-300'
+                      ? 'border-primary-300 dark:border-primary-500/30 bg-primary-50/40 dark:bg-primary-500/10'
+                      : 'border-surface-150 dark:border-surface-700 hover:border-surface-300 dark:hover:border-surface-600'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-base">{ca.flag}</span>
-                    <span className="font-medium text-surface-900 text-sm">{ca.language}</span>
+                    <span className="font-medium text-surface-900 dark:text-surface-100 text-sm">{ca.language}</span>
                     {ca.direction === 'RTL' && (
-                      <span className="text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] font-semibold bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded">
                         RTL
                       </span>
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                     <div>
-                      <span className="text-surface-500">Date:</span>{' '}
-                      <span className="text-surface-700 font-medium">{ca.dateFormat}</span>
+                      <span className="text-surface-500 dark:text-surface-400">Date:</span>{' '}
+                      <span className="text-surface-700 dark:text-surface-200 font-medium">{ca.dateFormat}</span>
                     </div>
                     <div>
-                      <span className="text-surface-500">Currency:</span>{' '}
-                      <span className="text-surface-700 font-medium">{ca.currencyDisplay}</span>
+                      <span className="text-surface-500 dark:text-surface-400">Currency:</span>{' '}
+                      <span className="text-surface-700 dark:text-surface-200 font-medium">{ca.currencyDisplay}</span>
                     </div>
                     <div>
-                      <span className="text-surface-500">Number:</span>{' '}
-                      <span className="text-surface-700 font-medium">{ca.numberFormat}</span>
+                      <span className="text-surface-500 dark:text-surface-400">Number:</span>{' '}
+                      <span className="text-surface-700 dark:text-surface-200 font-medium">{ca.numberFormat}</span>
                     </div>
                     <div>
-                      <span className="text-surface-500">Direction:</span>{' '}
-                      <span className="text-surface-700 font-medium">{ca.direction}</span>
+                      <span className="text-surface-500 dark:text-surface-400">Direction:</span>{' '}
+                      <span className="text-surface-700 dark:text-surface-200 font-medium">{ca.direction}</span>
                     </div>
                   </div>
-                  <p className="text-xs text-surface-500 mt-2 italic">{ca.colorNotes}</p>
+                  <p className="text-xs text-surface-500 dark:text-surface-400 mt-2 italic">{ca.colorNotes}</p>
                 </div>
               ))}
             </div>
@@ -903,7 +903,7 @@ export default function Localization() {
         subtitle="Items flagged for human review"
         actions={
           !isLoading && reviewItems.length > 0 ? (
-            <span className="flex items-center gap-1 text-xs text-red-600 font-medium bg-red-50 px-2 py-0.5 rounded-full">
+            <span className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400 font-medium bg-red-50 dark:bg-red-500/10 px-2 py-0.5 rounded-full">
               <AlertCircle className="w-3 h-3" />
               {reviewItems.filter((r) => r.severity === 'critical').length} critical
             </span>
@@ -929,35 +929,35 @@ export default function Localization() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="text-base">{item.flag}</span>
-                    <span className="text-sm font-medium text-surface-900">{item.language}</span>
-                    <span className="text-xs bg-surface-100 text-surface-600 px-1.5 py-0.5 rounded">
+                    <span className="text-sm font-medium text-surface-900 dark:text-surface-100">{item.language}</span>
+                    <span className="text-xs bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300 px-1.5 py-0.5 rounded">
                       {item.type}
                     </span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
-                    <div className="bg-white/60 rounded px-2 py-1.5 border border-surface-100">
-                      <p className="text-[10px] uppercase tracking-wider text-surface-400 font-medium mb-0.5">
+                    <div className="bg-white/60 dark:bg-surface-800/60 rounded px-2 py-1.5 border border-surface-100 dark:border-surface-700">
+                      <p className="text-[10px] uppercase tracking-wider text-surface-400 dark:text-surface-500 font-medium mb-0.5">
                         Source (EN)
                       </p>
-                      <p className="text-sm text-surface-800">{item.sourceText}</p>
+                      <p className="text-sm text-surface-800 dark:text-surface-200">{item.sourceText}</p>
                     </div>
-                    <div className="bg-white/60 rounded px-2 py-1.5 border border-surface-100">
-                      <p className="text-[10px] uppercase tracking-wider text-surface-400 font-medium mb-0.5">
+                    <div className="bg-white/60 dark:bg-surface-800/60 rounded px-2 py-1.5 border border-surface-100 dark:border-surface-700">
+                      <p className="text-[10px] uppercase tracking-wider text-surface-400 dark:text-surface-500 font-medium mb-0.5">
                         Translation
                       </p>
                       <p
-                        className="text-sm text-surface-800"
+                        className="text-sm text-surface-800 dark:text-surface-200"
                         dir={item.language === 'Arabic' ? 'rtl' : 'ltr'}
                       >
                         {item.translatedText}
                       </p>
                     </div>
                   </div>
-                  <p className="text-xs text-surface-600">{item.issue}</p>
+                  <p className="text-xs text-surface-600 dark:text-surface-300">{item.issue}</p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <StatusBadge status={item.severity} size="sm" />
-                  <button className="p-1.5 rounded-md hover:bg-white/60 text-surface-400 hover:text-surface-700 transition-colors">
+                  <button className="p-1.5 rounded-md hover:bg-white/60 dark:hover:bg-surface-700 text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 transition-colors">
                     <Edit className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -974,7 +974,7 @@ export default function Localization() {
           title="Currency Conversion Pairs"
           subtitle="Live exchange rates for active markets"
           actions={
-            <span className="flex items-center gap-1 text-xs text-surface-500">
+            <span className="flex items-center gap-1 text-xs text-surface-500 dark:text-surface-400">
               <RefreshCw className="w-3 h-3" />
               Updated 5 min ago
             </span>
@@ -992,20 +992,20 @@ export default function Localization() {
               {currencyPairs.map((pair) => (
                 <div
                   key={`${pair.from}-${pair.to}`}
-                  className="flex items-center justify-between rounded-lg border border-surface-100 px-4 py-3 hover:bg-surface-50/50 transition-colors"
+                  className="flex items-center justify-between rounded-lg border border-surface-100 dark:border-surface-700 px-4 py-3 hover:bg-surface-50/50 dark:hover:bg-surface-700/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-mono bg-surface-100 text-surface-700 px-2 py-1 rounded">
+                    <span className="text-sm font-mono bg-surface-100 dark:bg-surface-700 text-surface-700 dark:text-surface-200 px-2 py-1 rounded">
                       {pair.symbol}
                     </span>
                     <div>
-                      <p className="text-sm font-medium text-surface-900">
+                      <p className="text-sm font-medium text-surface-900 dark:text-surface-100">
                         {pair.from} / {pair.to}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-surface-900 font-mono">
+                    <p className="text-sm font-semibold text-surface-900 dark:text-surface-100 font-mono">
                       {pair.rate.toFixed(pair.rate >= 100 ? 2 : 4)}
                     </p>
                     <p
@@ -1014,7 +1014,7 @@ export default function Localization() {
                           ? 'text-success-600'
                           : pair.change < 0
                             ? 'text-danger-600'
-                            : 'text-surface-500'
+                            : 'text-surface-500 dark:text-surface-400'
                       }`}
                     >
                       {pair.change > 0 ? '+' : ''}
@@ -1033,7 +1033,7 @@ export default function Localization() {
           subtitle="Regulatory status by target market"
           actions={
             !isLoading && legalComplianceData.length > 0 ? (
-              <span className="flex items-center gap-1 text-xs text-surface-500">
+              <span className="flex items-center gap-1 text-xs text-surface-500 dark:text-surface-400">
                 <CheckCircle className="w-3 h-3 text-success-600" />
                 {legalComplianceData.filter((c) => c.status === 'compliant').length} /{' '}
                 {legalComplianceData.length} compliant
@@ -1053,12 +1053,12 @@ export default function Localization() {
               {legalComplianceData.map((entry) => (
                 <div
                   key={entry.country}
-                  className="rounded-lg border border-surface-100 px-4 py-3 hover:bg-surface-50/50 transition-colors"
+                  className="rounded-lg border border-surface-100 dark:border-surface-700 px-4 py-3 hover:bg-surface-50/50 dark:hover:bg-surface-700/50 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-base">{entry.flag}</span>
-                      <span className="text-sm font-medium text-surface-900">
+                      <span className="text-sm font-medium text-surface-900 dark:text-surface-100">
                         {entry.country}
                       </span>
                     </div>
@@ -1086,7 +1086,7 @@ export default function Localization() {
                       </span>
                     ))}
                   </div>
-                  <p className="text-xs text-surface-500">{entry.notes}</p>
+                  <p className="text-xs text-surface-500 dark:text-surface-400">{entry.notes}</p>
                 </div>
               ))}
             </div>

@@ -1,0 +1,41 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+
+# Version control
+.git
+.gitignore
+
+# Tests & coverage
+tests
+coverage
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+vitest.config.ts
+
+# Environment files
+.env
+.env.*
+
+# Editor & OS files
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Documentation
+README.md
+*.md
+
+# Docker (avoid recursive copy)
+Dockerfile
+.dockerignore
+
+# CI
+.github

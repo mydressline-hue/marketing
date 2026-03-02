@@ -20,7 +20,7 @@ interface SkeletonBlockProps {
 function SkeletonBlock({ className = '', style }: SkeletonBlockProps) {
   return (
     <div
-      className={`animate-pulse rounded bg-surface-200 ${className}`}
+      className={`animate-pulse rounded bg-surface-200 dark:bg-surface-700 ${className}`}
       style={style}
       aria-hidden="true"
     />
@@ -33,7 +33,7 @@ function SkeletonBlock({ className = '', style }: SkeletonBlockProps) {
 
 export function KPISkeleton() {
   return (
-    <div className="bg-white rounded-xl border border-surface-200 p-5">
+    <div className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 p-5">
       {/* Label */}
       <SkeletonBlock className="h-4 w-24 mb-3" />
       {/* Value */}
@@ -69,9 +69,9 @@ interface TableSkeletonProps {
 export function TableSkeleton({ rows = 5, columns: columnsProp, cols }: TableSkeletonProps) {
   const columns = columnsProp ?? cols ?? 6;
   return (
-    <div className="bg-white rounded-xl border border-surface-200 overflow-hidden">
+    <div className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-4 px-5 py-3 border-b border-surface-100">
+      <div className="flex items-center gap-4 px-5 py-3 border-b border-surface-100 dark:border-surface-700">
         {Array.from({ length: columns }, (_, i) => (
           <SkeletonBlock
             key={i}
@@ -83,7 +83,7 @@ export function TableSkeleton({ rows = 5, columns: columnsProp, cols }: TableSke
       {Array.from({ length: rows }, (_, rowIdx) => (
         <div
           key={rowIdx}
-          className="flex items-center gap-4 px-5 py-3 border-b border-surface-50 last:border-b-0"
+          className="flex items-center gap-4 px-5 py-3 border-b border-surface-50 dark:border-surface-700 last:border-b-0"
         >
           {Array.from({ length: columns }, (_, colIdx) => (
             <SkeletonBlock
@@ -119,9 +119,9 @@ export function CardSkeleton({
   showChart = false,
 }: CardSkeletonProps) {
   return (
-    <div className="bg-white rounded-xl border border-surface-200">
+    <div className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700">
       {hasHeader && (
-        <div className="flex items-center justify-between px-5 py-4 border-b border-surface-100">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-surface-100 dark:border-surface-700">
           <SkeletonBlock className="h-5 w-36" />
           <SkeletonBlock className="h-8 w-20 rounded-md" />
         </div>
@@ -184,8 +184,8 @@ export function ChartSkeleton({
   if (!withCard) return inner;
 
   return (
-    <div className="bg-white rounded-xl border border-surface-200">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-surface-100">
+    <div className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-surface-100 dark:border-surface-700">
         <SkeletonBlock className="h-5 w-40" />
         <div className="flex gap-2">
           <SkeletonBlock className="h-7 w-16 rounded-md" />
@@ -245,7 +245,7 @@ export function GallerySkeleton({ count = 4 }: { count?: number }) {
   return (
     <>
       {Array.from({ length: count }, (_, i) => (
-        <div key={i} className="bg-white rounded-xl border border-surface-200 overflow-hidden">
+        <div key={i} className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 overflow-hidden">
           <SkeletonBlock className="h-40 w-full rounded-none" />
           <div className="p-4 space-y-2">
             <SkeletonBlock className="h-4 w-3/4" />

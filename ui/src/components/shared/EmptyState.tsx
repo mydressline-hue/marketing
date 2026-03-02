@@ -53,12 +53,12 @@ export default function EmptyState({
     <div
       className={`flex flex-col items-center justify-center text-center ${compact ? 'py-8 px-4' : 'py-16 px-6'} ${className}`}
     >
-      <div className="w-12 h-12 rounded-full bg-surface-100 flex items-center justify-center mb-4">
-        {isElement ? (iconProp as ReactElement) : <IconComponent className="w-6 h-6 text-surface-400" />}
+      <div className="w-12 h-12 rounded-full bg-surface-100 dark:bg-surface-700 flex items-center justify-center mb-4">
+        {isElement ? (iconProp as ReactElement) : <IconComponent className="w-6 h-6 text-surface-400 dark:text-surface-500" />}
       </div>
-      <h3 className="text-base font-semibold text-surface-900 mb-1">{title}</h3>
+      <h3 className="text-base font-semibold text-surface-900 dark:text-surface-100 mb-1">{title}</h3>
       {resolvedDescription && (
-        <p className="text-sm text-surface-500 max-w-sm mb-4">{resolvedDescription}</p>
+        <p className="text-sm text-surface-500 dark:text-surface-400 max-w-sm mb-4">{resolvedDescription}</p>
       )}
       {action && <div className="mt-1">{action}</div>}
     </div>

@@ -147,9 +147,9 @@ const formatCurrency = (val: number) =>
       : `$${val.toFixed(0)}`;
 
 const impactColor = (impact: string) => {
-  if (impact === 'High') return 'text-red-600 bg-red-50';
-  if (impact === 'Medium') return 'text-yellow-600 bg-yellow-50';
-  return 'text-green-600 bg-green-50';
+  if (impact === 'High') return 'text-red-600 bg-red-50 dark:bg-red-500/10';
+  if (impact === 'Medium') return 'text-yellow-600 bg-yellow-50 dark:bg-yellow-500/10';
+  return 'text-green-600 bg-green-50 dark:bg-green-500/10';
 };
 
 // ---------------------------------------------------------------------------
@@ -159,13 +159,13 @@ const impactColor = (impact: string) => {
 const ProjectionTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-surface-200 rounded-lg shadow-lg p-3 text-sm">
-      <p className="font-semibold text-surface-900 mb-1">{label}</p>
+    <div className="bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg shadow-lg p-3 text-sm">
+      <p className="font-semibold text-surface-900 dark:text-surface-100 mb-1">{label}</p>
       {payload.map((entry: any, i: number) => (
         <div key={i} className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
-          <span className="text-surface-600">{entry.name}:</span>
-          <span className="font-medium text-surface-900">{formatCurrency(entry.value)}</span>
+          <span className="text-surface-600 dark:text-surface-300">{entry.name}:</span>
+          <span className="font-medium text-surface-900 dark:text-surface-100">{formatCurrency(entry.value)}</span>
         </div>
       ))}
       {payload[0]?.payload?.type === 'forecast' && (
@@ -217,7 +217,7 @@ export default function RevenueForecast() {
         icon={<TrendingUp className="w-5 h-5" />}
         actions={
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 text-sm text-surface-500">
+            <span className="flex items-center gap-1.5 text-sm text-surface-500 dark:text-surface-400">
               <Calendar className="w-4 h-4" />
               Last updated: Today
             </span>
@@ -398,7 +398,7 @@ export default function RevenueForecast() {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex items-center gap-6 mt-3 pt-3 border-t border-surface-100 text-xs text-surface-500">
+          <div className="flex items-center gap-6 mt-3 pt-3 border-t border-surface-100 dark:border-surface-700 text-xs text-surface-500 dark:text-surface-400">
             <span className="flex items-center gap-1.5">
               <span className="w-6 h-0.5 bg-surface-400 inline-block" /> Historical
             </span>
@@ -429,32 +429,32 @@ export default function RevenueForecast() {
           >
             {/* Key metrics */}
             <div className="grid grid-cols-2 gap-4 mb-5">
-              <div className="bg-surface-50 rounded-lg p-3">
-                <p className="text-xs text-surface-500 mb-0.5">Current LTV</p>
-                <p className="text-xl font-bold text-surface-900">{data.ltvMetrics.currentLtv}</p>
+              <div className="bg-surface-50 dark:bg-surface-800 rounded-lg p-3">
+                <p className="text-xs text-surface-500 dark:text-surface-400 mb-0.5">Current LTV</p>
+                <p className="text-xl font-bold text-surface-900 dark:text-surface-100">{data.ltvMetrics.currentLtv}</p>
                 <p className="text-xs text-surface-400">Target: {data.ltvMetrics.ltvTarget}</p>
                 <div className="w-full bg-surface-200 rounded-full h-1.5 mt-2">
                   <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${data.ltvMetrics.ltvProgress}%` }} />
                 </div>
               </div>
-              <div className="bg-surface-50 rounded-lg p-3">
-                <p className="text-xs text-surface-500 mb-0.5">Current CAC</p>
-                <p className="text-xl font-bold text-surface-900">{data.ltvMetrics.currentCac}</p>
+              <div className="bg-surface-50 dark:bg-surface-800 rounded-lg p-3">
+                <p className="text-xs text-surface-500 dark:text-surface-400 mb-0.5">Current CAC</p>
+                <p className="text-xl font-bold text-surface-900 dark:text-surface-100">{data.ltvMetrics.currentCac}</p>
                 <p className="text-xs text-surface-400">Target: {data.ltvMetrics.cacTarget}</p>
                 <div className="w-full bg-surface-200 rounded-full h-1.5 mt-2">
                   <div className="bg-green-500 h-1.5 rounded-full" style={{ width: `${data.ltvMetrics.cacProgress}%` }} />
                 </div>
               </div>
-              <div className="bg-surface-50 rounded-lg p-3">
-                <p className="text-xs text-surface-500 mb-0.5">Payback Period</p>
-                <p className="text-xl font-bold text-surface-900">{data.ltvMetrics.paybackPeriod}</p>
+              <div className="bg-surface-50 dark:bg-surface-800 rounded-lg p-3">
+                <p className="text-xs text-surface-500 dark:text-surface-400 mb-0.5">Payback Period</p>
+                <p className="text-xl font-bold text-surface-900 dark:text-surface-100">{data.ltvMetrics.paybackPeriod}</p>
                 <p className="text-xs text-green-600 flex items-center gap-0.5">
                   <ArrowDownRight className="w-3 h-3" /> {data.ltvMetrics.paybackChange}
                 </p>
               </div>
-              <div className="bg-surface-50 rounded-lg p-3">
-                <p className="text-xs text-surface-500 mb-0.5">LTV:CAC Ratio</p>
-                <p className="text-xl font-bold text-surface-900">{data.ltvMetrics.ltvCacRatio}</p>
+              <div className="bg-surface-50 dark:bg-surface-800 rounded-lg p-3">
+                <p className="text-xs text-surface-500 dark:text-surface-400 mb-0.5">LTV:CAC Ratio</p>
+                <p className="text-xl font-bold text-surface-900 dark:text-surface-100">{data.ltvMetrics.ltvCacRatio}</p>
                 <p className="text-xs text-green-600 flex items-center gap-0.5">
                   <ArrowUpRight className="w-3 h-3" /> Up from {data.ltvMetrics.ltvCacPrevious}
                 </p>
@@ -464,7 +464,7 @@ export default function RevenueForecast() {
             {/* Monthly improvement trend */}
             {data.ltvCacTrendData.length > 0 ? (
               <>
-                <p className="text-xs font-medium text-surface-500 mb-2">Monthly Improvement Trend</p>
+                <p className="text-xs font-medium text-surface-500 dark:text-surface-400 mb-2">Monthly Improvement Trend</p>
                 <div className="h-44">
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={data.ltvCacTrendData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
@@ -576,11 +576,11 @@ export default function RevenueForecast() {
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-surface-100">
+                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-surface-100 dark:border-surface-700">
                   <span className="w-3 h-3 rounded-full bg-green-500 inline-block" />
-                  <span className="text-sm text-surface-600">
-                    Break-even reached at <span className="font-semibold text-surface-900">Day {breakEvenDay}</span> with
-                    cumulative revenue of <span className="font-semibold text-surface-900">{breakEvenRevenue}</span>
+                  <span className="text-sm text-surface-600 dark:text-surface-300">
+                    Break-even reached at <span className="font-semibold text-surface-900 dark:text-surface-100">Day {breakEvenDay}</span> with
+                    cumulative revenue of <span className="font-semibold text-surface-900 dark:text-surface-100">{breakEvenRevenue}</span>
                   </span>
                 </div>
               </>
@@ -608,17 +608,17 @@ export default function RevenueForecast() {
                 className={`text-left rounded-xl border-2 p-5 transition-all ${
                   activeScenario === scenario.id
                     ? `${scenario.border} ${scenario.bg} shadow-md`
-                    : 'border-surface-200 bg-white hover:border-surface-300 hover:shadow-sm'
+                    : 'border-surface-200 bg-white dark:bg-surface-800 hover:border-surface-300 hover:shadow-sm'
                 }`}
               >
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className={`font-semibold ${activeScenario === scenario.id ? scenario.color : 'text-surface-900'}`}>
+                  <h4 className={`font-semibold ${activeScenario === scenario.id ? scenario.color : 'text-surface-900 dark:text-surface-100'}`}>
                     {scenario.label}
                   </h4>
                   <ConfidenceScore score={scenario.confidence} size="sm" />
                 </div>
-                <p className="text-2xl font-bold text-surface-900 mb-1">{scenario.revenue}</p>
-                <p className="text-sm text-surface-500 mb-3">{scenario.description}</p>
+                <p className="text-2xl font-bold text-surface-900 dark:text-surface-100 mb-1">{scenario.revenue}</p>
+                <p className="text-sm text-surface-500 dark:text-surface-400 mb-3">{scenario.description}</p>
                 <div className="flex items-center gap-1 text-sm font-medium">
                   {scenario.growth.startsWith('+') ? (
                     <ArrowUpRight className="w-4 h-4 text-green-600" />
@@ -630,8 +630,8 @@ export default function RevenueForecast() {
                   </span>
                 </div>
                 {activeScenario === scenario.id && (
-                  <div className="mt-3 pt-3 border-t border-surface-200">
-                    <div className="flex items-center gap-1.5 text-xs text-surface-500">
+                  <div className="mt-3 pt-3 border-t border-surface-200 dark:border-surface-700">
+                    <div className="flex items-center gap-1.5 text-xs text-surface-500 dark:text-surface-400">
                       <Target className="w-3 h-3" />
                       Currently selected scenario
                     </div>
@@ -711,28 +711,28 @@ export default function RevenueForecast() {
             {projectionCards.map((card) => (
               <div
                 key={card.period}
-                className="bg-white rounded-xl border border-surface-200 p-4 hover:shadow-md transition-shadow"
+                className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 p-4 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-semibold text-surface-900">{card.period} Outlook</h4>
-                  <span className={`flex items-center gap-1 text-xs font-medium ${card.up ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'} px-2 py-0.5 rounded-full`}>
+                  <h4 className="font-semibold text-surface-900 dark:text-surface-100">{card.period} Outlook</h4>
+                  <span className={`flex items-center gap-1 text-xs font-medium ${card.up ? 'text-green-600 bg-green-50 dark:bg-green-500/10' : 'text-red-600 bg-red-50 dark:bg-red-500/10'} px-2 py-0.5 rounded-full`}>
                     {card.up ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                     {card.change}
                   </span>
                 </div>
-                <p className="text-2xl font-bold text-surface-900 mb-3">{card.revenue}</p>
+                <p className="text-2xl font-bold text-surface-900 dark:text-surface-100 mb-3">{card.revenue}</p>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-surface-500">New Markets</span>
-                    <span className="font-medium text-surface-700">+{card.newMarkets}</span>
+                    <span className="text-surface-500 dark:text-surface-400">New Markets</span>
+                    <span className="font-medium text-surface-700 dark:text-surface-200">+{card.newMarkets}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-surface-500">Active Campaigns</span>
-                    <span className="font-medium text-surface-700">{card.campaigns}</span>
+                    <span className="text-surface-500 dark:text-surface-400">Active Campaigns</span>
+                    <span className="font-medium text-surface-700 dark:text-surface-200">{card.campaigns}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-surface-500">Projected ROAS</span>
-                    <span className="font-medium text-surface-700">{card.roas}</span>
+                    <span className="text-surface-500 dark:text-surface-400">Projected ROAS</span>
+                    <span className="font-medium text-surface-700 dark:text-surface-200">{card.roas}</span>
                   </div>
                 </div>
               </div>
@@ -751,7 +751,7 @@ export default function RevenueForecast() {
           title="Risk Factors"
           subtitle={`Top ${data.riskFactors.length} downside risks impacting revenue forecast`}
           actions={
-            <span className="flex items-center gap-1 text-xs font-medium text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">
+            <span className="flex items-center gap-1 text-xs font-medium text-yellow-600 bg-yellow-50 dark:bg-yellow-500/10 px-2 py-1 rounded-full">
               <Activity className="w-3 h-3" />
               Monitored
             </span>
@@ -760,22 +760,22 @@ export default function RevenueForecast() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left border-b border-surface-100">
-                  <th className="pb-3 pr-4 text-surface-500 font-medium w-12">#</th>
-                  <th className="pb-3 pr-4 text-surface-500 font-medium">Risk Description</th>
-                  <th className="pb-3 pr-4 text-surface-500 font-medium w-24">Impact</th>
-                  <th className="pb-3 text-surface-500 font-medium w-28">Probability</th>
+                <tr className="text-left border-b border-surface-100 dark:border-surface-700">
+                  <th className="pb-3 pr-4 text-surface-500 dark:text-surface-400 font-medium w-12">#</th>
+                  <th className="pb-3 pr-4 text-surface-500 dark:text-surface-400 font-medium">Risk Description</th>
+                  <th className="pb-3 pr-4 text-surface-500 dark:text-surface-400 font-medium w-24">Impact</th>
+                  <th className="pb-3 text-surface-500 dark:text-surface-400 font-medium w-28">Probability</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-surface-100">
+              <tbody className="divide-y divide-surface-100 dark:divide-surface-700">
                 {data.riskFactors.map((risk) => (
-                  <tr key={risk.rank} className="hover:bg-surface-50 transition-colors">
+                  <tr key={risk.rank} className="hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors">
                     <td className="py-3 pr-4">
-                      <span className="w-6 h-6 rounded-full bg-surface-100 flex items-center justify-center text-xs font-semibold text-surface-600">
+                      <span className="w-6 h-6 rounded-full bg-surface-100 dark:bg-surface-700 flex items-center justify-center text-xs font-semibold text-surface-600 dark:text-surface-300">
                         {risk.rank}
                       </span>
                     </td>
-                    <td className="py-3 pr-4 text-surface-700">{risk.risk}</td>
+                    <td className="py-3 pr-4 text-surface-700 dark:text-surface-200">{risk.risk}</td>
                     <td className="py-3 pr-4">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${impactColor(risk.impact)}`}>
                         {risk.impact}
@@ -783,13 +783,13 @@ export default function RevenueForecast() {
                     </td>
                     <td className="py-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-16 bg-surface-100 rounded-full h-1.5">
+                        <div className="w-16 bg-surface-100 dark:bg-surface-700 rounded-full h-1.5">
                           <div
                             className="bg-yellow-500 h-1.5 rounded-full"
                             style={{ width: risk.probability }}
                           />
                         </div>
-                        <span className="text-xs text-surface-600 font-medium">{risk.probability}</span>
+                        <span className="text-xs text-surface-600 dark:text-surface-300 font-medium">{risk.probability}</span>
                       </div>
                     </td>
                   </tr>

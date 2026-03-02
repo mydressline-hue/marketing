@@ -100,11 +100,11 @@ function getTypeLabel(type: string) {
 
 function getTypeBadgeColor(type: string) {
   const map: Record<string, string> = {
-    blog: 'bg-blue-100 text-blue-700',
-    guide: 'bg-purple-100 text-purple-700',
-    product: 'bg-amber-100 text-amber-700',
+    blog: 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300',
+    guide: 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300',
+    product: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300',
   };
-  return map[type] || 'bg-surface-100 text-surface-600';
+  return map[type] || 'bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300';
 }
 
 // --- Fallback defaults ---
@@ -230,7 +230,7 @@ export default function ContentBlog() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statsLoading
           ? Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-xl border border-surface-200 p-5">
+              <div key={i} className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 p-5">
                 <CardSkeleton lines={3} />
               </div>
             ))
@@ -243,13 +243,13 @@ export default function ContentBlog() {
         subtitle={`${totalItems} items total`}
         actions={
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400 dark:text-surface-500" />
             <input
               type="text"
               placeholder="Search content..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-3 py-1.5 text-sm border border-surface-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="pl-9 pr-3 py-1.5 text-sm border border-surface-200 dark:border-surface-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-surface-800 dark:text-surface-100"
             />
           </div>
         }
@@ -261,7 +261,7 @@ export default function ContentBlog() {
           <ApiErrorDisplay error={contentError} onRetry={refetchContent} />
         ) : filteredContent.length === 0 ? (
           <EmptyState
-            icon={<FileText className="w-6 h-6 text-surface-400" />}
+            icon={<FileText className="w-6 h-6 text-surface-400 dark:text-surface-500" />}
             title={searchQuery ? 'No matching content' : 'No content yet'}
             description={
               searchQuery
@@ -285,7 +285,7 @@ export default function ContentBlog() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-surface-100 text-left text-surface-500">
+                <tr className="border-b border-surface-100 dark:border-surface-700 text-left text-surface-500 dark:text-surface-400">
                   <th className="px-5 py-3 font-medium">Title</th>
                   <th className="px-5 py-3 font-medium">Type</th>
                   <th className="px-5 py-3 font-medium">Language</th>
@@ -300,10 +300,10 @@ export default function ContentBlog() {
                 {filteredContent.map((item) => (
                   <tr
                     key={item.id}
-                    className="border-b border-surface-50 hover:bg-surface-50 transition-colors"
+                    className="border-b border-surface-50 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
                   >
                     <td className="px-5 py-3">
-                      <span className="font-medium text-surface-900 line-clamp-1 max-w-xs block">
+                      <span className="font-medium text-surface-900 dark:text-surface-100 line-clamp-1 max-w-xs block">
                         {item.title}
                       </span>
                     </td>
@@ -316,13 +316,13 @@ export default function ContentBlog() {
                         {getTypeLabel(item.type)}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-surface-600">
+                    <td className="px-5 py-3 text-surface-600 dark:text-surface-300">
                       <div className="flex items-center gap-1.5">
-                        <Globe className="w-3.5 h-3.5 text-surface-400" />
+                        <Globe className="w-3.5 h-3.5 text-surface-400 dark:text-surface-500" />
                         {item.language}
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-surface-600">{item.country}</td>
+                    <td className="px-5 py-3 text-surface-600 dark:text-surface-300">{item.country}</td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2 min-w-[120px]">
                         <ProgressBar
@@ -330,7 +330,7 @@ export default function ContentBlog() {
                           color={getSeoColor(item.seoScore)}
                           size="sm"
                         />
-                        <span className="text-xs font-medium text-surface-700 whitespace-nowrap">
+                        <span className="text-xs font-medium text-surface-700 dark:text-surface-200 whitespace-nowrap">
                           {item.seoScore}/100
                         </span>
                       </div>
@@ -338,22 +338,22 @@ export default function ContentBlog() {
                     <td className="px-5 py-3">
                       <StatusBadge status={item.status} />
                     </td>
-                    <td className="px-5 py-3 text-surface-600">
+                    <td className="px-5 py-3 text-surface-600 dark:text-surface-300">
                       {item.publishDate ? (
                         <div className="flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-surface-400" />
+                          <Clock className="w-3.5 h-3.5 text-surface-400 dark:text-surface-500" />
                           {item.publishDate}
                         </div>
                       ) : (
-                        <span className="text-surface-400">--</span>
+                        <span className="text-surface-400 dark:text-surface-500">--</span>
                       )}
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-1">
-                        <button className="p-1.5 rounded-lg hover:bg-surface-100 text-surface-500 hover:text-primary-600 transition-colors">
+                        <button className="p-1.5 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700 text-surface-500 dark:text-surface-400 hover:text-primary-600 transition-colors">
                           <ExternalLink className="w-4 h-4" />
                         </button>
-                        <button className="p-1.5 rounded-lg hover:bg-surface-100 text-surface-500 hover:text-yellow-600 transition-colors">
+                        <button className="p-1.5 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700 text-surface-500 dark:text-surface-400 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors">
                           <Star className="w-4 h-4" />
                         </button>
                       </div>
@@ -385,10 +385,11 @@ export default function ContentBlog() {
                   <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#fff',
+                      backgroundColor: 'var(--color-surface-50, #fff)',
                       border: '1px solid #e5e7eb',
                       borderRadius: '8px',
                       fontSize: '13px',
+                      color: 'var(--color-surface-900, #111)',
                     }}
                     formatter={(value: number | undefined) => [(value ?? 0).toLocaleString(), 'Sessions']}
                   />
@@ -441,10 +442,11 @@ export default function ContentBlog() {
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#fff',
+                      backgroundColor: 'var(--color-surface-50, #fff)',
                       border: '1px solid #e5e7eb',
                       borderRadius: '8px',
                       fontSize: '13px',
+                      color: 'var(--color-surface-900, #111)',
                     }}
                     formatter={(value: number | undefined) => [`#${value ?? 0}`, 'Position']}
                   />
@@ -470,15 +472,15 @@ export default function ContentBlog() {
                 <div key={stage.stage} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`w-3 h-3 rounded-full ${stage.color}`} />
-                    <span className="text-sm font-medium text-surface-700">{stage.stage}</span>
+                    <span className="text-sm font-medium text-surface-700 dark:text-surface-200">{stage.stage}</span>
                   </div>
-                  <span className="text-lg font-bold text-surface-900">{stage.count}</span>
+                  <span className="text-lg font-bold text-surface-900 dark:text-surface-100">{stage.count}</span>
                 </div>
               ))}
-              <div className="pt-3 mt-3 border-t border-surface-100">
+              <div className="pt-3 mt-3 border-t border-surface-100 dark:border-surface-700">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-surface-500">Total in pipeline</span>
-                  <span className="font-semibold text-surface-900">{pipelineTotal}</span>
+                  <span className="text-surface-500 dark:text-surface-400">Total in pipeline</span>
+                  <span className="font-semibold text-surface-900 dark:text-surface-100">{pipelineTotal}</span>
                 </div>
                 <div className="mt-3 flex gap-1 h-2 rounded-full overflow-hidden">
                   {pipelineStages.map((stage) => {
@@ -501,24 +503,24 @@ export default function ContentBlog() {
         <Card title="AI Content Generator" subtitle="Create SEO-optimized content">
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-surface-600 mb-1">Topic</label>
+              <label className="block text-xs font-medium text-surface-600 dark:text-surface-300 mb-1">Topic</label>
               <input
                 type="text"
                 placeholder="e.g., Summer skincare essentials"
                 value={genForm.topic}
                 onChange={(e) => setGenForm({ ...genForm, topic: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-surface-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-surface-200 dark:border-surface-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-surface-800 dark:text-surface-100"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-surface-600 mb-1">
+                <label className="block text-xs font-medium text-surface-600 dark:text-surface-300 mb-1">
                   Target Country
                 </label>
                 <select
                   value={genForm.country}
                   onChange={(e) => setGenForm({ ...genForm, country: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-surface-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
+                  className="w-full px-3 py-2 text-sm border border-surface-200 dark:border-surface-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-surface-800 dark:text-surface-100"
                 >
                   <option value="">Select...</option>
                   <option value="US">United States</option>
@@ -532,11 +534,11 @@ export default function ContentBlog() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-surface-600 mb-1">Language</label>
+                <label className="block text-xs font-medium text-surface-600 dark:text-surface-300 mb-1">Language</label>
                 <select
                   value={genForm.language}
                   onChange={(e) => setGenForm({ ...genForm, language: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-surface-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
+                  className="w-full px-3 py-2 text-sm border border-surface-200 dark:border-surface-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-surface-800 dark:text-surface-100"
                 >
                   <option value="">Select...</option>
                   <option value="en">English</option>
@@ -550,21 +552,21 @@ export default function ContentBlog() {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-surface-600 mb-1">Keywords</label>
+              <label className="block text-xs font-medium text-surface-600 dark:text-surface-300 mb-1">Keywords</label>
               <input
                 type="text"
                 placeholder="Comma-separated keywords"
                 value={genForm.keywords}
                 onChange={(e) => setGenForm({ ...genForm, keywords: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-surface-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-surface-200 dark:border-surface-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-surface-800 dark:text-surface-100"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-surface-600 mb-1">Tone</label>
+              <label className="block text-xs font-medium text-surface-600 dark:text-surface-300 mb-1">Tone</label>
               <select
                 value={genForm.tone}
                 onChange={(e) => setGenForm({ ...genForm, tone: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-surface-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
+                className="w-full px-3 py-2 text-sm border border-surface-200 dark:border-surface-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-surface-800 dark:text-surface-100"
               >
                 <option value="professional">Professional</option>
                 <option value="conversational">Conversational</option>
@@ -608,25 +610,25 @@ export default function ContentBlog() {
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-surface-500">Last Sync</span>
-                  <span className="text-sm font-medium text-surface-900">
+                  <span className="text-sm text-surface-500 dark:text-surface-400">Last Sync</span>
+                  <span className="text-sm font-medium text-surface-900 dark:text-surface-100">
                     {shopifySync?.lastSync ?? '--'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-surface-500">Items Synced</span>
-                  <span className="text-sm font-medium text-surface-900">
+                  <span className="text-sm text-surface-500 dark:text-surface-400">Items Synced</span>
+                  <span className="text-sm font-medium text-surface-900 dark:text-surface-100">
                     {shopifySync ? `${shopifySync.itemsSynced} / ${shopifySync.totalItems}` : '--'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-surface-500">Sync Errors</span>
+                  <span className="text-sm text-surface-500 dark:text-surface-400">Sync Errors</span>
                   <span className="text-sm font-medium text-danger-600">
                     {shopifySync?.syncErrors ?? 0}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-surface-500">Pending Sync</span>
+                  <span className="text-sm text-surface-500 dark:text-surface-400">Pending Sync</span>
                   <span className="text-sm font-medium text-warning-600">
                     {shopifySync?.pendingSync ?? 0}
                   </span>
@@ -643,8 +645,8 @@ export default function ContentBlog() {
               />
 
               {shopifySync?.recentErrors && shopifySync.recentErrors.length > 0 && (
-                <div className="pt-3 border-t border-surface-100 space-y-2">
-                  <p className="text-xs font-medium text-surface-500 uppercase tracking-wide">
+                <div className="pt-3 border-t border-surface-100 dark:border-surface-700 space-y-2">
+                  <p className="text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wide">
                     Recent Errors
                   </p>
                   {shopifySync.recentErrors.map((err) => (
@@ -659,7 +661,7 @@ export default function ContentBlog() {
                 </div>
               )}
 
-              <button className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 border border-surface-200 rounded-lg text-sm font-medium text-surface-700 hover:bg-surface-50 transition-colors">
+              <button className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 border border-surface-200 dark:border-surface-700 rounded-lg text-sm font-medium text-surface-700 dark:text-surface-200 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors">
                 <Globe className="w-4 h-4" />
                 Force Sync Now
               </button>

@@ -28,7 +28,7 @@ const AppContext = createContext<AppContextType | null>(null);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>({
     sidebarOpen: true,
-    darkMode: false,
+    darkMode: localStorage.getItem('darkMode') === 'true',
     killSwitch: {
       global: false,
       campaigns: false,
@@ -106,7 +106,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleDarkMode = useCallback(() => {
-    setState(s => ({ ...s, darkMode: !s.darkMode }));
+    setState(s => {
+      const newDarkMode = !s.darkMode;
+      localStorage.setItem('darkMode', String(newDarkMode));
+      return { ...s, darkMode: newDarkMode };
+    });
   }, []);
 
   const setKillSwitch = useCallback((partial: Partial<KillSwitchState>) => {

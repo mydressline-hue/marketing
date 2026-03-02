@@ -34,11 +34,11 @@ export default function ProgressBar({
     <div className="w-full">
       {(label || showValue) && (
         <div className="flex justify-between items-center mb-1">
-          {label && <span className="text-sm text-surface-600">{label}</span>}
-          {showValue && <span className="text-sm font-medium text-surface-700">{Math.round(pct)}%</span>}
+          {label && <span className="text-sm text-surface-600 dark:text-surface-300">{label}</span>}
+          {showValue && <span className="text-sm font-medium text-surface-700 dark:text-surface-200">{Math.round(pct)}%</span>}
         </div>
       )}
-      <div className={`w-full bg-surface-200 rounded-full overflow-hidden ${sizeMap[size]}`}>
+      <div className={`w-full bg-surface-200 dark:bg-surface-700 rounded-full overflow-hidden ${sizeMap[size]}`}>
         <div
           className={`${colorMap[color]} rounded-full transition-all duration-500 h-full`}
           style={{ width: `${pct}%` }}

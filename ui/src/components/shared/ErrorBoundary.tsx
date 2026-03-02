@@ -20,13 +20,13 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
       className="flex flex-col items-center justify-center py-16 px-6 text-center"
       role="alert"
     >
-      <div className="w-14 h-14 rounded-full bg-danger-50 flex items-center justify-center mb-4">
-        <AlertTriangle className="w-7 h-7 text-danger-600" />
+      <div className="w-14 h-14 rounded-full bg-danger-50 dark:bg-danger-500/10 flex items-center justify-center mb-4">
+        <AlertTriangle className="w-7 h-7 text-danger-600 dark:text-danger-400" />
       </div>
-      <h2 className="text-lg font-semibold text-surface-900 mb-1">
+      <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-1">
         Something went wrong
       </h2>
-      <p className="text-sm text-surface-500 max-w-md mb-4">
+      <p className="text-sm text-surface-500 dark:text-surface-400 max-w-md mb-4">
         {error.message || 'An unexpected error occurred. Please try again.'}
       </p>
       <button
@@ -37,7 +37,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
         Try again
       </button>
       {import.meta.env.DEV && (
-        <pre className="mt-6 max-w-xl text-left text-xs text-surface-500 bg-surface-100 rounded-lg p-4 overflow-auto">
+        <pre className="mt-6 max-w-xl text-left text-xs text-surface-500 dark:text-surface-400 bg-surface-100 dark:bg-surface-800 rounded-lg p-4 overflow-auto">
           {error.stack}
         </pre>
       )}
@@ -167,13 +167,13 @@ export function ApiErrorDisplay({
 
   return (
     <div
-      className={`flex items-start gap-3 bg-danger-50 border border-danger-200 rounded-lg p-4 ${className}`}
+      className={`flex items-start gap-3 bg-danger-50 dark:bg-danger-500/10 border border-danger-200 dark:border-danger-500/30 rounded-lg p-4 ${className}`}
       role="alert"
     >
-      <XCircle className="w-5 h-5 text-danger-600 flex-shrink-0 mt-0.5" />
+      <XCircle className="w-5 h-5 text-danger-600 dark:text-danger-400 flex-shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-danger-800">{title}</p>
-        <p className="text-sm text-danger-700 mt-0.5 truncate">
+        <p className="text-sm font-medium text-danger-800 dark:text-danger-200">{title}</p>
+        <p className="text-sm text-danger-700 dark:text-danger-300 mt-0.5 truncate">
           {displayMessage}
         </p>
       </div>
@@ -181,7 +181,7 @@ export function ApiErrorDisplay({
         {onRetry && (
           <button
             onClick={onRetry}
-            className="inline-flex items-center gap-1 text-sm font-medium text-danger-700 hover:text-danger-900 transition-colors"
+            className="inline-flex items-center gap-1 text-sm font-medium text-danger-700 dark:text-danger-300 hover:text-danger-900 dark:hover:text-danger-100 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Retry
@@ -190,7 +190,7 @@ export function ApiErrorDisplay({
         {onDismiss && (
           <button
             onClick={onDismiss}
-            className="text-danger-400 hover:text-danger-600 transition-colors"
+            className="text-danger-400 hover:text-danger-600 dark:hover:text-danger-300 transition-colors"
             aria-label="Dismiss error"
           >
             <XCircle className="w-4 h-4" />

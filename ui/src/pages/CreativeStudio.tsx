@@ -254,15 +254,15 @@ export default function CreativeStudio() {
         {/* Left: Gallery (2 cols) */}
         <div className="xl:col-span-2 space-y-6">
           {/* Tabs */}
-          <div className="flex items-center gap-1 bg-surface-100 rounded-lg p-1 overflow-x-auto">
+          <div className="flex items-center gap-1 bg-surface-100 dark:bg-surface-700 rounded-lg p-1 overflow-x-auto">
             {tabOptions.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={`px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
                   activeTab === tab.key
-                    ? 'bg-white text-surface-900 shadow-sm'
-                    : 'text-surface-600 hover:text-surface-800'
+                    ? 'bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 shadow-sm'
+                    : 'text-surface-600 dark:text-surface-300 hover:text-surface-800 dark:hover:text-surface-100'
                 }`}
               >
                 {tab.label}
@@ -302,7 +302,7 @@ export default function CreativeStudio() {
               filteredCreatives.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-white rounded-xl border border-surface-200 overflow-hidden hover:shadow-md transition-shadow"
+                  className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 overflow-hidden hover:shadow-md transition-shadow"
                 >
                   {/* Preview Area */}
                   {item.colorPlaceholder ? (
@@ -314,8 +314,8 @@ export default function CreativeStudio() {
                       </div>
                     </div>
                   ) : (
-                    <div className="h-36 bg-surface-50 p-4 border-b border-surface-100">
-                      <p className="text-xs text-surface-600 leading-relaxed line-clamp-5">
+                    <div className="h-36 bg-surface-50 dark:bg-surface-800 p-4 border-b border-surface-100 dark:border-surface-700">
+                      <p className="text-xs text-surface-600 dark:text-surface-300 leading-relaxed line-clamp-5">
                         {item.preview}
                       </p>
                     </div>
@@ -324,7 +324,7 @@ export default function CreativeStudio() {
                   {/* Card Body */}
                   <div className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-2">
-                      <h4 className="text-sm font-semibold text-surface-900 leading-tight">
+                      <h4 className="text-sm font-semibold text-surface-900 dark:text-surface-100 leading-tight">
                         {item.title}
                       </h4>
                       <span
@@ -338,24 +338,24 @@ export default function CreativeStudio() {
 
                     {/* Meta Row */}
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-surface-600 bg-surface-100 rounded-full px-2 py-0.5">
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-surface-600 dark:text-surface-300 bg-surface-100 dark:bg-surface-700 rounded-full px-2 py-0.5">
                         {typeIcon(item.type)}
                         {creativeTypeLabels[item.type]}
                       </span>
-                      <span className="text-xs text-surface-500">
+                      <span className="text-xs text-surface-500 dark:text-surface-400">
                         {item.platform}
                       </span>
-                      <span className="text-xs text-surface-400">|</span>
-                      <span className="text-xs text-surface-500">
+                      <span className="text-xs text-surface-400 dark:text-surface-500">|</span>
+                      <span className="text-xs text-surface-500 dark:text-surface-400">
                         {item.country}
                       </span>
                       <StatusBadge status={item.status} />
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-1 pt-1 border-t border-surface-100">
+                    <div className="flex items-center gap-1 pt-1 border-t border-surface-100 dark:border-surface-700">
                       <button
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-surface-600 hover:bg-surface-50 rounded-md transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-700 rounded-md transition-colors"
                         title="Copy"
                         onClick={() => navigator.clipboard.writeText(item.preview)}
                       >
@@ -363,14 +363,14 @@ export default function CreativeStudio() {
                         Copy
                       </button>
                       <button
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-surface-600 hover:bg-surface-50 rounded-md transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-700 rounded-md transition-colors"
                         title="Download"
                       >
                         <Download className="w-3.5 h-3.5" />
                         Download
                       </button>
                       <button
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-surface-600 hover:bg-surface-50 rounded-md transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-700 rounded-md transition-colors"
                         title="Edit"
                       >
                         <Wand2 className="w-3.5 h-3.5" />
@@ -403,7 +403,7 @@ export default function CreativeStudio() {
             <div id="ai-generation-panel" className="space-y-4">
               {/* Product / Brand */}
               <div>
-                <label className="block text-xs font-medium text-surface-700 mb-1">
+                <label className="block text-xs font-medium text-surface-700 dark:text-surface-200 mb-1">
                   Product / Brand
                 </label>
                 <input
@@ -411,19 +411,19 @@ export default function CreativeStudio() {
                   value={genProduct}
                   onChange={(e) => setGenProduct(e.target.value)}
                   placeholder="e.g. ProGlow Skincare Serum"
-                  className="w-full px-3 py-2 border border-surface-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-3 py-2 border border-surface-200 dark:border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-surface-800 dark:text-surface-100"
                 />
               </div>
 
               {/* Platform */}
               <div>
-                <label className="block text-xs font-medium text-surface-700 mb-1">
+                <label className="block text-xs font-medium text-surface-700 dark:text-surface-200 mb-1">
                   Platform
                 </label>
                 <select
                   value={genPlatform}
                   onChange={(e) => setGenPlatform(e.target.value)}
-                  className="w-full px-3 py-2 border border-surface-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+                  className="w-full px-3 py-2 border border-surface-200 dark:border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-surface-800 dark:text-surface-100"
                 >
                   <option>Meta</option>
                   <option>Google</option>
@@ -436,13 +436,13 @@ export default function CreativeStudio() {
 
               {/* Country */}
               <div>
-                <label className="block text-xs font-medium text-surface-700 mb-1">
+                <label className="block text-xs font-medium text-surface-700 dark:text-surface-200 mb-1">
                   Country
                 </label>
                 <select
                   value={genCountry}
                   onChange={(e) => setGenCountry(e.target.value)}
-                  className="w-full px-3 py-2 border border-surface-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+                  className="w-full px-3 py-2 border border-surface-200 dark:border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-surface-800 dark:text-surface-100"
                 >
                   <option value="US">United States</option>
                   <option value="UK">United Kingdom</option>
@@ -456,13 +456,13 @@ export default function CreativeStudio() {
 
               {/* Tone */}
               <div>
-                <label className="block text-xs font-medium text-surface-700 mb-1">
+                <label className="block text-xs font-medium text-surface-700 dark:text-surface-200 mb-1">
                   Tone
                 </label>
                 <select
                   value={genTone}
                   onChange={(e) => setGenTone(e.target.value)}
-                  className="w-full px-3 py-2 border border-surface-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+                  className="w-full px-3 py-2 border border-surface-200 dark:border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-surface-800 dark:text-surface-100"
                 >
                   <option>Professional</option>
                   <option>Casual</option>
@@ -473,7 +473,7 @@ export default function CreativeStudio() {
 
               {/* Creative Type */}
               <div>
-                <label className="block text-xs font-medium text-surface-700 mb-1">
+                <label className="block text-xs font-medium text-surface-700 dark:text-surface-200 mb-1">
                   Creative Type
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -492,7 +492,7 @@ export default function CreativeStudio() {
                       className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-colors ${
                         genType === t
                           ? 'border-primary-500 bg-primary-50 text-primary-700'
-                          : 'border-surface-200 text-surface-600 hover:border-surface-300'
+                          : 'border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-300 hover:border-surface-300 dark:hover:border-surface-500'
                       }`}
                     >
                       {typeIcon(t)}
@@ -553,23 +553,23 @@ export default function CreativeStudio() {
                   >
                     <div className="flex items-center gap-3">
                       <StatusBadge status={check.status} />
-                      <span className="text-sm text-surface-700">
+                      <span className="text-sm text-surface-700 dark:text-surface-200">
                         {check.label}
                       </span>
                     </div>
-                    <span className="text-sm font-semibold text-surface-900">
+                    <span className="text-sm font-semibold text-surface-900 dark:text-surface-100">
                       {check.score}%
                     </span>
                   </div>
                 ))}
-                <div className="pt-3 border-t border-surface-100">
+                <div className="pt-3 border-t border-surface-100 dark:border-surface-700">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-surface-700">
+                    <span className="font-medium text-surface-700 dark:text-surface-200">
                       Overall Compliance
                     </span>
                     <span className="font-bold text-success-700">{overallCompliance}%</span>
                   </div>
-                  <div className="mt-2 w-full bg-surface-100 rounded-full h-2">
+                  <div className="mt-2 w-full bg-surface-100 dark:bg-surface-700 rounded-full h-2">
                     <div
                       className="bg-success-500 h-2 rounded-full transition-all"
                       style={{ width: `${overallCompliance}%` }}
@@ -599,22 +599,22 @@ export default function CreativeStudio() {
                     <span
                       className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
                         idx === 0
-                          ? 'bg-yellow-100 text-yellow-700'
+                          ? 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300'
                           : idx === 1
-                          ? 'bg-surface-100 text-surface-600'
-                          : 'bg-orange-50 text-orange-600'
+                          ? 'bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300'
+                          : 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400'
                       }`}
                     >
                       #{idx + 1}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-surface-900 truncate">
+                      <p className="text-sm font-semibold text-surface-900 dark:text-surface-100 truncate">
                         {item.title}
                       </p>
-                      <p className="text-xs text-surface-500 mt-0.5">
+                      <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5">
                         {item.type}
                       </p>
-                      <div className="flex items-center gap-3 mt-1.5 text-xs text-surface-600">
+                      <div className="flex items-center gap-3 mt-1.5 text-xs text-surface-600 dark:text-surface-300">
                         <span>
                           <span className="font-medium">Score:</span>{' '}
                           <span className="text-success-700 font-semibold">
@@ -667,26 +667,26 @@ export default function CreativeStudio() {
                     className="p-3 rounded-lg border border-warning-200 bg-warning-50/50"
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <p className="text-sm font-semibold text-surface-900">
+                      <p className="text-sm font-semibold text-surface-900 dark:text-surface-100">
                         {alert.creative}
                       </p>
                       <StatusBadge status="warning" />
                     </div>
-                    <p className="text-xs text-surface-500 mb-2">
+                    <p className="text-xs text-surface-500 dark:text-surface-400 mb-2">
                       {alert.platform} &middot; {alert.daysActive} days active
                     </p>
 
                     {/* Frequency Bar */}
                     <div className="mb-2">
                       <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-surface-600">
+                        <span className="text-surface-600 dark:text-surface-300">
                           Frequency: {alert.frequency}
                         </span>
-                        <span className="text-surface-400">
+                        <span className="text-surface-400 dark:text-surface-500">
                           Threshold: {alert.threshold}
                         </span>
                       </div>
-                      <div className="w-full bg-surface-100 rounded-full h-1.5">
+                      <div className="w-full bg-surface-100 dark:bg-surface-700 rounded-full h-1.5">
                         <div
                           className="bg-warning-500 h-1.5 rounded-full transition-all"
                           style={{
@@ -696,7 +696,7 @@ export default function CreativeStudio() {
                       </div>
                     </div>
 
-                    <p className="text-xs text-surface-600 leading-relaxed">
+                    <p className="text-xs text-surface-600 dark:text-surface-300 leading-relaxed">
                       {alert.recommendation}
                     </p>
 

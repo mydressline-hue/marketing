@@ -112,8 +112,8 @@ const scoreTextColor = (score: number): string => {
 };
 
 const severityStyles: Record<string, string> = {
-  critical: 'border-l-red-500 bg-red-50',
-  warning: 'border-l-yellow-500 bg-yellow-50',
+  critical: 'border-l-red-500 bg-red-50 dark:bg-red-500/10',
+  warning: 'border-l-yellow-500 bg-yellow-50 dark:bg-yellow-500/10',
 };
 
 const severityIconColor: Record<string, string> = {
@@ -124,13 +124,13 @@ const severityIconColor: Record<string, string> = {
 const visualCheckIcon = (icon: string) => {
   switch (icon) {
     case 'image':
-      return <Image className="w-4 h-4 text-surface-500" />;
+      return <Image className="w-4 h-4 text-surface-500 dark:text-surface-400" />;
     case 'palette':
-      return <Palette className="w-4 h-4 text-surface-500" />;
+      return <Palette className="w-4 h-4 text-surface-500 dark:text-surface-400" />;
     case 'type':
-      return <Type className="w-4 h-4 text-surface-500" />;
+      return <Type className="w-4 h-4 text-surface-500 dark:text-surface-400" />;
     default:
-      return <Image className="w-4 h-4 text-surface-500" />;
+      return <Image className="w-4 h-4 text-surface-500 dark:text-surface-400" />;
   }
 };
 
@@ -214,7 +214,7 @@ export default function BrandConsistency() {
               <Play className="w-3.5 h-3.5" />
               {agentRunning ? 'Running...' : 'Run Analysis'}
             </button>
-            <span className="flex items-center gap-1.5 text-sm text-surface-500">
+            <span className="flex items-center gap-1.5 text-sm text-surface-500 dark:text-surface-400">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
@@ -233,7 +233,7 @@ export default function BrandConsistency() {
           {statusLoading ? (
             <>
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-xl border border-surface-200 p-5">
+                <div key={i} className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 p-5">
                   <CardSkeleton lines={2} />
                 </div>
               ))}
@@ -337,14 +337,14 @@ export default function BrandConsistency() {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                  <span className="text-sm font-semibold text-surface-800">Primary Tone</span>
+                  <span className="text-sm font-semibold text-surface-800 dark:text-surface-200">Primary Tone</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center rounded-lg bg-indigo-50 border border-indigo-200 px-3 py-1.5 text-sm font-medium text-indigo-700">
+                  <span className="inline-flex items-center rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/30 px-3 py-1.5 text-sm font-medium text-indigo-700">
                     {voiceSettings.primaryTone.label}
                   </span>
                 </div>
-                <p className="text-xs text-surface-500 mt-1.5">
+                <p className="text-xs text-surface-500 dark:text-surface-400 mt-1.5">
                   {voiceSettings.primaryTone.description}
                 </p>
               </div>
@@ -353,14 +353,14 @@ export default function BrandConsistency() {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-2 h-2 rounded-full bg-blue-500" />
-                  <span className="text-sm font-semibold text-surface-800">Secondary Tone</span>
+                  <span className="text-sm font-semibold text-surface-800 dark:text-surface-200">Secondary Tone</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center rounded-lg bg-blue-50 border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-700">
+                  <span className="inline-flex items-center rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 px-3 py-1.5 text-sm font-medium text-blue-700">
                     {voiceSettings.secondaryTone.label}
                   </span>
                 </div>
-                <p className="text-xs text-surface-500 mt-1.5">
+                <p className="text-xs text-surface-500 dark:text-surface-400 mt-1.5">
                   {voiceSettings.secondaryTone.description}
                 </p>
               </div>
@@ -369,34 +369,34 @@ export default function BrandConsistency() {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-2 h-2 rounded-full bg-red-500" />
-                  <span className="text-sm font-semibold text-surface-800">Forbidden Tones</span>
+                  <span className="text-sm font-semibold text-surface-800 dark:text-surface-200">Forbidden Tones</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {voiceSettings.forbiddenTones.map((tone) => (
                     <span
                       key={tone}
-                      className="inline-flex items-center rounded-lg bg-red-50 border border-red-200 px-3 py-1.5 text-sm font-medium text-red-700"
+                      className="inline-flex items-center rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 px-3 py-1.5 text-sm font-medium text-red-700"
                     >
                       {tone}
                     </span>
                   ))}
                 </div>
-                <p className="text-xs text-surface-500 mt-1.5">
+                <p className="text-xs text-surface-500 dark:text-surface-400 mt-1.5">
                   Content flagged with these tones will require human review before publication.
                 </p>
               </div>
 
               {/* Compliance Summary */}
-              <div className="pt-4 border-t border-surface-100">
+              <div className="pt-4 border-t border-surface-100 dark:border-surface-700">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-surface-600">Tone detection accuracy</span>
+                  <span className="text-sm text-surface-600 dark:text-surface-300">Tone detection accuracy</span>
                   <span className="text-sm font-semibold text-success-600">
                     {voiceSettings.toneDetectionAccuracy}%
                   </span>
                 </div>
                 <div className="flex items-center justify-between mt-2">
-                  <span className="text-sm text-surface-600">Campaigns using AI tone check</span>
-                  <span className="text-sm font-semibold text-surface-900">
+                  <span className="text-sm text-surface-600 dark:text-surface-300">Campaigns using AI tone check</span>
+                  <span className="text-sm font-semibold text-surface-900 dark:text-surface-100">
                     {voiceSettings.campaignsUsingToneCheck} / {voiceSettings.totalCampaigns}
                   </span>
                 </div>
@@ -427,7 +427,7 @@ export default function BrandConsistency() {
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2">
                       {visualCheckIcon(check.icon)}
-                      <span className="text-sm font-medium text-surface-700">{check.name}</span>
+                      <span className="text-sm font-medium text-surface-700 dark:text-surface-200">{check.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`text-sm font-semibold ${complianceTextClass(check.compliance)}`}>
@@ -450,12 +450,12 @@ export default function BrandConsistency() {
                 </div>
               ))}
 
-              <div className="pt-4 border-t border-surface-100">
-                <div className="flex items-center gap-2 text-sm text-surface-500">
+              <div className="pt-4 border-t border-surface-100 dark:border-surface-700">
+                <div className="flex items-center gap-2 text-sm text-surface-500 dark:text-surface-400">
                   <CheckCircle className="w-4 h-4 text-success-500" />
                   <span>Last full scan: {statusData?.lastScanAgo ?? 'unknown'}</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-surface-500 mt-1.5">
+                <div className="flex items-center gap-2 text-sm text-surface-500 dark:text-surface-400 mt-1.5">
                   <Eye className="w-4 h-4 text-primary-500" />
                   <span>
                     {statusData?.assetsScanned?.toLocaleString() ?? 0} assets scanned across{' '}
@@ -530,7 +530,7 @@ export default function BrandConsistency() {
                 className={`px-3 py-1 text-xs rounded-full font-medium transition-colors ${
                   selectedFilter === filter
                     ? 'bg-primary-100 text-primary-700 border border-primary-300'
-                    : 'bg-surface-100 text-surface-600 border border-surface-200 hover:bg-surface-200'
+                    : 'bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300 border border-surface-200 dark:border-surface-700 hover:bg-surface-200 dark:hover:bg-surface-600'
                 }`}
               >
                 {filter === 'all' ? 'All' : filter.charAt(0).toUpperCase() + filter.slice(1)}
@@ -556,26 +556,26 @@ export default function BrandConsistency() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-surface-100">
-                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Campaign</th>
-                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Channel</th>
-                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Country</th>
-                  <th className="text-center py-3 px-3 font-semibold text-surface-600">Tone Match</th>
-                  <th className="text-center py-3 px-3 font-semibold text-surface-600">Visual Match</th>
-                  <th className="text-center py-3 px-3 font-semibold text-surface-600">Overall</th>
-                  <th className="text-center py-3 px-3 font-semibold text-surface-600">Status</th>
-                  <th className="text-center py-3 px-3 font-semibold text-surface-600">Issues</th>
+                <tr className="border-b border-surface-100 dark:border-surface-700">
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Campaign</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Channel</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Country</th>
+                  <th className="text-center py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Tone Match</th>
+                  <th className="text-center py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Visual Match</th>
+                  <th className="text-center py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Overall</th>
+                  <th className="text-center py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Status</th>
+                  <th className="text-center py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Issues</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredCampaigns.map((campaign) => (
                   <tr
                     key={campaign.id}
-                    className="border-b border-surface-50 hover:bg-surface-50/50 transition-colors"
+                    className="border-b border-surface-50 hover:bg-surface-50 dark:hover:bg-surface-700/50 transition-colors"
                   >
-                    <td className="py-3 px-3 font-medium text-surface-800">{campaign.name}</td>
-                    <td className="py-3 px-3 text-surface-600">{campaign.channel}</td>
-                    <td className="py-3 px-3 text-surface-600">{campaign.country}</td>
+                    <td className="py-3 px-3 font-medium text-surface-800 dark:text-surface-200">{campaign.name}</td>
+                    <td className="py-3 px-3 text-surface-600 dark:text-surface-300">{campaign.channel}</td>
+                    <td className="py-3 px-3 text-surface-600 dark:text-surface-300">{campaign.country}</td>
                     <td className="py-3 px-3 text-center">
                       <span className={`font-semibold ${scoreTextColor(campaign.toneMatch)}`}>
                         {campaign.toneMatch}%
@@ -629,7 +629,7 @@ export default function BrandConsistency() {
           className="lg:col-span-2"
           actions={
             !checksLoading && flaggedIssues.length > 0 ? (
-              <span className="flex items-center gap-1 text-xs text-red-600 font-medium bg-red-50 px-2 py-0.5 rounded-full">
+              <span className="flex items-center gap-1 text-xs text-red-600 font-medium bg-red-50 dark:bg-red-500/10 px-2 py-0.5 rounded-full">
                 <AlertTriangle className="w-3 h-3" />
                 {flaggedIssues.filter((i) => i.severity === 'critical').length} critical
               </span>
@@ -658,11 +658,11 @@ export default function BrandConsistency() {
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-semibold text-surface-800">{issue.type}</span>
+                      <span className="text-sm font-semibold text-surface-800 dark:text-surface-200">{issue.type}</span>
                       <span className="text-xs text-surface-400">|</span>
-                      <span className="text-xs text-surface-500">{issue.campaign}</span>
+                      <span className="text-xs text-surface-500 dark:text-surface-400">{issue.campaign}</span>
                     </div>
-                    <p className="text-sm text-surface-600">{issue.description}</p>
+                    <p className="text-sm text-surface-600 dark:text-surface-300">{issue.description}</p>
                     <p className="text-xs text-surface-400 mt-1.5">{issue.flaggedAt}</p>
                   </div>
                   <StatusBadge status={issue.severity} size="sm" />
@@ -693,7 +693,7 @@ export default function BrandConsistency() {
                     className="flex items-center justify-between py-2 border-b border-surface-50 last:border-b-0"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-surface-800 truncate">{asset.name}</p>
+                      <p className="text-sm font-medium text-surface-800 dark:text-surface-200 truncate">{asset.name}</p>
                       <p className="text-xs text-surface-400 mt-0.5">
                         Updated {asset.lastUpdated} &middot; {asset.usageCount} uses
                       </p>
@@ -703,18 +703,18 @@ export default function BrandConsistency() {
                 ))}
               </div>
 
-              <div className="mt-4 pt-4 border-t border-surface-100">
+              <div className="mt-4 pt-4 border-t border-surface-100 dark:border-surface-700">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-surface-600">Total assets</span>
-                  <span className="font-semibold text-surface-900">{brandAssets.length} packages</span>
+                  <span className="text-surface-600 dark:text-surface-300">Total assets</span>
+                  <span className="font-semibold text-surface-900 dark:text-surface-100">{brandAssets.length} packages</span>
                 </div>
                 <div className="flex items-center justify-between text-sm mt-1.5">
-                  <span className="text-surface-600">Total usage</span>
-                  <span className="font-semibold text-surface-900">
+                  <span className="text-surface-600 dark:text-surface-300">Total usage</span>
+                  <span className="font-semibold text-surface-900 dark:text-surface-100">
                     {brandAssets.reduce((sum, a) => sum + a.usageCount, 0).toLocaleString()} references
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-surface-500 mt-3">
+                <div className="flex items-center gap-2 text-xs text-surface-500 dark:text-surface-400 mt-3">
                   <CheckCircle className="w-3.5 h-3.5 text-success-500" />
                   <span>All assets synced across {marketComplianceData.length} markets</span>
                 </div>

@@ -97,6 +97,11 @@ export interface FinalOutputsCheck {
   error?: string;
 }
 
+export interface AiCheck {
+  status: 'enabled' | 'disabled';
+  message: string;
+}
+
 export interface DeepHealthChecks {
   postgresql: PostgresCheck;
   redis: RedisCheck;
@@ -105,6 +110,7 @@ export interface DeepHealthChecks {
   final_outputs: FinalOutputsCheck;
   memory: MemoryCheck;
   disk: DiskCheck;
+  ai: AiCheck;
 }
 
 export interface DeepHealthResult {
@@ -231,6 +237,12 @@ export class HealthCheckService {
         final_outputs: finalOutputsCheck,
         memory: memoryCheck,
         disk: diskCheck,
+        ai: {
+          status: env.ANTHROPIC_API_KEY ? 'enabled' : 'disabled',
+          message: env.ANTHROPIC_API_KEY
+            ? 'Anthropic API key configured'
+            : 'Anthropic API key not configured - AI features disabled',
+        },
       },
     };
 

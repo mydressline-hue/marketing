@@ -76,6 +76,9 @@ export const envSchema = z
 
     // ── MFA ────────────────────────────────────────────────────────────
     MFA_ISSUER: z.string().default('AIGrowthEngine'),
+
+    // ── Derived ─────────────────────────────────────────────────────────
+    AI_ENABLED: coerceBoolean(false), // Will be overridden after parse
   })
   // ── Cross-field production validations ──────────────────────────────
   .superRefine((data, ctx) => {
@@ -99,6 +102,20 @@ export const envSchema = z
           code: z.ZodIssueCode.custom,
           path: ['ENCRYPTION_KEY'],
           message: 'ENCRYPTION_KEY is required in production',
+        });
+      }
+      if (data.JWT_SECRET && data.JWT_SECRET.length < 32) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['JWT_SECRET'],
+          message: 'JWT_SECRET must be at least 32 characters in production',
+        });
+      }
+      if (data.ENCRYPTION_KEY && data.ENCRYPTION_KEY.length !== 32) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['ENCRYPTION_KEY'],
+          message: 'ENCRYPTION_KEY must be exactly 32 characters in production',
         });
       }
     }
@@ -152,3 +169,7 @@ function loadEnv(): Env {
 }
 
 export const env: Env = loadEnv();
+
+// Derive AI_ENABLED from ANTHROPIC_API_KEY presence
+(env as any).AI_ENABLED = !!env.ANTHROPIC_API_KEY;
+export const AI_ENABLED = !!env.ANTHROPIC_API_KEY;

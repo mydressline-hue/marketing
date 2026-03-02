@@ -143,7 +143,7 @@ export default function Orchestrator() {
         actions={
           <div className="flex items-center gap-2">
             <span className={`flex items-center gap-1 px-2 py-1 text-xs rounded-full ${
-              connected ? 'bg-success-50 text-success-700' : 'bg-surface-100 text-surface-500'
+              connected ? 'bg-success-50 text-success-700' : 'bg-surface-100 dark:bg-surface-700 text-surface-500 dark:text-surface-400'
             }`}>
               {connected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
               {connected ? 'Live' : 'Offline'}
@@ -165,31 +165,31 @@ export default function Orchestrator() {
         <KPIRowSkeleton count={4} />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl border border-surface-200 p-5">
+          <div className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 p-5">
             <div className="flex items-center gap-2 mb-2">
               <Activity className="w-4 h-4 text-success-600" />
-              <span className="text-sm text-surface-500">Active Agents</span>
+              <span className="text-sm text-surface-500 dark:text-surface-400">Active Agents</span>
             </div>
             <p className="text-2xl font-bold">{activeCount}/20</p>
           </div>
-          <div className="bg-white rounded-xl border border-surface-200 p-5">
+          <div className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 p-5">
             <div className="flex items-center gap-2 mb-2">
               <Zap className="w-4 h-4 text-primary-600" />
-              <span className="text-sm text-surface-500">Avg Confidence</span>
+              <span className="text-sm text-surface-500 dark:text-surface-400">Avg Confidence</span>
             </div>
             <p className="text-2xl font-bold">{avgConfidence}%</p>
           </div>
-          <div className="bg-white rounded-xl border border-surface-200 p-5">
+          <div className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 p-5">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className="w-4 h-4 text-success-600" />
-              <span className="text-sm text-surface-500">Tasks Completed</span>
+              <span className="text-sm text-surface-500 dark:text-surface-400">Tasks Completed</span>
             </div>
             <p className="text-2xl font-bold">{totalCompleted.toLocaleString()}</p>
           </div>
-          <div className="bg-white rounded-xl border border-surface-200 p-5">
+          <div className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 p-5">
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle className="w-4 h-4 text-warning-600" />
-              <span className="text-sm text-surface-500">Contradictions</span>
+              <span className="text-sm text-surface-500 dark:text-surface-400">Contradictions</span>
             </div>
             <p className="text-2xl font-bold">{unresolvedContradictions}</p>
           </div>
@@ -214,10 +214,10 @@ export default function Orchestrator() {
             <Card title="Agent Status Matrix" subtitle="All 20 agents with real-time status">
               <div className="space-y-1">
                 {agentList.map(agent => (
-                  <div key={agent.id} className="border border-surface-100 rounded-lg overflow-hidden">
+                  <div key={agent.id} className="border border-surface-100 dark:border-surface-700 rounded-lg overflow-hidden">
                     <button
                       onClick={() => setExpandedAgent(expandedAgent === agent.id ? null : agent.id)}
-                      className="w-full flex items-center justify-between p-3 hover:bg-surface-50 transition-colors text-left"
+                      className="w-full flex items-center justify-between p-3 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors text-left"
                     >
                       <div className="flex items-center gap-3">
                         <div className={`w-2.5 h-2.5 rounded-full ${
@@ -225,28 +225,28 @@ export default function Orchestrator() {
                           agent.status === 'idle' ? 'bg-surface-400' :
                           agent.status === 'warning' ? 'bg-warning-500' : 'bg-danger-500'
                         }`} />
-                        <span className="text-sm font-medium text-surface-900">{agent.id}. {agent.name}</span>
+                        <span className="text-sm font-medium text-surface-900 dark:text-surface-100">{agent.id}. {agent.name}</span>
                         <StatusBadge status={agent.status} />
                       </div>
                       <div className="flex items-center gap-4">
                         <ConfidenceScore score={agent.confidence} size="sm" showLabel={false} />
-                        <span className="text-xs text-surface-500 hidden sm:inline">{agent.lastUpdated}</span>
+                        <span className="text-xs text-surface-500 dark:text-surface-400 hidden sm:inline">{agent.lastUpdated}</span>
                         {expandedAgent === agent.id ? <ChevronUp className="w-4 h-4 text-surface-400" /> : <ChevronDown className="w-4 h-4 text-surface-400" />}
                       </div>
                     </button>
                     {expandedAgent === agent.id && (
-                      <div className="px-3 pb-3 border-t border-surface-100 bg-surface-50">
+                      <div className="px-3 pb-3 border-t border-surface-100 dark:border-surface-700 bg-surface-50 dark:bg-surface-800">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-3 text-sm">
                           <div>
-                            <p className="text-surface-500 mb-1">Last Action</p>
-                            <p className="text-surface-800">{agent.lastAction}</p>
+                            <p className="text-surface-500 dark:text-surface-400 mb-1">Last Action</p>
+                            <p className="text-surface-800 dark:text-surface-200">{agent.lastAction}</p>
                           </div>
                           <div>
-                            <p className="text-surface-500 mb-1">Tasks</p>
-                            <p className="text-surface-800">{agent.tasksCompleted} completed, {agent.tasksPending} pending</p>
+                            <p className="text-surface-500 dark:text-surface-400 mb-1">Tasks</p>
+                            <p className="text-surface-800 dark:text-surface-200">{agent.tasksCompleted} completed, {agent.tasksPending} pending</p>
                           </div>
                           <div>
-                            <p className="text-surface-500 mb-1">Challenges</p>
+                            <p className="text-surface-500 dark:text-surface-400 mb-1">Challenges</p>
                             <div className="flex flex-wrap gap-1">
                               {agent.challenges.map(c => (
                                 <span key={c} className="px-2 py-0.5 bg-primary-50 text-primary-700 text-xs rounded-full">{c}</span>
@@ -254,7 +254,7 @@ export default function Orchestrator() {
                             </div>
                           </div>
                           <div>
-                            <p className="text-surface-500 mb-1">Challenged By</p>
+                            <p className="text-surface-500 dark:text-surface-400 mb-1">Challenged By</p>
                             <div className="flex flex-wrap gap-1">
                               {agent.crossChallengedBy.map(c => (
                                 <span key={c} className="px-2 py-0.5 bg-warning-50 text-warning-700 text-xs rounded-full">{c}</span>
@@ -263,13 +263,13 @@ export default function Orchestrator() {
                           </div>
                         </div>
                         <div className="flex gap-2 pt-2">
-                          <button className="flex items-center gap-1 px-3 py-1.5 text-xs bg-white border border-surface-200 rounded-lg hover:bg-surface-50">
+                          <button className="flex items-center gap-1 px-3 py-1.5 text-xs bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg hover:bg-surface-50 dark:hover:bg-surface-700">
                             <Play className="w-3 h-3" /> Run
                           </button>
-                          <button className="flex items-center gap-1 px-3 py-1.5 text-xs bg-white border border-surface-200 rounded-lg hover:bg-surface-50">
+                          <button className="flex items-center gap-1 px-3 py-1.5 text-xs bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg hover:bg-surface-50 dark:hover:bg-surface-700">
                             <Pause className="w-3 h-3" /> Pause
                           </button>
-                          <button className="flex items-center gap-1 px-3 py-1.5 text-xs bg-white border border-surface-200 rounded-lg hover:bg-surface-50">
+                          <button className="flex items-center gap-1 px-3 py-1.5 text-xs bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg hover:bg-surface-50 dark:hover:bg-surface-700">
                             <RefreshCw className="w-3 h-3" /> Reset
                           </button>
                         </div>
@@ -363,14 +363,14 @@ export default function Orchestrator() {
                        <Clock className="w-4 h-4 text-primary-600" />}
                       <div className="flex gap-1">
                         {c.agents.map(a => (
-                          <span key={a} className="px-2 py-0.5 bg-white border border-surface-200 text-xs font-medium rounded-full">{a}</span>
+                          <span key={a} className="px-2 py-0.5 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 text-xs font-medium rounded-full">{a}</span>
                         ))}
                       </div>
                     </div>
                     <StatusBadge status={c.status} />
                   </div>
-                  <p className="text-sm text-surface-800 mb-1"><strong>Issue:</strong> {c.issue}</p>
-                  <p className="text-sm text-surface-600"><strong>Resolution:</strong> {c.resolution}</p>
+                  <p className="text-sm text-surface-800 dark:text-surface-200 mb-1"><strong>Issue:</strong> {c.issue}</p>
+                  <p className="text-sm text-surface-600 dark:text-surface-300"><strong>Resolution:</strong> {c.resolution}</p>
                 </div>
               ))}
             </div>
@@ -405,19 +405,19 @@ export default function Orchestrator() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-surface-200">
-                    <th className="text-left py-3 px-4 font-semibold text-surface-600">Decision</th>
-                    <th className="text-left py-3 px-4 font-semibold text-surface-600">Source Agents</th>
-                    <th className="text-left py-3 px-4 font-semibold text-surface-600">Confidence</th>
-                    <th className="text-left py-3 px-4 font-semibold text-surface-600">Impact</th>
-                    <th className="text-left py-3 px-4 font-semibold text-surface-600">Status</th>
+                  <tr className="border-b border-surface-200 dark:border-surface-700">
+                    <th className="text-left py-3 px-4 font-semibold text-surface-600 dark:text-surface-300">Decision</th>
+                    <th className="text-left py-3 px-4 font-semibold text-surface-600 dark:text-surface-300">Source Agents</th>
+                    <th className="text-left py-3 px-4 font-semibold text-surface-600 dark:text-surface-300">Confidence</th>
+                    <th className="text-left py-3 px-4 font-semibold text-surface-600 dark:text-surface-300">Impact</th>
+                    <th className="text-left py-3 px-4 font-semibold text-surface-600 dark:text-surface-300">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {decisions.map((d, i) => (
-                    <tr key={i} className="border-b border-surface-100 hover:bg-surface-50">
-                      <td className="py-3 px-4 font-medium text-surface-900">{d.decision}</td>
-                      <td className="py-3 px-4 text-surface-600">{d.sources}</td>
+                    <tr key={i} className="border-b border-surface-100 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-700">
+                      <td className="py-3 px-4 font-medium text-surface-900 dark:text-surface-100">{d.decision}</td>
+                      <td className="py-3 px-4 text-surface-600 dark:text-surface-300">{d.sources}</td>
                       <td className="py-3 px-4"><ConfidenceScore score={d.confidence} size="sm" showLabel={false} /></td>
                       <td className="py-3 px-4"><StatusBadge status={d.impact.toLowerCase()} /></td>
                       <td className="py-3 px-4"><StatusBadge status={d.status} /></td>
