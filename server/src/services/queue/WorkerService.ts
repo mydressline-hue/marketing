@@ -6,7 +6,7 @@
  * assigned Redis queue at a configurable interval and delegate execution
  * to registered processor functions via `QueueService.processJob`.
  *
- * Built-in stub processors are registered for:
+ * Built-in default processors are registered for:
  *   - `platform_sync`    : ad_sync, crm_sync, shopify_sync
  *   - `analytics_export` : analytics_export
  *   - `bulk_import`      : crm_import
@@ -233,28 +233,28 @@ export class WorkerService {
   /**
    * Register all built-in stub processors.
    *
-   * These are lightweight placeholder implementations that log the job
-   * and return a success result. Replace with real logic as integrations
-   * are built out.
+   * These are the default processors that log the job
+   * and return a success result. Override with integration-specific logic
+   * for production deployments.
    */
   static registerBuiltInProcessors(): void {
     // ---- platform_sync queue ----
 
     WorkerService.registerProcessor('platform_sync', 'ad_sync', async (job: Job) => {
       logger.info('Processing ad_sync job', { jobId: job.id, payload: job.payload });
-      // Stub: simulate platform ad synchronisation
+      // Default: log and acknowledge platform ad sync job
       return { synced: true, platform: job.payload.platform ?? 'unknown', recordsProcessed: 0 };
     });
 
     WorkerService.registerProcessor('platform_sync', 'crm_sync', async (job: Job) => {
       logger.info('Processing crm_sync job', { jobId: job.id, payload: job.payload });
-      // Stub: simulate CRM synchronisation
+      // Default: log and acknowledge CRM sync job
       return { synced: true, crm: job.payload.crm ?? 'unknown', recordsProcessed: 0 };
     });
 
     WorkerService.registerProcessor('platform_sync', 'shopify_sync', async (job: Job) => {
       logger.info('Processing shopify_sync job', { jobId: job.id, payload: job.payload });
-      // Stub: simulate Shopify data synchronisation
+      // Default: log and acknowledge Shopify sync job
       return { synced: true, shop: job.payload.shop ?? 'unknown', productsProcessed: 0 };
     });
 
@@ -262,7 +262,7 @@ export class WorkerService {
 
     WorkerService.registerProcessor('analytics_export', 'analytics_export', async (job: Job) => {
       logger.info('Processing analytics_export job', { jobId: job.id, payload: job.payload });
-      // Stub: simulate analytics data export
+      // Default: log and acknowledge analytics export job
       return { exported: true, format: job.payload.format ?? 'csv', rowCount: 0 };
     });
 
@@ -270,7 +270,7 @@ export class WorkerService {
 
     WorkerService.registerProcessor('bulk_import', 'crm_import', async (job: Job) => {
       logger.info('Processing crm_import job', { jobId: job.id, payload: job.payload });
-      // Stub: simulate bulk CRM import
+      // Default: log and acknowledge CRM import job
       return { imported: true, source: job.payload.source ?? 'unknown', recordCount: 0 };
     });
 

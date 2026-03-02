@@ -7,7 +7,7 @@ const mockToggleDarkMode = vi.fn();
 const mockSetAutonomyMode = vi.fn();
 
 // Mock the useApp hook
-vi.mock('../../../src/context/AppContext', () => ({
+vi.mock('../../../src/context/useApp', () => ({
   useApp: () => ({
     sidebarOpen: true,
     darkMode: false,

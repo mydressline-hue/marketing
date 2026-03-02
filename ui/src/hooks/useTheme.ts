@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useApp } from '../context/AppContext';
+import { useApp } from '../context/useApp';
 
 export function useTheme() {
   const { darkMode } = useApp();

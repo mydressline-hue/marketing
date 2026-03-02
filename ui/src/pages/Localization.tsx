@@ -427,7 +427,7 @@ function buildReviewItems(translations: TranslationRecord[]) {
       language: langName,
       flag: getFlag(
         Object.entries(FLAG_MAP).find(
-          ([, _]) => langCode === langCode,
+          ([code]) => code.toLowerCase() === langCode,
         )?.[0] || '',
       ),
       type: 'Translation',

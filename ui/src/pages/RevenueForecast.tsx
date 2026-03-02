@@ -156,12 +156,25 @@ const impactColor = (impact: string) => {
 // Custom tooltip for the revenue projection chart
 // ---------------------------------------------------------------------------
 
-const ProjectionTooltip = ({ active, payload, label }: any) => {
+interface TooltipEntry {
+  color: string;
+  name: string;
+  value: number;
+  payload?: RevenueProjectionPoint;
+}
+
+interface ProjectionTooltipProps {
+  active?: boolean;
+  payload?: TooltipEntry[];
+  label?: string;
+}
+
+const ProjectionTooltip = ({ active, payload, label }: ProjectionTooltipProps) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg shadow-lg p-3 text-sm">
       <p className="font-semibold text-surface-900 dark:text-surface-100 mb-1">{label}</p>
-      {payload.map((entry: any, i: number) => (
+      {payload.map((entry: TooltipEntry, i: number) => (
         <div key={i} className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
           <span className="text-surface-600 dark:text-surface-300">{entry.name}:</span>
@@ -306,10 +319,10 @@ export default function RevenueForecast() {
                   dataKey="conservative"
                   stroke="#3b82f6"
                   strokeWidth={2}
-                  strokeDasharray={((_d: any, index: number) => (index >= 6 ? '6 4' : '0')) as any}
+                  strokeDasharray={((_d: unknown, index: number) => (index >= 6 ? '6 4' : '0')) as unknown as string}
                   fill="url(#conservativeGrad)"
                   name="Conservative"
-                  dot={(props: any) => {
+                  dot={(props: { cx?: number; cy?: number; index?: number }) => {
                     const { cx, cy, index } = props;
                     if (index === 5) {
                       return (
@@ -334,7 +347,7 @@ export default function RevenueForecast() {
                   strokeWidth={2.5}
                   fill="url(#projectedGrad)"
                   name="Projected"
-                  dot={(props: any) => {
+                  dot={(props: { cx?: number; cy?: number; index?: number }) => {
                     const { cx, cy, index } = props;
                     if (index === 5) {
                       return (
@@ -359,7 +372,7 @@ export default function RevenueForecast() {
                   strokeWidth={2}
                   fill="url(#aggressiveGrad)"
                   name="Aggressive"
-                  dot={(props: any) => {
+                  dot={(props: { cx?: number; cy?: number; index?: number }) => {
                     const { cx, cy, index } = props;
                     if (index === 5) {
                       return (
@@ -557,19 +570,19 @@ export default function RevenueForecast() {
                         type="monotone"
                         dataKey="cumulativeRevenue"
                         stroke="none"
-                        dot={(props: any) => {
+                        dot={(props: { cx?: number; cy?: number; payload?: BreakEvenPoint }) => {
                           const { cx, cy, payload } = props;
-                          if (payload.day === breakEvenDay) {
+                          if (payload?.day === breakEvenDay) {
                             return (
                               <g key="breakeven">
                                 <circle cx={cx} cy={cy} r={6} fill="#22c55e" stroke="#fff" strokeWidth={2} />
-                                <text x={cx + 10} y={cy - 10} fill="#22c55e" fontSize={11} fontWeight={600}>
+                                <text x={(cx ?? 0) + 10} y={(cy ?? 0) - 10} fill="#22c55e" fontSize={11} fontWeight={600}>
                                   Break-even
                                 </text>
                               </g>
                             );
                           }
-                          return <circle key={`be-${payload.day}`} cx={cx} cy={cy} r={0} fill="none" />;
+                          return <circle key={`be-${payload?.day}`} cx={cx} cy={cy} r={0} fill="none" />;
                         }}
                         legendType="none"
                       />

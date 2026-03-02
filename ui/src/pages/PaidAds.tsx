@@ -679,7 +679,10 @@ export default function PaidAds() {
             }
           />
         ) : (
-          <DataTable columns={columns as any} data={filteredCampaigns as unknown as Record<string, unknown>[]} />
+          <DataTable
+            columns={columns as unknown as { key: string; label: string; render?: (item: Record<string, unknown>) => React.ReactNode }[]}
+            data={filteredCampaigns as unknown as Record<string, unknown>[]}
+          />
         )}
       </Card>
 

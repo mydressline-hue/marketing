@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Power, AlertTriangle, Shield, ShieldOff, Globe, Megaphone,
   Cpu, Key, Activity, Clock, CheckCircle, XCircle, Wifi, WifiOff
@@ -12,7 +12,7 @@ import EmptyState from '../components/shared/EmptyState';
 import { useApiQuery, useApiMutation } from '../hooks/useApi';
 import api from '../services/api';
 import { useWebSocket } from '../hooks/useWebSocket';
-import { useApp } from '../context/AppContext';
+import { useApp } from '../context/useApp';
 
 interface KillSwitchStatus {
   global: boolean;
@@ -120,7 +120,7 @@ export default function KillSwitch() {
   }, [killSwitchStatus, setKillSwitch]);
 
   // Derived state
-  const switches = killSwitchStatus || {
+  const switches = useMemo(() => killSwitchStatus || {
     global: false,
     campaigns: false,
     automation: false,
@@ -128,7 +128,7 @@ export default function KillSwitch() {
     newCampaigns: false,
     scaling: false,
     countries: [],
-  };
+  }, [killSwitchStatus]);
 
   const handleToggleSwitch = useCallback(async (key: string) => {
     if (key === 'global' && !switches.global) {

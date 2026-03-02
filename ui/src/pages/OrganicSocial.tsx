@@ -155,7 +155,7 @@ export default function OrganicSocial() {
     useApiMutation<AgentExecuteResponse>('/v1/agents/organic-social/run', { method: 'POST' });
 
   // ---- Derived data --------------------------------------------------------
-  const posts = socialData?.posts ?? [];
+  const posts = useMemo(() => socialData?.posts ?? [], [socialData?.posts]);
   const kpis = socialData?.kpis ?? fallbackKpis;
   const engagementTrendData = socialData?.engagementTrend ?? [];
   const topPosts = socialData?.topPosts ?? [];

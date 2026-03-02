@@ -119,6 +119,7 @@ export function QueryProvider({ children }: { children: ReactNode }) {
  *
  * Throws if called outside the provider tree.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useQueryCache(): QueryCacheContextType {
   const ctx = useContext(QueryCacheContext);
   if (!ctx) {

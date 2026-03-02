@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
-import { AppProvider, useApp } from '../../src/context/AppContext';
+import { AppProvider } from '../../src/context/AppContext';
+import { useApp } from '../../src/context/useApp';
 import { QueryProvider } from '../../src/providers/QueryProvider';
 
 // ---------------------------------------------------------------------------
