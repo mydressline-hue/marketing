@@ -281,11 +281,14 @@ points that were not provided. When data is missing, explicitly note it as an un
     }
 
     // Step 7: Build confidence score
+    const dataRecency = this.calculateDataRecencyScore(countries);
+    const methodologyConsistency = this.calculateMethodologyConsistencyScore(countries);
+
     const confidence = this.calculateConfidence({
       dataAvailability: dataCompletenessScore,
       sampleSize: Math.min(100, (countries.length / 10) * 100),
-      dataRecency: 75, // Placeholder; ideally compare updated_at timestamps
-      methodologyConsistency: 85,
+      dataRecency,
+      methodologyConsistency,
     });
 
     // Step 8: Assemble market analysis
@@ -958,6 +961,120 @@ Respond with a JSON array of recommendation strings. Example:
         : 0;
 
     return { dataCompletenessScore, missingDataCountries };
+  }
+
+  /**
+   * Calculates a data recency score (0-100) based on how recently the
+   * country records were updated. Computes the average age in days of
+   * each country's `updated_at` timestamp and maps it to a score:
+   * - Updated today: 100
+   * - 30+ days old: 50
+   * - 90+ days old: 25
+   * - 180+ days old: 0
+   *
+   * Uses linear interpolation between these anchor points.
+   *
+   * @param countries - Array of country records with `updated_at` timestamps.
+   * @returns A recency score between 0 and 100.
+   */
+  private calculateDataRecencyScore(countries: Country[]): number {
+    if (countries.length === 0) {
+      return 0;
+    }
+
+    const now = Date.now();
+    let totalAgeDays = 0;
+    let validCount = 0;
+
+    for (const country of countries) {
+      if (country.updated_at) {
+        const updatedAt = new Date(country.updated_at).getTime();
+        if (!isNaN(updatedAt)) {
+          const ageDays = (now - updatedAt) / (1000 * 60 * 60 * 24);
+          totalAgeDays += Math.max(0, ageDays);
+          validCount++;
+        }
+      }
+    }
+
+    if (validCount === 0) {
+      return 0;
+    }
+
+    const avgAgeDays = totalAgeDays / validCount;
+
+    // Piecewise linear mapping from age in days to score:
+    //   0 days   -> 100
+    //   30 days  -> 50
+    //   90 days  -> 25
+    //   180 days -> 0
+    let score: number;
+    if (avgAgeDays <= 0) {
+      score = 100;
+    } else if (avgAgeDays <= 30) {
+      // Linear from 100 (at 0 days) to 50 (at 30 days)
+      score = 100 - (avgAgeDays / 30) * 50;
+    } else if (avgAgeDays <= 90) {
+      // Linear from 50 (at 30 days) to 25 (at 90 days)
+      score = 50 - ((avgAgeDays - 30) / 60) * 25;
+    } else if (avgAgeDays <= 180) {
+      // Linear from 25 (at 90 days) to 0 (at 180 days)
+      score = 25 - ((avgAgeDays - 90) / 90) * 25;
+    } else {
+      score = 0;
+    }
+
+    return Math.round(Math.max(0, Math.min(100, score)) * 100) / 100;
+  }
+
+  /**
+   * Calculates a methodology consistency score (0-100) based on what
+   * percentage of countries have complete key data fields. A country
+   * is considered "complete" if all of the following fields are present
+   * and non-empty: gdp, internet_penetration, ecommerce_adoption,
+   * social_platforms, ad_costs, and cultural_behavior.
+   *
+   * @param countries - Array of country records.
+   * @returns A consistency score between 0 and 100.
+   */
+  private calculateMethodologyConsistencyScore(countries: Country[]): number {
+    if (countries.length === 0) {
+      return 0;
+    }
+
+    const keyFields: Array<keyof Country> = [
+      'gdp',
+      'internet_penetration',
+      'ecommerce_adoption',
+      'social_platforms',
+      'ad_costs',
+      'cultural_behavior',
+    ];
+
+    let completeCountries = 0;
+
+    for (const country of countries) {
+      let isComplete = true;
+
+      for (const field of keyFields) {
+        const value = country[field];
+        if (value === undefined || value === null) {
+          isComplete = false;
+          break;
+        }
+        if (typeof value === 'object' && Object.keys(value).length === 0) {
+          isComplete = false;
+          break;
+        }
+      }
+
+      if (isComplete) {
+        completeCountries++;
+      }
+    }
+
+    const score = (completeCountries / countries.length) * 100;
+    return Math.round(score * 100) / 100;
   }
 
   /**

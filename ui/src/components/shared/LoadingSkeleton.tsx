@@ -169,7 +169,7 @@ export function ChartSkeleton({
 }: ChartSkeletonProps) {
   const inner = (
     <div className={`${height} flex items-end gap-2 px-2 pb-2`}>
-      {/* Fake bar chart bars of varying height */}
+      {/* Animated skeleton bars of varying height */}
       {[40, 65, 50, 80, 55, 70, 45, 90, 60, 75, 50, 85].map((h, i) => (
         <div key={i} className="flex-1 flex flex-col justify-end h-full">
           <SkeletonBlock

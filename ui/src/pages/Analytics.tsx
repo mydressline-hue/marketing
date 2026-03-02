@@ -181,6 +181,12 @@ function renderPieLabel({
 export default function Analytics() {
   const [dateRange, setDateRange] = useState<DateRange>('30d');
 
+  // Compute dynamic default dates for the custom date range picker
+  const today = new Date();
+  const thirtyDaysAgo = new Date(today);
+  thirtyDaysAgo.setDate(today.getDate() - 30);
+  const formatDate = (d: Date) => d.toISOString().split('T')[0];
+
   // -----------------------------------------------------------------------
   // API queries with 30-second auto-refresh
   // -----------------------------------------------------------------------
@@ -328,13 +334,13 @@ export default function Analytics() {
             <input
               type="date"
               className="px-2.5 py-1.5 text-sm border border-surface-200 dark:border-surface-700 rounded-lg bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              defaultValue="2026-01-01"
+              defaultValue={formatDate(thirtyDaysAgo)}
             />
             <span className="text-surface-400 text-sm">to</span>
             <input
               type="date"
               className="px-2.5 py-1.5 text-sm border border-surface-200 dark:border-surface-700 rounded-lg bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              defaultValue="2026-01-30"
+              defaultValue={formatDate(today)}
             />
           </div>
         )}

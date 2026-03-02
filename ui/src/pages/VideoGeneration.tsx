@@ -116,7 +116,7 @@ export default function VideoGeneration() {
   const [pipelineAspectRatio, setPipelineAspectRatio] = useState<AspectRatio>('9:16');
   const [pipelinePrompt, setPipelinePrompt] = useState('');
   const [pipelineImageUrl, setPipelineImageUrl] = useState('');
-  const [targetPlatforms, setTargetPlatforms] = useState<SocialPlatform[]>(['instagram', 'tiktok']);
+  const [targetPlatforms, setTargetPlatforms] = useState<SocialPlatform[]>([]);
   const [tone, setTone] = useState('engaging');
   const [targetAudience, setTargetAudience] = useState('');
 

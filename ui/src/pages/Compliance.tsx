@@ -166,7 +166,6 @@ export default function Compliance() {
   } = useApiQuery<ComplianceStatus>('/v1/agents/compliance/status');
 
   const {
-    data: _countries,
     loading: countriesLoading,
     error: countriesError,
     refetch: refetchCountries,

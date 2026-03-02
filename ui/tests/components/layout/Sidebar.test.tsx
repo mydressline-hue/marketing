@@ -6,7 +6,7 @@ import Sidebar from '../../../src/components/layout/Sidebar';
 const mockToggleSidebar = vi.fn();
 
 // Mock the useApp hook
-vi.mock('../../../src/context/AppContext', () => ({
+vi.mock('../../../src/context/useApp', () => ({
   useApp: () => ({
     sidebarOpen: true,
     darkMode: false,

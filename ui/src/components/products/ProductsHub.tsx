@@ -37,7 +37,11 @@ export default function ProductsHub() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
-  const selectTab = (tab: Tab) => { setActiveTab(tab); window.location.hash = tab; };
+  useEffect(() => {
+    window.location.hash = activeTab;
+  }, [activeTab]);
+
+  const selectTab = (tab: Tab) => { setActiveTab(tab); };
 
   return (
     <div className="space-y-4">
@@ -168,7 +172,7 @@ function CollectionsTab() {
     setNewTitle(''); setShowCreate(false); refetch();
   };
 
-  const handleDelete = async (_id: string) => {
+  const handleDelete = async () => {
     await deleteCol(); // Note: Would need proper endpoint
     refetch();
   };

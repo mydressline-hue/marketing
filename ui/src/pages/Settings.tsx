@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
   Settings as SettingsIcon, Key, Globe, Bell, Shield,
   Save, Eye, EyeOff, RefreshCw, CheckCircle, Cpu, Palette
@@ -113,65 +113,78 @@ export default function SettingsPage() {
   const { mutate: saveSettings, loading: saving } = useApiMutation<SystemSettings>('/v1/settings', { method: 'PUT' });
   const { mutate: saveApiKeys, loading: savingKeys } = useApiMutation<ApiKeysResponse>('/v1/settings/api-keys', { method: 'PUT' });
 
-  // Sync fetched settings to local state
-  useEffect(() => {
-    if (settings && !localSettings) {
-      setLocalSettings(settings);
-    }
-  }, [settings, localSettings]);
+  // Derive effective settings: use local edits if available, otherwise the API data
+  const effectiveSettings = localSettings ?? settings ?? null;
 
   const apiKeys = apiKeysData?.keys || [];
 
   const handleSave = useCallback(async () => {
-    if (!localSettings) return;
-    const result = await saveSettings(localSettings);
+    const toSave = localSettings ?? settings;
+    if (!toSave) return;
+    const result = await saveSettings(toSave);
     if (result) {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
       refetchSettings();
     }
-  }, [localSettings, saveSettings, refetchSettings]);
+  }, [localSettings, settings, saveSettings, refetchSettings]);
 
   const toggleKeyVisibility = (name: string) => {
     setShowKeys(s => ({ ...s, [name]: !s[name] }));
   };
 
   const updateGeneral = (partial: Partial<GeneralSettings>) => {
-    setLocalSettings(s => s ? { ...s, general: { ...s.general, ...partial } } : s);
+    setLocalSettings(s => {
+      const base = s ?? settings;
+      return base ? { ...base, general: { ...base.general, ...partial } } : null;
+    });
   };
 
   const updateAppearance = (partial: Partial<AppearanceSettings>) => {
-    setLocalSettings(s => s ? { ...s, appearance: { ...s.appearance, ...partial } } : s);
+    setLocalSettings(s => {
+      const base = s ?? settings;
+      return base ? { ...base, appearance: { ...base.appearance, ...partial } } : null;
+    });
   };
 
   const updateAgentConfig = (section: 'opus' | 'sonnet', partial: Partial<AgentConfig['opus']>) => {
-    setLocalSettings(s => s ? {
-      ...s,
-      aiAgents: { ...s.aiAgents, [section]: { ...s.aiAgents[section], ...partial } },
-    } : s);
+    setLocalSettings(s => {
+      const base = s ?? settings;
+      return base ? {
+        ...base,
+        aiAgents: { ...base.aiAgents, [section]: { ...base.aiAgents[section], ...partial } },
+      } : null;
+    });
   };
 
   const updateCrossChallenge = (partial: Partial<AgentConfig['crossChallenge']>) => {
-    setLocalSettings(s => s ? {
-      ...s,
-      aiAgents: { ...s.aiAgents, crossChallenge: { ...s.aiAgents.crossChallenge, ...partial } },
-    } : s);
+    setLocalSettings(s => {
+      const base = s ?? settings;
+      return base ? {
+        ...base,
+        aiAgents: { ...base.aiAgents, crossChallenge: { ...base.aiAgents.crossChallenge, ...partial } },
+      } : null;
+    });
   };
 
   const updateNotificationChannel = (index: number, enabled: boolean) => {
     setLocalSettings(s => {
-      if (!s) return s;
-      const channels = [...s.notifications.channels];
+      const base = s ?? settings;
+      if (!base) return null;
+      const channels = [...base.notifications.channels];
       channels[index] = { ...channels[index], enabled };
-      return { ...s, notifications: { ...s.notifications, channels } };
+      return { ...base, notifications: { ...base.notifications, channels } };
     });
   };
 
   const updateNotificationThreshold = (key: keyof NotificationSettings['thresholds'], value: number) => {
-    setLocalSettings(s => s ? {
-      ...s,
-      notifications: { ...s.notifications, thresholds: { ...s.notifications.thresholds, [key]: value } },
-    } : s);
+    setLocalSettings(s => {
+      const base = s ?? settings;
+      return base ? {
+        ...base,
+        notifications: { ...base.notifications, thresholds: { ...base.notifications.thresholds, [key]: value } },
+      } : null;
+    });
   };
 
   const handleRotateKey = useCallback(async (keyName: string) => {
@@ -188,11 +201,11 @@ export default function SettingsPage() {
     { id: 'appearance', label: 'Appearance', icon: Palette },
   ];
 
-  const general = localSettings?.general;
-  const appearance = localSettings?.appearance;
-  const aiAgents = localSettings?.aiAgents;
-  const notifications = localSettings?.notifications;
-  const security = localSettings?.security || [];
+  const general = effectiveSettings?.general;
+  const appearance = effectiveSettings?.appearance;
+  const aiAgents = effectiveSettings?.aiAgents;
+  const notifications = effectiveSettings?.notifications;
+  const security = effectiveSettings?.security || [];
 
   return (
     <div className="space-y-6">
@@ -203,7 +216,7 @@ export default function SettingsPage() {
         actions={
           <button
             onClick={handleSave}
-            disabled={saving || !localSettings}
+            disabled={saving || !effectiveSettings}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
               saved ? 'bg-success-600 text-white' : 'bg-primary-600 text-white hover:bg-primary-700'
             }`}

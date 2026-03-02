@@ -144,7 +144,6 @@ export function ApiErrorDisplay({
   onRetry,
   onDismiss,
   className = '',
-  compact: _compact = false,
   title: titleOverride,
   message: messageOverride,
 }: ApiErrorDisplayProps) {

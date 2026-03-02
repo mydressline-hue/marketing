@@ -1,5 +1,5 @@
 import { Bell, Menu, Moon, Search, Shield, Sun } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
+import { useApp } from '../../context/useApp';
 
 export default function Header() {
   const { toggleSidebar, autonomyMode, setAutonomyMode, alerts, darkMode, toggleDarkMode } = useApp();

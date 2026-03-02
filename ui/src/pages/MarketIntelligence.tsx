@@ -122,8 +122,6 @@ export default function MarketIntelligence() {
 
   const {
     data: agentStatus,
-    loading: _agentStatusLoading,
-    error: _agentStatusError,
     refetch: refetchAgentStatus,
   } = useApiQuery<AgentStatusResponse>('/v1/agents/market-intelligence');
 
@@ -152,9 +150,9 @@ export default function MarketIntelligence() {
     }
   };
 
-  const countryData = countriesData?.countries ?? [];
-  const radarData = countriesData?.radarData ?? [];
-  const insights = countriesData?.insights ?? [];
+  const countryData = useMemo(() => countriesData?.countries ?? [], [countriesData]);
+  const radarData = useMemo(() => countriesData?.radarData ?? [], [countriesData]);
+  const insights = useMemo(() => countriesData?.insights ?? [], [countriesData]);
 
   const filteredAndSorted = useMemo(() => {
     return countryData
@@ -194,7 +192,7 @@ export default function MarketIntelligence() {
   const radarColors = ['#6366f1', '#10b981', '#f59e0b'];
   const radarLegendColors = ['bg-indigo-500', 'bg-emerald-500', 'bg-amber-500'];
 
-  const SortableHeader = ({ label, sortField }: { label: string; sortField: SortKey }) => (
+  const renderSortableHeader = (label: string, sortField: SortKey) => (
     <button
       onClick={() => handleSort(sortField)}
       className="flex items-center gap-1 font-semibold text-surface-600 dark:text-surface-300 hover:text-surface-900 dark:hover:text-surface-100 transition-colors group"
@@ -382,23 +380,23 @@ export default function MarketIntelligence() {
               <thead>
                 <tr className="border-b border-surface-200 dark:border-surface-700">
                   <th className="text-left py-3 px-4 w-16">
-                    <SortableHeader label="#" sortField="rank" />
+                    {renderSortableHeader('#', 'rank')}
                   </th>
                   <th className="text-left py-3 px-4">Country</th>
                   <th className="text-left py-3 px-4">
-                    <SortableHeader label="Opportunity" sortField="opportunityScore" />
+                    {renderSortableHeader('Opportunity', 'opportunityScore')}
                   </th>
                   <th className="text-left py-3 px-4">
-                    <SortableHeader label="GDP" sortField="gdpValue" />
+                    {renderSortableHeader('GDP', 'gdpValue')}
                   </th>
                   <th className="text-left py-3 px-4">
-                    <SortableHeader label="Internet %" sortField="internetPenetration" />
+                    {renderSortableHeader('Internet %', 'internetPenetration')}
                   </th>
                   <th className="text-left py-3 px-4">
-                    <SortableHeader label="E-commerce %" sortField="ecommerceAdoption" />
+                    {renderSortableHeader('E-commerce %', 'ecommerceAdoption')}
                   </th>
                   <th className="text-left py-3 px-4">
-                    <SortableHeader label="Ad Cost" sortField="adCostIndex" />
+                    {renderSortableHeader('Ad Cost', 'adCostIndex')}
                   </th>
                   <th className="text-left py-3 px-4">Entry Strategy</th>
                   <th className="text-left py-3 px-4">Status</th>

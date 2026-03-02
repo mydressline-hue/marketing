@@ -5,7 +5,7 @@ import {
   Shield, Eye, AlertTriangle, Fingerprint, Database, Lock,
   TrendingUp, Cpu, Settings, Power, LayoutDashboard, X, Video
 } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
+import { useApp } from '../../context/useApp';
 
 const navItems = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard },

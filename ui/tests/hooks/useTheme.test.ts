@@ -2,12 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useTheme } from '../../src/hooks/useTheme';
 
-// Mock useApp from AppContext
-vi.mock('../../src/context/AppContext', () => ({
+// Mock useApp from useApp module
+vi.mock('../../src/context/useApp', () => ({
   useApp: vi.fn(),
 }));
 
-import { useApp } from '../../src/context/AppContext';
+import { useApp } from '../../src/context/useApp';
 
 const mockUseApp = useApp as ReturnType<typeof vi.fn>;
 

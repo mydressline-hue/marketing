@@ -12,7 +12,7 @@ vi.mock('../../src/hooks/useWebSocket', () => ({
   useWebSocket: vi.fn(() => ({ connected: true, subscribe: vi.fn(() => vi.fn()), lastMessage: null, send: vi.fn(), connect: vi.fn(), disconnect: vi.fn(), unsubscribe: vi.fn() })),
 }));
 
-vi.mock('../../src/context/AppContext', () => ({
+vi.mock('../../src/context/useApp', () => ({
   useApp: vi.fn(() => ({
     sidebarOpen: true, darkMode: false, toggleSidebar: vi.fn(), toggleDarkMode: vi.fn(),
     autonomyMode: 'semi' as const, setAutonomyMode: vi.fn(),

@@ -317,8 +317,11 @@ note it as an uncertainty and adjust confidence downward accordingly.`;
 
     // Evaluate anomaly rules
     let ruleEvaluations: RuleEvaluation[] = [];
+    let totalExpectedEvaluations = 0;
+    let ruleEvaluationErrors = 0;
     try {
       const rules = await this.getRules();
+      totalExpectedEvaluations = rules.length * campaignIds.length;
       for (const rule of rules) {
         for (const cId of campaignIds) {
           try {
@@ -334,6 +337,7 @@ note it as an uncertainty and adjust confidence downward accordingly.`;
               });
             }
           } catch (error) {
+            ruleEvaluationErrors++;
             const message = error instanceof Error ? error.message : String(error);
             this.log.warn('Rule evaluation failed', {
               ruleId: rule.id,
@@ -357,11 +361,38 @@ note it as an uncertainty and adjust confidence downward accordingly.`;
       ? Math.min(100, (results.reduce((sum, r) => sum + r.signals.length, 0) / results.length) * 20)
       : 0;
 
+    // Calculate methodology consistency from actual evaluation data:
+    // 1. Rule evaluation completeness — what fraction of expected evaluations succeeded
+    const ruleCompleteness = totalExpectedEvaluations > 0
+      ? ((totalExpectedEvaluations - ruleEvaluationErrors) / totalExpectedEvaluations) * 100
+      : 0;
+    // 2. Signal consistency — how much signals within each campaign agree (all suspicious or all clean)
+    let signalConsistency = 100;
+    if (results.length > 0) {
+      const consistencyScores = results
+        .filter((r) => r.signals.length > 0)
+        .map((r) => {
+          const suspiciousCount = r.signals.filter((s) => s.suspicious).length;
+          const ratio = suspiciousCount / r.signals.length;
+          // Score is highest (100) when signals fully agree (ratio near 0 or 1), lowest at 0.5
+          return (1 - 2 * Math.abs(ratio - 0.5)) * 100;
+        });
+      signalConsistency = consistencyScores.length > 0
+        ? consistencyScores.reduce((sum, s) => sum + s, 0) / consistencyScores.length
+        : 50;
+    }
+    // 3. Step completion — did both campaign analysis and rule evaluation phases produce results
+    const stepsCompleted = (results.length > 0 ? 50 : 0) + (ruleEvaluations.length > 0 ? 50 : 0);
+    // Weighted combination: rule completeness 40%, signal consistency 30%, step completion 30%
+    const methodologyConsistency = Math.round(
+      ruleCompleteness * 0.4 + signalConsistency * 0.3 + stepsCompleted * 0.3,
+    );
+
     const confidence = this.calculateConfidence({
       dataAvailability: dataCompleteness,
       signalDensity,
       rulesCoverage: ruleEvaluations.length > 0 ? 75 : 25,
-      methodologyConsistency: 80,
+      methodologyConsistency,
     });
 
     // Aggregate results

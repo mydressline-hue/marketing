@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Target,
   ChevronDown,
@@ -115,21 +115,22 @@ export default function CountryStrategy() {
   } = useApiQuery<CountriesResponse | CountryListItem[]>('/v1/countries');
 
   // Normalize: API may return { countries: [...] } or [...]
-  const countries: CountryListItem[] = countriesData
-    ? Array.isArray(countriesData)
-      ? countriesData
-      : (countriesData as CountriesResponse).countries ?? []
-    : [];
+  const countries: CountryListItem[] = useMemo(
+    () =>
+      countriesData
+        ? Array.isArray(countriesData)
+          ? countriesData
+          : (countriesData as CountriesResponse).countries ?? []
+        : [],
+    [countriesData],
+  );
 
-  // Auto-select the first country once loaded
-  useEffect(() => {
-    if (countries.length > 0 && !selectedCountryId) {
-      setSelectedCountryId(countries[0].id ?? countries[0].code);
-    }
-  }, [countries, selectedCountryId]);
+  // Derive the effective selected country: fall back to first country when none selected
+  const effectiveSelectedCountryId =
+    selectedCountryId ?? (countries.length > 0 ? (countries[0].id ?? countries[0].code) : null);
 
   // Fetch selected country detail + strategy
-  const countryEndpoint = `/v1/countries/${selectedCountryId ?? ''}`;
+  const countryEndpoint = `/v1/countries/${effectiveSelectedCountryId ?? ''}`;
 
   const {
     data: countryDetailRaw,
@@ -137,7 +138,7 @@ export default function CountryStrategy() {
     error: detailError,
     refetch: refetchDetail,
   } = useApiQuery<CountryDetailResponse | CountryDetail>(countryEndpoint, {
-    enabled: !!selectedCountryId,
+    enabled: !!effectiveSelectedCountryId,
   });
 
   const {
@@ -146,7 +147,7 @@ export default function CountryStrategy() {
     error: strategyError,
     refetch: refetchStrategy,
   } = useApiQuery<CountryStrategyResponse | CountryDetail>(countryEndpoint, {
-    enabled: !!selectedCountryId,
+    enabled: !!effectiveSelectedCountryId,
   });
 
   // Normalize detail response
@@ -258,14 +259,14 @@ export default function CountryStrategy() {
               key={id}
               onClick={() => setSelectedCountryId(id)}
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                selectedCountryId === id
+                effectiveSelectedCountryId === id
                   ? 'bg-primary-600 text-white shadow-sm'
                   : 'bg-white dark:bg-surface-800 text-surface-600 dark:text-surface-300 border border-surface-200 dark:border-surface-700 hover:border-primary-300 hover:text-primary-600'
               }`}
             >
               <span>{c.flag}</span>
               <span>{c.code}</span>
-              {selectedCountryId === id && (
+              {effectiveSelectedCountryId === id && (
                 <ChevronDown className="w-3.5 h-3.5" />
               )}
             </button>
