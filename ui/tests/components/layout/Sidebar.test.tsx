@@ -63,12 +63,12 @@ describe('Sidebar', () => {
     expect(screen.getByText('Paid Ads')).toBeInTheDocument();
   });
 
-  it('renders all 23 navigation items', () => {
+  it('renders all 24 navigation items', () => {
     renderSidebar();
     const expectedLabels = [
       'Dashboard', 'Market Intelligence', 'Country Strategy', 'Paid Ads',
-      'Organic Social', 'Content & Blog', 'Creative Studio', 'Analytics',
-      'Budget Optimizer', 'A/B Testing', 'Conversion', 'Shopify',
+      'Organic Social', 'Content & Blog', 'Creative Studio', 'Video Generation',
+      'Analytics', 'Budget Optimizer', 'A/B Testing', 'Conversion', 'Shopify',
       'Localization', 'Compliance', 'Competitive Intel', 'Fraud Detection',
       'Brand Consistency', 'Data Engineering', 'Security', 'Revenue Forecast',
       'Orchestrator', 'Kill Switch', 'Settings',
@@ -78,7 +78,7 @@ describe('Sidebar', () => {
     });
     // Also verify count
     const navLinks = screen.getAllByRole('link');
-    expect(navLinks).toHaveLength(23);
+    expect(navLinks).toHaveLength(24);
   });
 
   it('renders nav items as links with correct paths', () => {

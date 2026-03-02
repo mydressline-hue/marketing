@@ -556,9 +556,12 @@ describe('PerformanceAnalyticsAgent', () => {
         ],
       };
 
-      // 4 attribution model calls, each with fallback (fail touchpoints table, then campaign query)
+      // 4 attribution model calls run via Promise.all (concurrent), each with fallback
+      // All touchpoint queries reject first, then all fallback derive queries resolve
       for (let i = 0; i < 4; i++) {
         mockQuery.mockRejectedValueOnce(new Error('table not found'));
+      }
+      for (let i = 0; i < 4; i++) {
         mockQuery.mockResolvedValueOnce(campaignData);
       }
 
@@ -628,27 +631,24 @@ describe('PerformanceAnalyticsAgent', () => {
 
   describe('computeKPIs', () => {
     it('should compute all KPIs from underlying metrics', async () => {
-      // CAC query (current + no previous since no dateRange)
+      // Promise.allSettled runs CAC, LTV, ROAS, MER concurrently.
+      // Round 1 (first query from each): CAC, LTV, ROAS current, MER spend
       mockQuery.mockResolvedValueOnce({
         rows: [{ total_spend: '10000', total_conversions: '200' }],
       });
-      // LTV query
       mockQuery.mockResolvedValueOnce({
         rows: [{ total_customers: '500', total_revenue: '75000', span_days: '365' }],
       });
-      // ROAS current
       mockQuery.mockResolvedValueOnce({
         rows: [{ total_spend: '20000', total_revenue: '60000' }],
       });
-      // ROAS previous
-      mockQuery.mockResolvedValueOnce({
-        rows: [{ total_spend: '15000', total_revenue: '40000' }],
-      });
-      // MER spend
       mockQuery.mockResolvedValueOnce({
         rows: [{ total_spend: '20000' }],
       });
-      // MER revenue
+      // Round 2 (second query from ROAS + MER): ROAS previous, MER revenue
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ total_spend: '15000', total_revenue: '40000' }],
+      });
       mockQuery.mockResolvedValueOnce({
         rows: [{ total_revenue: '60000' }],
       });

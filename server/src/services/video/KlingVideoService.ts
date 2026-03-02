@@ -11,6 +11,7 @@
 import { logger } from '../../utils/logger';
 import { retryWithBackoff, sleep } from '../../utils/helpers';
 import { ExternalServiceError } from '../../utils/errors';
+import { env } from '../../config/env';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -60,7 +61,7 @@ export interface KlingTaskResult {
 
 export class KlingVideoService {
   private static getApiKey(): string {
-    const key = process.env.KLING_API_KEY;
+    const key = env.KLING_API_KEY;
     if (!key) {
       throw new ExternalServiceError(
         'KlingAI',

@@ -64,6 +64,18 @@ export interface Strategy {
 }
 
 // ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const STRATEGIES: Strategy[] = [
+  { id: 'random', name: 'Random Selection', description: 'Randomly pick products for diverse exposure', icon: 'Shuffle', requiresAI: false },
+  { id: 'most_viewed', name: 'Most Viewed', description: 'Products with highest view counts', icon: 'Eye', requiresAI: false },
+  { id: 'most_sold', name: 'Best Sellers', description: 'Top-selling products by units sold', icon: 'TrendingUp', requiresAI: false },
+  { id: 'trending', name: 'Trending Now', description: 'Products with rising sales velocity', icon: 'Zap', requiresAI: false },
+  { id: 'ai_recommended', name: 'AI Recommended', description: 'AI analyzes multiple factors to pick optimal products', icon: 'Sparkles', requiresAI: false },
+];
+
+// ---------------------------------------------------------------------------
 // Service
 // ---------------------------------------------------------------------------
 
@@ -217,13 +229,7 @@ export class AIProductPickerService {
   }
 
   static async getStrategies(): Promise<Strategy[]> {
-    return [
-      { id: 'random', name: 'Random Selection', description: 'Randomly pick products for diverse exposure', icon: 'Shuffle', requiresAI: false },
-      { id: 'most_viewed', name: 'Most Viewed', description: 'Products with highest view counts', icon: 'Eye', requiresAI: false },
-      { id: 'most_sold', name: 'Best Sellers', description: 'Top-selling products by units sold', icon: 'TrendingUp', requiresAI: false },
-      { id: 'trending', name: 'Trending Now', description: 'Products with rising sales velocity', icon: 'Zap', requiresAI: false },
-      { id: 'ai_recommended', name: 'AI Recommended', description: 'AI analyzes multiple factors to pick optimal products', icon: 'Sparkles', requiresAI: false },
-    ];
+    return STRATEGIES;
   }
 
   private static toProduct(row: Record<string, unknown>, reasoning: string, score: number): PickedProduct {
