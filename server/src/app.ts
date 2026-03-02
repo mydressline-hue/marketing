@@ -49,6 +49,7 @@ import finalOutputsStrategyRoutes from './routes/final-outputs-strategy.routes';
 import finalOutputsChannelsRoutes from './routes/final-outputs-channels.routes';
 import finalOutputsRoadmapRoutes from './routes/final-outputs-roadmap.routes';
 import finalOutputsValidationRoutes from './routes/final-outputs-validation.routes';
+import videoRoutes from './routes/video.routes';
 
 // ---------------------------------------------------------------------------
 // App
@@ -101,6 +102,7 @@ app.use(`${prefix}/final-outputs`, finalOutputsStrategyRoutes);
 app.use(`${prefix}/final-outputs/channel-allocation`, finalOutputsChannelsRoutes);
 app.use(`${prefix}/final-outputs`, finalOutputsRoadmapRoutes);
 app.use(`${prefix}/final-outputs`, finalOutputsValidationRoutes);
+app.use(`${prefix}/video`, videoRoutes);
 
 // ── Error handling ────────────────────────────────────────────────────────
 app.use(notFoundHandler);

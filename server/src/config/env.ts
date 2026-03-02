@@ -63,6 +63,9 @@ export const envSchema = z
     ANTHROPIC_OPUS_MODEL: z.string().default('claude-opus-4-20250514'),
     ANTHROPIC_SONNET_MODEL: z.string().default('claude-sonnet-4-20250514'),
 
+    // ── Kling AI Video ──────────────────────────────────────────────────
+    KLING_API_KEY: z.string().optional(),
+
     // ── Rate Limiting ──────────────────────────────────────────────────
     RATE_LIMIT_WINDOW_MS: coerceNumber(900000),
     RATE_LIMIT_MAX_REQUESTS: coerceNumber(100),

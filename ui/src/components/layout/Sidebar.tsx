@@ -3,7 +3,7 @@ import {
   Globe, Target, Megaphone, Share2, FileText, Palette, BarChart3,
   DollarSign, FlaskConical, MousePointerClick, ShoppingBag, Languages,
   Shield, Eye, AlertTriangle, Fingerprint, Database, Lock,
-  TrendingUp, Cpu, Settings, Power, LayoutDashboard, X
+  TrendingUp, Cpu, Settings, Power, LayoutDashboard, X, Video
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -15,6 +15,7 @@ const navItems = [
   { label: 'Organic Social', path: '/organic-social', icon: Share2 },
   { label: 'Content & Blog', path: '/content-blog', icon: FileText },
   { label: 'Creative Studio', path: '/creative-studio', icon: Palette },
+  { label: 'Video Generation', path: '/video-generation', icon: Video },
   { label: 'Analytics', path: '/analytics', icon: BarChart3 },
   { label: 'Budget Optimizer', path: '/budget-optimizer', icon: DollarSign },
   { label: 'A/B Testing', path: '/ab-testing', icon: FlaskConical },
