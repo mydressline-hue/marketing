@@ -6,10 +6,11 @@ import {
 import PageHeader from '../components/shared/PageHeader';
 import Card from '../components/shared/Card';
 import StatusBadge from '../components/shared/StatusBadge';
-import { KPISkeleton, CardSkeleton } from '../components/shared/LoadingSkeleton';
+import { CardSkeleton } from '../components/shared/LoadingSkeleton';
 import { ApiErrorDisplay } from '../components/shared/ErrorBoundary';
 import EmptyState from '../components/shared/EmptyState';
 import { useApiQuery, useApiMutation } from '../hooks/useApi';
+import api from '../services/api';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useApp } from '../context/AppContext';
 
@@ -79,8 +80,8 @@ export default function KillSwitch() {
   } = useApiQuery<HistoryEvent[]>('/v1/killswitch/history');
 
   // Mutations
-  const { mutate: activateKillSwitch, loading: activating } = useApiMutation<ActivateResult>('/v1/killswitch/activate', 'POST');
-  const { mutate: deactivateKillSwitch, loading: deactivating } = useApiMutation<ActivateResult>('/v1/killswitch/deactivate', 'POST');
+  const { mutate: activateKillSwitch, loading: activating } = useApiMutation<ActivateResult>('/v1/killswitch/activate', { method: 'POST' });
+  const { mutate: deactivateKillSwitch, loading: deactivating } = useApiMutation<ActivateResult>('/v1/killswitch/deactivate', { method: 'POST' });
 
   // WebSocket for instant state propagation
   const { connected, subscribe } = useWebSocket();
@@ -166,11 +167,7 @@ export default function KillSwitch() {
     // Use a dynamic endpoint for updating trigger
     const endpoint = `/v1/killswitch/triggers/${trigger.id}`;
     try {
-      await fetch(`/api${endpoint}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...trigger, enabled: !trigger.enabled }),
-      });
+      await api.put(endpoint, { ...trigger, enabled: !trigger.enabled });
       refetchTriggers();
     } catch {
       // Error handled by refetch
@@ -198,7 +195,7 @@ export default function KillSwitch() {
         actions={
           <div className="flex items-center gap-2">
             <span className={`flex items-center gap-1 px-2 py-1 text-xs rounded-full ${
-              connected ? 'bg-success-50 text-success-700' : 'bg-surface-100 text-surface-500'
+              connected ? 'bg-success-50 text-success-700' : 'bg-surface-100 dark:bg-surface-700 text-surface-500 dark:text-surface-400'
             }`}>
               {connected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
               {connected ? 'Live' : 'Offline'}
@@ -238,7 +235,7 @@ export default function KillSwitch() {
                 </button>
                 <button
                   onClick={() => setConfirmGlobal(false)}
-                  className="px-6 py-2.5 bg-white border border-surface-300 text-surface-700 rounded-lg text-sm font-medium hover:bg-surface-50"
+                  className="px-6 py-2.5 bg-white dark:bg-surface-800 border border-surface-300 text-surface-700 dark:text-surface-200 rounded-lg text-sm font-medium hover:bg-surface-50 dark:hover:bg-surface-700"
                 >
                   Cancel
                 </button>
@@ -261,20 +258,20 @@ export default function KillSwitch() {
                 const isActive = switches[item.key as keyof KillSwitchStatus] as boolean;
                 return (
                   <div key={item.key} className={`flex items-center justify-between p-4 rounded-lg border ${
-                    isActive ? 'border-danger-200 bg-danger-50' : 'border-surface-200 bg-white'
+                    isActive ? 'border-danger-200 bg-danger-50' : 'border-surface-200 bg-white dark:bg-surface-800'
                   }`}>
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                        isActive ? 'bg-danger-100' : 'bg-surface-100'
+                        isActive ? 'bg-danger-100' : 'bg-surface-100 dark:bg-surface-700'
                       }`}>
-                        <item.icon className={`w-5 h-5 ${isActive ? 'text-danger-600' : 'text-surface-600'}`} />
+                        <item.icon className={`w-5 h-5 ${isActive ? 'text-danger-600' : 'text-surface-600 dark:text-surface-300'}`} />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-surface-900 flex items-center gap-2">
+                        <p className="text-sm font-semibold text-surface-900 dark:text-surface-100 flex items-center gap-2">
                           {item.label}
                           {item.critical && <span className="text-[10px] text-danger-600 bg-danger-50 px-1.5 py-0.5 rounded font-medium border border-danger-200">CRITICAL</span>}
                         </p>
-                        <p className="text-xs text-surface-500">{item.desc}</p>
+                        <p className="text-xs text-surface-500 dark:text-surface-400">{item.desc}</p>
                       </div>
                     </div>
                     <button
@@ -284,7 +281,7 @@ export default function KillSwitch() {
                         isActive ? 'bg-danger-500' : 'bg-surface-300'
                       }`}
                     >
-                      <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                      <span className={`absolute top-0.5 w-5 h-5 bg-white dark:bg-surface-800 rounded-full shadow transition-transform ${
                         isActive ? 'translate-x-6' : 'translate-x-0.5'
                       }`} />
                     </button>
@@ -312,13 +309,13 @@ export default function KillSwitch() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {switches.countries.map(country => (
                   <div key={country.code} className={`flex items-center justify-between p-3 rounded-lg border ${
-                    !country.active ? 'border-warning-200 bg-warning-50/50' : 'border-surface-200'
+                    !country.active ? 'border-warning-200 bg-warning-50/50' : 'border-surface-200 dark:border-surface-700'
                   }`}>
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{country.flag}</span>
                       <div>
-                        <p className="text-sm font-medium text-surface-900">{country.code}</p>
-                        <p className="text-[10px] text-surface-500">{country.name}</p>
+                        <p className="text-sm font-medium text-surface-900 dark:text-surface-100">{country.code}</p>
+                        <p className="text-[10px] text-surface-500 dark:text-surface-400">{country.name}</p>
                       </div>
                     </div>
                     <button
@@ -328,7 +325,7 @@ export default function KillSwitch() {
                         country.active ? 'bg-success-500' : 'bg-surface-300'
                       }`}
                     >
-                      <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                      <span className={`absolute top-0.5 w-4 h-4 bg-white dark:bg-surface-800 rounded-full shadow transition-transform ${
                         country.active ? 'translate-x-5' : 'translate-x-0.5'
                       }`} />
                     </button>
@@ -357,17 +354,17 @@ export default function KillSwitch() {
             <div className="space-y-2">
               {triggers.map((trigger) => (
                 <div key={trigger.id} className={`flex items-center justify-between p-4 rounded-lg border ${
-                  trigger.enabled ? 'border-surface-200' : 'border-surface-100 bg-surface-50 opacity-60'
+                  trigger.enabled ? 'border-surface-200' : 'border-surface-100 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 opacity-60'
                 }`}>
                   <div className="flex items-center gap-3 flex-1">
                     <div className={`w-2.5 h-2.5 rounded-full ${
                       trigger.severity === 'critical' ? 'bg-danger-500' : 'bg-warning-500'
                     }`} />
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-surface-900">{trigger.name}</p>
-                      <p className="text-xs text-surface-500">{trigger.description}</p>
+                      <p className="text-sm font-medium text-surface-900 dark:text-surface-100">{trigger.name}</p>
+                      <p className="text-xs text-surface-500 dark:text-surface-400">{trigger.description}</p>
                     </div>
-                    <div className="hidden sm:flex items-center gap-2 text-xs text-surface-500">
+                    <div className="hidden sm:flex items-center gap-2 text-xs text-surface-500 dark:text-surface-400">
                       <Clock className="w-3 h-3" />
                       Last: {trigger.lastTriggered}
                     </div>
@@ -379,7 +376,7 @@ export default function KillSwitch() {
                       trigger.enabled ? 'bg-success-500' : 'bg-surface-300'
                     }`}
                   >
-                    <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                    <span className={`absolute top-0.5 w-4 h-4 bg-white dark:bg-surface-800 rounded-full shadow transition-transform ${
                       trigger.enabled ? 'translate-x-5' : 'translate-x-0.5'
                     }`} />
                   </button>
@@ -406,7 +403,7 @@ export default function KillSwitch() {
           ) : (
             <div className="space-y-3">
               {history.map((action, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-lg border border-surface-100 hover:bg-surface-50">
+                <div key={i} className="flex items-start gap-3 p-3 rounded-lg border border-surface-100 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-700">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                     action.status === 'resolved' ? 'bg-success-50' : 'bg-warning-50'
                   }`}>
@@ -417,15 +414,15 @@ export default function KillSwitch() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <p className="text-sm font-medium text-surface-900">{action.action}</p>
+                      <p className="text-sm font-medium text-surface-900 dark:text-surface-100">{action.action}</p>
                       <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                        action.type === 'auto' ? 'bg-primary-50 text-primary-700' : 'bg-surface-100 text-surface-600'
+                        action.type === 'auto' ? 'bg-primary-50 text-primary-700' : 'bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300'
                       }`}>
                         {action.type === 'auto' ? 'Automated' : 'Manual'}
                       </span>
                       <StatusBadge status={action.status} />
                     </div>
-                    <p className="text-xs text-surface-600">{action.detail}</p>
+                    <p className="text-xs text-surface-600 dark:text-surface-300">{action.detail}</p>
                   </div>
                   <span className="text-xs text-surface-400 flex-shrink-0">{action.time}</span>
                 </div>

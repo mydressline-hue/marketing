@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   AlertTriangle,
   Shield,
@@ -113,7 +113,7 @@ const typeLabels: Record<FraudAlert['type'], string> = {
   budget_misuse: 'Budget Misuse',
 };
 
-const typeIcons: Record<FraudAlert['type'], JSX.Element> = {
+const typeIcons: Record<FraudAlert['type'], React.ReactElement> = {
   click_fraud: <Ban className="w-4 h-4 text-red-500" />,
   bot_traffic: <Activity className="w-4 h-4 text-orange-500" />,
   conversion_anomaly: <AlertTriangle className="w-4 h-4 text-yellow-500" />,
@@ -121,13 +121,13 @@ const typeIcons: Record<FraudAlert['type'], JSX.Element> = {
 };
 
 const severityColors: Record<string, string> = {
-  critical: 'bg-red-100 text-red-700 border-red-200',
-  high: 'bg-orange-100 text-orange-700 border-orange-200',
-  medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-  low: 'bg-green-100 text-green-700 border-green-200',
+  critical: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-300 dark:border-red-500/30',
+  high: 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-300 dark:border-orange-500/30',
+  medium: 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-500/10 dark:text-yellow-300 dark:border-yellow-500/30',
+  low: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-300 dark:border-green-500/30',
 };
 
-const anomalyStatusConfig: Record<string, { border: string; bg: string; iconBg: string; icon: JSX.Element; badge: string; badgeBg: string; badgeLabel: string }> = {
+const anomalyStatusConfig: Record<string, { border: string; bg: string; iconBg: string; icon: React.ReactElement; badge: string; badgeBg: string; badgeLabel: string }> = {
   normal: {
     border: 'border-green-200',
     bg: 'bg-green-50/50',
@@ -192,16 +192,16 @@ export default function FraudDetection() {
   const {
     mutate: runAgent,
     loading: agentRunning,
-  } = useApiMutation<{ status: string }>('/v1/agents/15/execute');
+  } = useApiMutation<{ status: string }>('/v1/agents/fraud-detection/run', { method: 'POST' });
 
   const {
     mutate: resolveAlert,
     loading: resolving,
-  } = useApiMutation<{ status: string }>('/v1/alerts?type=fraud', 'PUT');
+  } = useApiMutation<{ status: string }>('/v1/alerts?type=fraud', { method: 'PUT' });
 
   const {
     mutate: toggleRuleApi,
-  } = useApiMutation<{ status: string }>('/v1/agents/fraud-detection/rules', 'PUT');
+  } = useApiMutation<{ status: string }>('/v1/agents/fraud-detection/rules', { method: 'PUT' });
 
   // ------ Derived data ------
   const fraudAlerts = alertsData?.alerts ?? [];
@@ -263,7 +263,7 @@ export default function FraudDetection() {
               <Play className="w-3.5 h-3.5" />
               {agentRunning ? 'Running...' : 'Run Agent'}
             </button>
-            <span className="flex items-center gap-1.5 text-sm font-medium text-green-600 bg-green-50 px-3 py-1.5 rounded-full border border-green-200">
+            <span className="flex items-center gap-1.5 text-sm font-medium text-green-600 bg-green-50 dark:bg-green-500/10 px-3 py-1.5 rounded-full border border-green-200 dark:border-green-500/30">
               <Shield className="w-3.5 h-3.5" />
               Protection Active
             </span>
@@ -275,7 +275,7 @@ export default function FraudDetection() {
       {alertsLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-surface-200 p-5">
+            <div key={i} className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 p-5">
               <CardSkeleton lines={2} />
             </div>
           ))}
@@ -320,7 +320,7 @@ export default function FraudDetection() {
         subtitle={alertsLoading ? 'Loading...' : `${activeAlerts} active / ${resolvedAlerts} resolved`}
         actions={
           alertsLoading ? null : (
-            <span className="flex items-center gap-1 text-xs text-red-600 font-medium bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
+            <span className="flex items-center gap-1 text-xs text-red-600 font-medium bg-red-50 dark:bg-red-500/10 px-2 py-0.5 rounded-full border border-red-200 dark:border-red-500/30">
               <AlertTriangle className="w-3 h-3" />
               {fraudAlerts.filter((a) => a.severity === 'critical' && a.status === 'active').length} critical
             </span>
@@ -341,25 +341,25 @@ export default function FraudDetection() {
           <div className="overflow-x-auto -mx-5 px-5">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-surface-100">
-                  <th className="text-left py-3 px-2 font-medium text-surface-500 whitespace-nowrap">Alert ID</th>
-                  <th className="text-left py-3 px-2 font-medium text-surface-500 whitespace-nowrap">Type</th>
-                  <th className="text-left py-3 px-2 font-medium text-surface-500 whitespace-nowrap">Severity</th>
-                  <th className="text-left py-3 px-2 font-medium text-surface-500 whitespace-nowrap">Campaign</th>
-                  <th className="text-left py-3 px-2 font-medium text-surface-500 min-w-[280px]">Description</th>
-                  <th className="text-left py-3 px-2 font-medium text-surface-500 whitespace-nowrap">Timestamp</th>
-                  <th className="text-left py-3 px-2 font-medium text-surface-500 whitespace-nowrap">Status</th>
-                  <th className="text-left py-3 px-2 font-medium text-surface-500 whitespace-nowrap">Actions</th>
+                <tr className="border-b border-surface-100 dark:border-surface-700">
+                  <th className="text-left py-3 px-2 font-medium text-surface-500 dark:text-surface-400 whitespace-nowrap">Alert ID</th>
+                  <th className="text-left py-3 px-2 font-medium text-surface-500 dark:text-surface-400 whitespace-nowrap">Type</th>
+                  <th className="text-left py-3 px-2 font-medium text-surface-500 dark:text-surface-400 whitespace-nowrap">Severity</th>
+                  <th className="text-left py-3 px-2 font-medium text-surface-500 dark:text-surface-400 whitespace-nowrap">Campaign</th>
+                  <th className="text-left py-3 px-2 font-medium text-surface-500 dark:text-surface-400 min-w-[280px]">Description</th>
+                  <th className="text-left py-3 px-2 font-medium text-surface-500 dark:text-surface-400 whitespace-nowrap">Timestamp</th>
+                  <th className="text-left py-3 px-2 font-medium text-surface-500 dark:text-surface-400 whitespace-nowrap">Status</th>
+                  <th className="text-left py-3 px-2 font-medium text-surface-500 dark:text-surface-400 whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {fraudAlerts.map((alert) => (
-                  <tr key={alert.id} className="border-b border-surface-50 hover:bg-surface-50/50 transition-colors">
-                    <td className="py-3 px-2 font-mono text-xs text-surface-600">{alert.id}</td>
+                  <tr key={alert.id} className="border-b border-surface-50 dark:border-surface-700 hover:bg-surface-50/50 dark:hover:bg-surface-700/50 transition-colors">
+                    <td className="py-3 px-2 font-mono text-xs text-surface-600 dark:text-surface-300">{alert.id}</td>
                     <td className="py-3 px-2">
                       <span className="flex items-center gap-1.5 whitespace-nowrap">
                         {typeIcons[alert.type]}
-                        <span className="text-surface-700">{typeLabels[alert.type]}</span>
+                        <span className="text-surface-700 dark:text-surface-200">{typeLabels[alert.type]}</span>
                       </span>
                     </td>
                     <td className="py-3 px-2">
@@ -369,13 +369,13 @@ export default function FraudDetection() {
                         {alert.severity}
                       </span>
                     </td>
-                    <td className="py-3 px-2 text-surface-700 whitespace-nowrap max-w-[200px] truncate">
+                    <td className="py-3 px-2 text-surface-700 dark:text-surface-200 whitespace-nowrap max-w-[200px] truncate">
                       {alert.campaign}
                     </td>
-                    <td className="py-3 px-2 text-surface-600 text-xs leading-relaxed">
+                    <td className="py-3 px-2 text-surface-600 dark:text-surface-300 text-xs leading-relaxed">
                       {alert.description}
                     </td>
-                    <td className="py-3 px-2 text-surface-500 whitespace-nowrap text-xs">
+                    <td className="py-3 px-2 text-surface-500 dark:text-surface-400 whitespace-nowrap text-xs">
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {formatTimestamp(alert.timestamp)}
@@ -387,7 +387,7 @@ export default function FraudDetection() {
                     <td className="py-3 px-2">
                       <div className="flex items-center gap-1">
                         <button
-                          className="p-1.5 rounded-lg hover:bg-surface-100 text-surface-500 hover:text-surface-700 transition-colors"
+                          className="p-1.5 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700 text-surface-500 hover:text-surface-700 dark:hover:text-surface-200 transition-colors"
                           title="Investigate"
                         >
                           <Eye className="w-4 h-4" />
@@ -396,7 +396,7 @@ export default function FraudDetection() {
                           <button
                             onClick={() => handleResolveAlert(alert.id)}
                             disabled={resolving}
-                            className="p-1.5 rounded-lg hover:bg-green-50 text-surface-500 hover:text-green-600 transition-colors disabled:opacity-50"
+                            className="p-1.5 rounded-lg hover:bg-green-50 dark:hover:bg-green-500/10 text-surface-500 hover:text-green-600 transition-colors disabled:opacity-50"
                             title="Mark Resolved"
                           >
                             <CheckCircle className="w-4 h-4" />
@@ -405,7 +405,7 @@ export default function FraudDetection() {
                         <button
                           onClick={() => handleBlockSource(alert.id)}
                           disabled={resolving}
-                          className="p-1.5 rounded-lg hover:bg-red-50 text-surface-500 hover:text-red-600 transition-colors disabled:opacity-50"
+                          className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-surface-500 hover:text-red-600 transition-colors disabled:opacity-50"
                           title="Block Source"
                         >
                           <Ban className="w-4 h-4" />
@@ -520,7 +520,7 @@ export default function FraudDetection() {
                     width={100}
                   />
                   <Tooltip
-                    formatter={(value: number) => [`${value}%`, 'Bot Traffic']}
+                    formatter={(value: number | undefined) => [`${value ?? 0}%`, 'Bot Traffic']}
                     contentStyle={{
                       borderRadius: '8px',
                       border: '1px solid #e5e7eb',
@@ -542,7 +542,7 @@ export default function FraudDetection() {
           title="Real-time Anomaly Monitor"
           subtitle="Live detection status"
           actions={
-            <span className="flex items-center gap-1.5 text-xs text-surface-500">
+            <span className="flex items-center gap-1.5 text-xs text-surface-500 dark:text-surface-400">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
@@ -554,7 +554,7 @@ export default function FraudDetection() {
           {alertsLoading ? (
             <div className="space-y-4">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="rounded-lg border border-surface-200 p-3">
+                <div key={i} className="rounded-lg border border-surface-200 dark:border-surface-700 p-3">
                   <CardSkeleton lines={2} />
                 </div>
               ))}
@@ -581,7 +581,7 @@ export default function FraudDetection() {
                         {cfg.icon}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-surface-800">{entry.label}</p>
+                        <p className="text-sm font-medium text-surface-800 dark:text-surface-200">{entry.label}</p>
                         <p className={`text-xs ${entry.status === 'normal' ? 'text-surface-500' : `${cfg.badge} font-medium`}`}>
                           {entry.detail}
                         </p>
@@ -613,7 +613,7 @@ export default function FraudDetection() {
           {rulesLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="rounded-lg border border-surface-200 p-3">
+                <div key={i} className="rounded-lg border border-surface-200 dark:border-surface-700 p-3">
                   <CardSkeleton lines={2} />
                 </div>
               ))}
@@ -633,21 +633,21 @@ export default function FraudDetection() {
                   key={rule.id}
                   className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
                     rule.enabled
-                      ? 'border-surface-200 bg-white'
-                      : 'border-surface-100 bg-surface-50'
+                      ? 'border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800'
+                      : 'border-surface-100 dark:border-surface-700 bg-surface-50 dark:bg-surface-800'
                   }`}
                 >
                   <div className="flex-1 min-w-0 mr-3">
                     <p
                       className={`text-sm font-medium ${
-                        rule.enabled ? 'text-surface-800' : 'text-surface-400'
+                        rule.enabled ? 'text-surface-800 dark:text-surface-200' : 'text-surface-400'
                       }`}
                     >
                       {rule.name}
                     </p>
                     <p
                       className={`text-xs mt-0.5 ${
-                        rule.enabled ? 'text-surface-500' : 'text-surface-400'
+                        rule.enabled ? 'text-surface-500 dark:text-surface-400' : 'text-surface-400'
                       }`}
                     >
                       {rule.description}
@@ -681,7 +681,7 @@ export default function FraudDetection() {
         {alertsLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="rounded-lg border border-surface-200 p-4">
+              <div key={i} className="rounded-lg border border-surface-200 dark:border-surface-700 p-4">
                 <CardSkeleton lines={3} />
               </div>
             ))}
@@ -699,24 +699,24 @@ export default function FraudDetection() {
             {resolutionLog.map((entry) => (
               <div
                 key={entry.id}
-                className="flex items-start gap-4 p-4 rounded-lg border border-surface-200 bg-surface-50/50 hover:bg-surface-50 transition-colors"
+                className="flex items-start gap-4 p-4 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50/50 dark:bg-surface-800/50 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
                   <CheckCircle className="w-4 h-4 text-green-600" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-semibold text-surface-800">{entry.alertId}</span>
-                    <span className="text-xs font-medium text-surface-500 bg-surface-100 px-2 py-0.5 rounded-full">
+                    <span className="text-sm font-semibold text-surface-800 dark:text-surface-200">{entry.alertId}</span>
+                    <span className="text-xs font-medium text-surface-500 dark:text-surface-400 bg-surface-100 dark:bg-surface-700 px-2 py-0.5 rounded-full">
                       {entry.type}
                     </span>
                     {entry.savingsRecovered !== '$0' && (
-                      <span className="text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
+                      <span className="text-xs font-medium text-green-700 bg-green-50 dark:bg-green-500/10 dark:text-green-300 px-2 py-0.5 rounded-full border border-green-200 dark:border-green-500/30">
                         {entry.savingsRecovered} recovered
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-surface-600 mt-1">{entry.resolution}</p>
+                  <p className="text-sm text-surface-600 dark:text-surface-300 mt-1">{entry.resolution}</p>
                   <div className="flex items-center gap-4 mt-2 text-xs text-surface-400">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />

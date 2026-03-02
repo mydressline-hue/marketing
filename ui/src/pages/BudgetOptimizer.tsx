@@ -28,7 +28,7 @@ import KPICard from '../components/shared/KPICard';
 import StatusBadge from '../components/shared/StatusBadge';
 import ProgressBar from '../components/shared/ProgressBar';
 import { useApiQuery, useApiMutation } from '../hooks/useApi';
-import { TableSkeleton, ChartSkeleton, KPISkeleton } from '../components/shared/LoadingSkeleton';
+import { TableSkeleton, ChartSkeleton, KPIRowSkeleton } from '../components/shared/LoadingSkeleton';
 import { ApiErrorDisplay } from '../components/shared/ErrorBoundary';
 import EmptyState from '../components/shared/EmptyState';
 
@@ -141,23 +141,29 @@ const CustomPieLabel = ({
   outerRadius,
   percent,
 }: {
-  cx: number;
-  cy: number;
-  midAngle: number;
-  innerRadius: number;
-  outerRadius: number;
-  percent: number;
+  cx?: number;
+  cy?: number;
+  midAngle?: number;
+  innerRadius?: number;
+  outerRadius?: number;
+  percent?: number;
 }) => {
   const RADIAN = Math.PI / 180;
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  const angle = midAngle ?? 0;
+  const ir = innerRadius ?? 0;
+  const or = outerRadius ?? 0;
+  const cxVal = cx ?? 0;
+  const cyVal = cy ?? 0;
+  const pct = percent ?? 0;
+  const radius = ir + (or - ir) * 0.5;
+  const x = cxVal + radius * Math.cos(-angle * RADIAN);
+  const y = cyVal + radius * Math.sin(-angle * RADIAN);
 
-  if (percent < 0.06) return null;
+  if (pct < 0.06) return null;
 
   return (
     <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={12} fontWeight={600}>
-      {`${(percent * 100).toFixed(0)}%`}
+      {`${(pct * 100).toFixed(0)}%`}
     </text>
   );
 };
@@ -181,13 +187,13 @@ export default function BudgetOptimizer() {
   const {
     mutate: runOptimizeAgent,
     loading: optimizing,
-  } = useApiMutation<AgentResult>('/v1/agents/8/execute', 'POST');
+  } = useApiMutation<AgentResult>('/v1/agents/budget-optimizer/run', { method: 'POST' });
 
   // ---- Apply single recommendation ---------------------------------------
   const {
     mutate: applyRecommendation,
     loading: applyingRec,
-  } = useApiMutation<AgentResult>('/v1/budget/optimize', 'POST');
+  } = useApiMutation<AgentResult>('/v1/budget/optimize', { method: 'POST' });
 
   // ---- Derived data (safe even when null) --------------------------------
   const allocations = budgetData?.allocations ?? [];
@@ -250,7 +256,7 @@ export default function BudgetOptimizer() {
         icon={<DollarSign className="w-5 h-5" />}
         actions={
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 text-sm text-surface-500">
+            <span className="flex items-center gap-1.5 text-sm text-surface-500 dark:text-surface-400">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
@@ -270,7 +276,7 @@ export default function BudgetOptimizer() {
 
       {/* KPI Row */}
       {budgetLoading ? (
-        <KPISkeleton count={4} />
+        <KPIRowSkeleton count={4} />
       ) : kpis ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <KPICard
@@ -302,7 +308,7 @@ export default function BudgetOptimizer() {
           />
         </div>
       ) : (
-        <KPISkeleton count={4} />
+        <KPIRowSkeleton count={4} />
       )}
 
       {/* Budget Allocation Pie + Channel Table */}
@@ -349,7 +355,7 @@ export default function BudgetOptimizer() {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: number) => formatCurrencyFull(value)}
+                      formatter={(value: number | undefined) => formatCurrencyFull(value ?? 0)}
                       contentStyle={{
                         borderRadius: '8px',
                         border: '1px solid #e5e7eb',
@@ -367,7 +373,7 @@ export default function BudgetOptimizer() {
                       className="w-3 h-3 rounded-sm shrink-0"
                       style={{ backgroundColor: entry.color }}
                     />
-                    <span className="text-surface-600 truncate">{entry.name}</span>
+                    <span className="text-surface-600 dark:text-surface-300 truncate">{entry.name}</span>
                   </div>
                 ))}
               </div>
@@ -394,13 +400,13 @@ export default function BudgetOptimizer() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-surface-100">
-                    <th className="text-left font-medium text-surface-500 px-5 py-3">Channel</th>
-                    <th className="text-right font-medium text-surface-500 px-3 py-3">Allocated</th>
-                    <th className="text-right font-medium text-surface-500 px-3 py-3">Spent</th>
-                    <th className="text-right font-medium text-surface-500 px-3 py-3">Remaining</th>
-                    <th className="text-right font-medium text-surface-500 px-3 py-3">ROAS</th>
-                    <th className="text-left font-medium text-surface-500 px-3 py-3">AI Recommendation</th>
+                  <tr className="border-b border-surface-100 dark:border-surface-700">
+                    <th className="text-left font-medium text-surface-500 dark:text-surface-400 px-5 py-3">Channel</th>
+                    <th className="text-right font-medium text-surface-500 dark:text-surface-400 px-3 py-3">Allocated</th>
+                    <th className="text-right font-medium text-surface-500 dark:text-surface-400 px-3 py-3">Spent</th>
+                    <th className="text-right font-medium text-surface-500 dark:text-surface-400 px-3 py-3">Remaining</th>
+                    <th className="text-right font-medium text-surface-500 dark:text-surface-400 px-3 py-3">ROAS</th>
+                    <th className="text-left font-medium text-surface-500 dark:text-surface-400 px-3 py-3">AI Recommendation</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -411,8 +417,8 @@ export default function BudgetOptimizer() {
                     return (
                       <tr
                         key={ch.id || ch.channel}
-                        className={`border-b border-surface-50 hover:bg-surface-50 transition-colors ${
-                          selectedChannel === ch.channel ? 'bg-primary-50/50' : ''
+                        className={`border-b border-surface-50 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors ${
+                          selectedChannel === ch.channel ? 'bg-primary-50/50 dark:bg-primary-500/10' : ''
                         }`}
                       >
                         <td className="px-5 py-3">
@@ -421,16 +427,16 @@ export default function BudgetOptimizer() {
                               className="w-2.5 h-2.5 rounded-full shrink-0"
                               style={{ backgroundColor: color }}
                             />
-                            <span className="font-medium text-surface-900">{ch.channel}</span>
+                            <span className="font-medium text-surface-900 dark:text-surface-100">{ch.channel}</span>
                           </div>
                         </td>
-                        <td className="text-right px-3 py-3 font-medium text-surface-700">
+                        <td className="text-right px-3 py-3 font-medium text-surface-700 dark:text-surface-200">
                           {formatCurrency(ch.allocated)}
                         </td>
-                        <td className="text-right px-3 py-3 text-surface-600">
+                        <td className="text-right px-3 py-3 text-surface-600 dark:text-surface-300">
                           {formatCurrency(ch.spent)}
                         </td>
-                        <td className="text-right px-3 py-3 text-surface-600">
+                        <td className="text-right px-3 py-3 text-surface-600 dark:text-surface-300">
                           {formatCurrency(ch.remaining)}
                         </td>
                         <td className="text-right px-3 py-3">
@@ -457,7 +463,7 @@ export default function BudgetOptimizer() {
                               {ch.recommendation}
                             </span>
                             <ArrowRight className="w-3 h-3 text-surface-300" />
-                            <span className="text-xs text-surface-500 hidden xl:inline">{ch.aiNote}</span>
+                            <span className="text-xs text-surface-500 dark:text-surface-400 hidden xl:inline">{ch.aiNote}</span>
                           </div>
                         </td>
                       </tr>
@@ -465,15 +471,15 @@ export default function BudgetOptimizer() {
                   })}
                 </tbody>
                 <tfoot>
-                  <tr className="bg-surface-50/50">
-                    <td className="px-5 py-3 font-semibold text-surface-900">Total</td>
-                    <td className="text-right px-3 py-3 font-semibold text-surface-900">
+                  <tr className="bg-surface-50/50 dark:bg-surface-800/50">
+                    <td className="px-5 py-3 font-semibold text-surface-900 dark:text-surface-100">Total</td>
+                    <td className="text-right px-3 py-3 font-semibold text-surface-900 dark:text-surface-100">
                       {formatCurrency(totalAllocated)}
                     </td>
-                    <td className="text-right px-3 py-3 font-semibold text-surface-700">
+                    <td className="text-right px-3 py-3 font-semibold text-surface-700 dark:text-surface-200">
                       {formatCurrency(totalSpent)}
                     </td>
-                    <td className="text-right px-3 py-3 font-semibold text-surface-700">
+                    <td className="text-right px-3 py-3 font-semibold text-surface-700 dark:text-surface-200">
                       {formatCurrency(totalAllocated - totalSpent)}
                     </td>
                     <td className="text-right px-3 py-3 font-semibold text-primary-600">
@@ -515,10 +521,10 @@ export default function BudgetOptimizer() {
               return (
                 <div key={c.country}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-surface-700">
+                    <span className="text-sm font-medium text-surface-700 dark:text-surface-200">
                       {c.flag} {c.country}
                     </span>
-                    <span className="text-xs text-surface-500">
+                    <span className="text-xs text-surface-500 dark:text-surface-400">
                       {formatCurrency(c.spent)} / {formatCurrency(c.allocated)}
                     </span>
                   </div>
@@ -555,7 +561,7 @@ export default function BudgetOptimizer() {
           {budgetLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="animate-pulse rounded-lg border border-surface-200 p-3 h-20 bg-surface-50" />
+                <div key={i} className="animate-pulse rounded-lg border border-surface-200 dark:border-surface-700 p-3 h-20 bg-surface-50 dark:bg-surface-800" />
               ))}
             </div>
           ) : recommendations.length === 0 ? (
@@ -574,12 +580,12 @@ export default function BudgetOptimizer() {
                     key={rec.id}
                     className={`flex items-start gap-3 rounded-lg border p-3 ${
                       rec.action === 'increase'
-                        ? 'border-success-200 bg-success-50/50'
+                        ? 'border-success-200 dark:border-success-500/30 bg-success-50/50 dark:bg-success-500/10'
                         : rec.action === 'pause'
-                          ? 'border-danger-200 bg-danger-50/50'
+                          ? 'border-danger-200 dark:border-danger-500/30 bg-danger-50/50 dark:bg-danger-500/10'
                           : rec.action === 'decrease'
-                            ? 'border-warning-200 bg-warning-50/50'
-                            : 'border-primary-200 bg-primary-50/50'
+                            ? 'border-warning-200 dark:border-warning-500/30 bg-warning-50/50 dark:bg-warning-500/10'
+                            : 'border-primary-200 dark:border-primary-500/30 bg-primary-50/50 dark:bg-primary-500/10'
                     }`}
                   >
                     <div
@@ -588,9 +594,9 @@ export default function BudgetOptimizer() {
                       <Icon className={`w-4 h-4 ${style.text}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-surface-800">{rec.message}</p>
+                      <p className="text-sm font-medium text-surface-800 dark:text-surface-200">{rec.message}</p>
                       <div className="flex items-center gap-3 mt-1">
-                        <span className="text-xs text-surface-500">{rec.impact}</span>
+                        <span className="text-xs text-surface-500 dark:text-surface-400">{rec.impact}</span>
                         <span className="text-xs font-medium text-primary-600">
                           {rec.confidence}% confidence
                         </span>
@@ -635,7 +641,7 @@ export default function BudgetOptimizer() {
           {budgetLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="animate-pulse rounded-lg border border-surface-200 px-4 py-3 h-16 bg-surface-50" />
+                <div key={i} className="animate-pulse rounded-lg border border-surface-200 dark:border-surface-700 px-4 py-3 h-16 bg-surface-50 dark:bg-surface-800" />
               ))}
             </div>
           ) : guardrails.length === 0 ? (
@@ -651,8 +657,8 @@ export default function BudgetOptimizer() {
                   key={index}
                   className={`flex items-start gap-3 rounded-lg border px-4 py-3 ${
                     rule.triggered
-                      ? 'border-warning-200 bg-warning-50/50'
-                      : 'border-surface-200 bg-surface-50/30'
+                      ? 'border-warning-200 dark:border-warning-500/30 bg-warning-50/50 dark:bg-warning-500/10'
+                      : 'border-surface-200 dark:border-surface-700 bg-surface-50/30 dark:bg-surface-800/30'
                   }`}
                 >
                   <div className="mt-0.5 shrink-0">
@@ -663,8 +669,8 @@ export default function BudgetOptimizer() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-surface-800">{rule.rule}</p>
-                    <p className="text-xs text-surface-500 mt-0.5">{rule.threshold}</p>
+                    <p className="text-sm font-medium text-surface-800 dark:text-surface-200">{rule.rule}</p>
+                    <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5">{rule.threshold}</p>
                   </div>
                   <div className="shrink-0">
                     {rule.triggered ? (
@@ -710,8 +716,8 @@ export default function BudgetOptimizer() {
                     stroke="#9ca3af"
                   />
                   <Tooltip
-                    formatter={(value: number | null) =>
-                      value !== null ? formatCurrencyFull(value) : 'N/A'
+                    formatter={(value: string | number | undefined) =>
+                      value != null ? formatCurrencyFull(Number(value)) : 'N/A'
                     }
                     contentStyle={{
                       borderRadius: '8px',
@@ -738,12 +744,12 @@ export default function BudgetOptimizer() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-surface-100">
-              <div className="flex items-center gap-2 text-sm text-surface-600">
+            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-surface-100 dark:border-surface-700">
+              <div className="flex items-center gap-2 text-sm text-surface-600 dark:text-surface-300">
                 <CheckCircle className="w-4 h-4 text-success-500" />
                 <span>
                   Budget pacing is on track at{' '}
-                  <span className="font-semibold text-surface-900">
+                  <span className="font-semibold text-surface-900 dark:text-surface-100">
                     {forecast.length > 0 && forecast[forecast.length - 2]?.actual && forecast[forecast.length - 2]?.projected
                       ? `${((forecast[forecast.length - 2].actual! / forecast[forecast.length - 2].projected) * 100).toFixed(1)}%`
                       : '--'}
@@ -751,11 +757,11 @@ export default function BudgetOptimizer() {
                   accuracy
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-surface-600">
+              <div className="flex items-center gap-2 text-sm text-surface-600 dark:text-surface-300">
                 <TrendingUp className="w-4 h-4 text-primary-500" />
                 <span>
                   Next projection:{' '}
-                  <span className="font-semibold text-surface-900">
+                  <span className="font-semibold text-surface-900 dark:text-surface-100">
                     {forecast.length > 0
                       ? formatCurrency(forecast[forecast.length - 1].projected)
                       : '--'}

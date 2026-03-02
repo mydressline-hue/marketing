@@ -25,7 +25,7 @@ import { FailoverService } from '../services/failover/FailoverService';
 export const getSpendMonitoring = asyncHandler(async (req: Request, res: Response) => {
   const { startDate, endDate, country, channel } = req.query;
 
-  const result = await MonitoringService.monitorSpend();
+  const result = await MonitoringService.getSpendMonitoring();
 
   res.json({
     success: true,
@@ -38,17 +38,7 @@ export const getSpendMonitoring = asyncHandler(async (req: Request, res: Respons
  * Get detected anomalies across spend, performance, and system metrics.
  */
 export const getAnomalies = asyncHandler(async (_req: Request, res: Response) => {
-  const [ctrAnomalies, cpcAnomalies, conversionAnomalies] = await Promise.all([
-    MonitoringService.detectCTRAnomaly(),
-    MonitoringService.detectCPCAnomaly(),
-    MonitoringService.detectConversionAnomaly(),
-  ]);
-
-  const result = {
-    ctr: ctrAnomalies,
-    cpc: cpcAnomalies,
-    conversion_rate: conversionAnomalies,
-  };
+  const result = await MonitoringService.getAnomalies();
 
   res.json({
     success: true,
@@ -63,7 +53,7 @@ export const getAnomalies = asyncHandler(async (_req: Request, res: Response) =>
 export const getAlerts = asyncHandler(async (req: Request, res: Response) => {
   const { severity, page, limit } = req.query;
 
-  const result = await MonitoringService.getActiveAlerts({
+  const result = await MonitoringService.getAlerts({
     severity: severity as string | undefined,
     page: page ? parseInt(page as string, 10) : 1,
     limit: limit ? parseInt(limit as string, 10) : 20,
@@ -145,7 +135,7 @@ export const updateAlertConfig = asyncHandler(async (req: Request, res: Response
   const userId = req.user!.id;
   const configUpdate = req.body;
 
-  const result = await MonitoringService.configureAlert(configUpdate);
+  const result = await MonitoringService.updateAlertConfig(configUpdate);
 
   res.json({
     success: true,
@@ -158,7 +148,7 @@ export const updateAlertConfig = asyncHandler(async (req: Request, res: Response
  * Get aggregated monitoring dashboard data.
  */
 export const getMonitoringDashboard = asyncHandler(async (_req: Request, res: Response) => {
-  const result = await MonitoringService.getMonitoringDashboard();
+  const result = await MonitoringService.getDashboard();
 
   res.json({
     success: true,
@@ -175,7 +165,7 @@ export const getMonitoringDashboard = asyncHandler(async (_req: Request, res: Re
  * Get data quality report with scores and issues.
  */
 export const getDataQualityReport = asyncHandler(async (_req: Request, res: Response) => {
-  const result = await DataQualityService.generateDataQualityReport();
+  const result = await DataQualityService.getReport();
 
   res.json({
     success: true,
@@ -205,7 +195,7 @@ export const validateTableSchema = asyncHandler(async (req: Request, res: Respon
 export const getDataLineage = asyncHandler(async (req: Request, res: Response) => {
   const { table } = req.params;
 
-  const result = await DataQualityService.getDataLineage(table);
+  const result = await DataQualityService.getLineage(table);
 
   res.json({
     success: true,
@@ -218,7 +208,7 @@ export const getDataLineage = asyncHandler(async (req: Request, res: Response) =
  * Detect PII fields across all tables.
  */
 export const detectPii = asyncHandler(async (_req: Request, res: Response) => {
-  const result = await DataQualityService.detectPIIFields();
+  const result = await DataQualityService.detectPii();
 
   res.json({
     success: true,
@@ -233,7 +223,7 @@ export const detectPii = asyncHandler(async (_req: Request, res: Response) => {
 export const anonymizePii = asyncHandler(async (req: Request, res: Response) => {
   const { table, columns } = req.body;
 
-  const result = await DataQualityService.anonymizePII(table, columns);
+  const result = await DataQualityService.anonymizePii(table, columns);
 
   res.json({
     success: true,
@@ -248,7 +238,7 @@ export const anonymizePii = asyncHandler(async (req: Request, res: Response) => 
 export const getUserConsent = asyncHandler(async (req: Request, res: Response) => {
   const { userId } = req.params;
 
-  const result = await DataQualityService.getConsentStatus(userId);
+  const result = await DataQualityService.getConsent(userId);
 
   res.json({
     success: true,
@@ -506,7 +496,7 @@ export const enforceLogRetention = asyncHandler(async (req: Request, res: Respon
  * Public health check -- no authentication required.
  */
 export const healthCheck = asyncHandler(async (_req: Request, res: Response) => {
-  const result = await ObservabilityService.healthCheck();
+  const result = await FailoverService.healthCheck();
 
   res.json({
     success: true,
@@ -519,7 +509,7 @@ export const healthCheck = asyncHandler(async (_req: Request, res: Response) => 
  * Detailed health check with subsystem statuses (admin only).
  */
 export const detailedHealthCheck = asyncHandler(async (_req: Request, res: Response) => {
-  const result = await FailoverService.getRecoveryStatus();
+  const result = await FailoverService.detailedHealthCheck();
 
   res.json({
     success: true,

@@ -81,23 +81,54 @@ export class MarketingModelsService {
     const id = generateId();
     const contributions: Record<string, number> = {};
     const channelRoas: Record<string, number> = {};
-    let remaining = 1.0;
-    const n = params.channels.length;
 
-    for (let i = 0; i < n; i++) {
-      const ch = params.channels[i];
-      const share = i < n - 1
-        ? Math.round((remaining / (n - i) + (Math.random() * 0.1 - 0.05)) * 100) / 100
-        : Math.round(remaining * 100) / 100;
-      contributions[ch] = share;
-      remaining -= share;
-      channelRoas[ch] = Math.round((2 + Math.random() * 5) * 100) / 100;
+    // Query actual campaign spend and revenue data per channel from the database
+    const channelDataResult = await pool.query(
+      `SELECT platform AS channel,
+              COALESCE(SUM(spent), 0) AS total_spent,
+              COALESCE(SUM(revenue), 0) AS total_revenue
+       FROM campaigns
+       WHERE country_id IN (SELECT id FROM countries WHERE code = $1)
+         AND start_date >= $2
+         AND end_date <= $3
+         AND platform = ANY($4)
+       GROUP BY platform`,
+      [params.country, params.dateRange.start, params.dateRange.end, params.channels],
+    );
+
+    const channelData: Record<string, { spent: number; revenue: number }> = {};
+    for (const row of channelDataResult.rows) {
+      channelData[row.channel] = {
+        spent: parseFloat(row.total_spent) || 0,
+        revenue: parseFloat(row.total_revenue) || 0,
+      };
     }
 
-    const totalSpend = 100000;
-    const avgRoas = Object.values(channelRoas).reduce((a, b) => a + b, 0) / n;
-    const totalRevenue = Math.round(totalSpend * avgRoas);
-    const roas = Math.round((totalRevenue / totalSpend) * 100) / 100;
+    // Compute total spend from actual data
+    const totalSpend = Object.values(channelData).reduce((sum, d) => sum + d.spent, 0) || 1;
+
+    // Compute channel contributions based on actual spend proportions
+    const n = params.channels.length;
+    for (const ch of params.channels) {
+      const data = channelData[ch];
+      const spent = data ? data.spent : 0;
+      contributions[ch] = Math.round((spent / totalSpend) * 100) / 100;
+      channelRoas[ch] = spent > 0 && data
+        ? Math.round((data.revenue / spent) * 100) / 100
+        : 0;
+    }
+
+    // Normalise contributions to sum to 1.0
+    const contributionTotal = Object.values(contributions).reduce((a, b) => a + b, 0);
+    if (contributionTotal > 0 && contributionTotal !== 1.0) {
+      const scale = 1.0 / contributionTotal;
+      for (const ch of params.channels) {
+        contributions[ch] = Math.round(contributions[ch] * scale * 100) / 100;
+      }
+    }
+
+    const totalRevenue = Object.values(channelData).reduce((sum, d) => sum + d.revenue, 0);
+    const roas = totalSpend > 0 ? Math.round((totalRevenue / totalSpend) * 100) / 100 : 0;
 
     const results = {
       channel_contributions: contributions,
@@ -246,25 +277,79 @@ export class MarketingModelsService {
       const userId = userIdOrCampaignId as string;
       const id = generateId();
 
-      // Generate attribution paths with probabilities
-      const paths: Array<{ path: string[]; probability: number }> = [];
-      const numPaths = Math.min(params.channels.length * 2, 10);
-      for (let i = 0; i < numPaths; i++) {
-        const p: string[] = [];
-        for (let j = 0; j < 2 + Math.floor(Math.random() * 3); j++) {
-          p.push(params.channels[Math.floor(Math.random() * params.channels.length)]);
-        }
-        p.push('conversion');
-        paths.push({ path: p, probability: Math.round((Math.random() * 0.5 + 0.1) * 100) / 100 });
+      // Query actual campaign performance data for Bayesian attribution
+      const channelStatsResult = await pool.query(
+        `SELECT platform AS channel,
+                COUNT(*) AS campaign_count,
+                COALESCE(SUM(conversions), 0) AS total_conversions,
+                COALESCE(SUM(clicks), 0) AS total_clicks,
+                COALESCE(SUM(impressions), 0) AS total_impressions,
+                COALESCE(SUM(spent), 0) AS total_spent
+         FROM campaigns
+         WHERE platform = ANY($1)
+           AND start_date >= $2
+           AND end_date <= $3
+         GROUP BY platform`,
+        [params.channels, params.dateRange.start, params.dateRange.end],
+      );
+
+      const channelStats: Record<string, { conversions: number; clicks: number; impressions: number; spent: number; campaignCount: number }> = {};
+      let totalConversions = 0;
+      for (const row of channelStatsResult.rows) {
+        const conversions = parseInt(row.total_conversions, 10) || 0;
+        channelStats[row.channel] = {
+          conversions,
+          clicks: parseInt(row.total_clicks, 10) || 0,
+          impressions: parseInt(row.total_impressions, 10) || 0,
+          spent: parseFloat(row.total_spent) || 0,
+          campaignCount: parseInt(row.campaign_count, 10) || 0,
+        };
+        totalConversions += conversions;
       }
-      // Normalise probabilities
-      const totalP = paths.reduce((s, x) => s + x.probability, 0);
+
+      // Build attribution paths from actual channel performance data
+      // Bayesian attribution: weight each channel by its conversion share
+      // adjusted by the provided priors
+      const paths: Array<{ path: string[]; probability: number }> = [];
+      for (const ch of params.channels) {
+        const stats = channelStats[ch];
+        const prior = params.priors[ch] || 1;
+        const conversions = stats ? stats.conversions : 0;
+        // Bayesian posterior: prior + observed conversions
+        const posterior = prior + conversions;
+        paths.push({
+          path: [ch, 'conversion'],
+          probability: posterior,
+        });
+        // Multi-touch path: channels that have both clicks and conversions
+        if (stats && stats.clicks > stats.conversions && params.channels.length > 1) {
+          const assistChannels = params.channels.filter((c) => c !== ch && channelStats[c]?.clicks);
+          for (const assist of assistChannels.slice(0, 2)) {
+            paths.push({
+              path: [assist, ch, 'conversion'],
+              probability: (prior + conversions) * 0.3,
+            });
+          }
+        }
+      }
+      // Normalise probabilities to sum to 1.0
+      const totalP = paths.reduce((s, x) => s + x.probability, 0) || 1;
       paths.forEach((x) => { x.probability = Math.round((x.probability / totalP) * 100) / 100; });
 
-      // Confidence scores per channel
+      // Confidence scores per channel based on data volume
       const scores: Record<string, number> = {};
       params.channels.forEach((ch) => {
-        scores[ch] = Math.round((0.6 + Math.random() * 0.35) * 100) / 100;
+        const stats = channelStats[ch];
+        if (!stats || stats.impressions === 0) {
+          scores[ch] = 0.1; // Low confidence when no data
+        } else {
+          // Confidence increases with sample size (impressions/clicks)
+          const sampleScore = Math.min(stats.impressions / 10000, 1.0);
+          const conversionScore = totalConversions > 0
+            ? Math.min(stats.conversions / totalConversions + 0.3, 1.0)
+            : 0.3;
+          scores[ch] = Math.round(((sampleScore + conversionScore) / 2) * 100) / 100;
+        }
       });
 
       const res = await pool.query(
@@ -352,22 +437,115 @@ export class MarketingModelsService {
       const userId = userIdOrParams as string;
       const id = generateId();
 
-      // Elasticity coefficients per independent variable
-      const elasticity: Record<string, number> = {};
-      params.independentVariables.forEach((v) => {
-        elasticity[v] = Math.round((Math.random() * 1.6 - 0.6) * 100) / 100;
-      });
-      const rSquared = Math.round((0.7 + Math.random() * 0.25) * 1000) / 1000;
+      // Query historical campaign data for econometric analysis
+      const histResult = await pool.query(
+        `SELECT DATE_TRUNC('month', start_date) AS period,
+                COALESCE(SUM(spent), 0) AS total_spent,
+                COALESCE(SUM(revenue), 0) AS total_revenue,
+                COALESCE(SUM(impressions), 0) AS total_impressions,
+                COALESCE(SUM(clicks), 0) AS total_clicks,
+                COALESCE(SUM(conversions), 0) AS total_conversions
+         FROM campaigns
+         WHERE country_id IN (SELECT id FROM countries WHERE code = $1)
+           AND start_date >= $2
+           AND end_date <= $3
+         GROUP BY DATE_TRUNC('month', start_date)
+         ORDER BY period ASC`,
+        [params.country, params.dateRange.start, params.dateRange.end],
+      );
 
-      // 12-period forecast with confidence bands
+      // Compute elasticity coefficients from actual data correlations
+      const elasticity: Record<string, number> = {};
+      const periodData = histResult.rows;
+
+      // Build dependent variable series
+      const depVarKey = params.dependentVariable === 'revenue' ? 'total_revenue'
+        : params.dependentVariable === 'conversions' ? 'total_conversions'
+        : 'total_revenue';
+      const depValues = periodData.map((r: Record<string, unknown>) => parseFloat(r[depVarKey] as string) || 0);
+      const depMean = depValues.length > 0 ? depValues.reduce((a: number, b: number) => a + b, 0) / depValues.length : 0;
+
+      // For each independent variable, compute correlation-based elasticity
+      for (const v of params.independentVariables) {
+        const indVarKey = v === 'spend' ? 'total_spent'
+          : v === 'impressions' ? 'total_impressions'
+          : v === 'clicks' ? 'total_clicks'
+          : 'total_spent';
+        const indValues = periodData.map((r: Record<string, unknown>) => parseFloat(r[indVarKey] as string) || 0);
+        const indMean = indValues.length > 0 ? indValues.reduce((a: number, b: number) => a + b, 0) / indValues.length : 0;
+
+        if (indMean > 0 && depMean > 0 && indValues.length > 1) {
+          // Compute elasticity: (% change in dep) / (% change in ind)
+          let sumXY = 0, sumXX = 0;
+          for (let i = 0; i < indValues.length; i++) {
+            const dx = indValues[i] - indMean;
+            const dy = depValues[i] - depMean;
+            sumXY += dx * dy;
+            sumXX += dx * dx;
+          }
+          const beta = sumXX > 0 ? sumXY / sumXX : 0;
+          elasticity[v] = Math.round((beta * (indMean / depMean)) * 100) / 100;
+        } else {
+          elasticity[v] = 0;
+        }
+      }
+
+      // Compute R-squared from actual fit
+      let ssRes = 0, ssTot = 0;
+      if (periodData.length > 1) {
+        // Simple linear fit against the first independent variable for R-squared
+        const firstIndKey = params.independentVariables[0] === 'spend' ? 'total_spent'
+          : params.independentVariables[0] === 'impressions' ? 'total_impressions'
+          : 'total_spent';
+        const xVals = periodData.map((r: Record<string, unknown>) => parseFloat(r[firstIndKey] as string) || 0);
+        const xMean = xVals.reduce((a: number, b: number) => a + b, 0) / xVals.length;
+        let sxy = 0, sxx = 0;
+        for (let i = 0; i < xVals.length; i++) {
+          sxy += (xVals[i] - xMean) * (depValues[i] - depMean);
+          sxx += (xVals[i] - xMean) * (xVals[i] - xMean);
+        }
+        const slope = sxx > 0 ? sxy / sxx : 0;
+        const intercept = depMean - slope * xMean;
+
+        for (let i = 0; i < depValues.length; i++) {
+          const predicted = intercept + slope * xVals[i];
+          ssRes += (depValues[i] - predicted) ** 2;
+          ssTot += (depValues[i] - depMean) ** 2;
+        }
+      }
+      const rSquared = ssTot > 0 ? Math.round((1 - ssRes / ssTot) * 1000) / 1000 : 0;
+
+      // 12-period forecast based on trend from actual data
       const forecast: Array<{ period: number; predicted: number; lower: number; upper: number }> = [];
-      let base = 100000;
+      const lastValue = depValues.length > 0 ? depValues[depValues.length - 1] : 0;
+      // Compute average period-over-period growth rate from actual data
+      let growthRate = 0;
+      if (depValues.length >= 2) {
+        let growthSum = 0;
+        let growthCount = 0;
+        for (let i = 1; i < depValues.length; i++) {
+          if (depValues[i - 1] > 0) {
+            growthSum += (depValues[i] - depValues[i - 1]) / depValues[i - 1];
+            growthCount++;
+          }
+        }
+        growthRate = growthCount > 0 ? growthSum / growthCount : 0;
+      }
+      // Compute standard deviation for confidence bands
+      let stdDev = 0;
+      if (depValues.length > 1) {
+        const variance = depValues.reduce((s: number, v: number) => s + (v - depMean) ** 2, 0) / (depValues.length - 1);
+        stdDev = Math.sqrt(variance);
+      }
+      let base = lastValue || 1;
       for (let i = 1; i <= 12; i++) {
-        const predicted = Math.round(base * (1 + Math.random() * 0.1 - 0.02));
+        const predicted = Math.round(base * (1 + growthRate));
+        // Widen confidence bands over time
+        const band = stdDev > 0 ? stdDev * Math.sqrt(i) : predicted * 0.1;
         forecast.push({
           period: i, predicted,
-          lower: Math.round(predicted * 0.85),
-          upper: Math.round(predicted * 1.15),
+          lower: Math.round(predicted - band),
+          upper: Math.round(predicted + band),
         });
         base = predicted;
       }
@@ -517,8 +695,62 @@ export class MarketingModelsService {
     const result = await pool.query('SELECT * FROM geo_lift_tests WHERE id = $1', [testId]);
     if (result.rows.length === 0) throw new NotFoundError('Geo lift test not found');
 
-    const incrementalLift = 0.15;
-    const confidenceLevel = 0.95;
+    const test = result.rows[0];
+    const testRegions = typeof test.test_regions === 'string' ? JSON.parse(test.test_regions) : (test.test_regions || []);
+    const controlRegions = typeof test.control_regions === 'string' ? JSON.parse(test.control_regions) : (test.control_regions || []);
+
+    // Query actual campaign performance in test vs control regions
+    const testPerf = await pool.query(
+      `SELECT COALESCE(SUM(revenue), 0) AS total_revenue,
+              COALESCE(SUM(spent), 0) AS total_spent,
+              COALESCE(SUM(conversions), 0) AS total_conversions,
+              COUNT(*) AS campaign_count
+       FROM campaigns c
+       JOIN countries co ON c.country_id = co.id
+       WHERE co.code = ANY($1)
+         AND ($2::date IS NULL OR c.start_date >= $2::date)
+         AND ($3::date IS NULL OR c.end_date <= $3::date)`,
+      [testRegions, test.start_date, test.end_date],
+    );
+
+    const controlPerf = await pool.query(
+      `SELECT COALESCE(SUM(revenue), 0) AS total_revenue,
+              COALESCE(SUM(spent), 0) AS total_spent,
+              COALESCE(SUM(conversions), 0) AS total_conversions,
+              COUNT(*) AS campaign_count
+       FROM campaigns c
+       JOIN countries co ON c.country_id = co.id
+       WHERE co.code = ANY($1)
+         AND ($2::date IS NULL OR c.start_date >= $2::date)
+         AND ($3::date IS NULL OR c.end_date <= $3::date)`,
+      [controlRegions, test.start_date, test.end_date],
+    );
+
+    const testRevenue = parseFloat(testPerf.rows[0]?.total_revenue) || 0;
+    const controlRevenue = parseFloat(controlPerf.rows[0]?.total_revenue) || 0;
+    const testConversions = parseInt(testPerf.rows[0]?.total_conversions, 10) || 0;
+    const controlConversions = parseInt(controlPerf.rows[0]?.total_conversions, 10) || 0;
+    const totalCampaigns = (parseInt(testPerf.rows[0]?.campaign_count, 10) || 0)
+      + (parseInt(controlPerf.rows[0]?.campaign_count, 10) || 0);
+
+    // Compute incremental lift from actual test vs control performance
+    const incrementalLift = controlRevenue > 0
+      ? Math.round(((testRevenue - controlRevenue) / controlRevenue) * 100) / 100
+      : 0;
+
+    // Compute confidence level based on sample size and effect consistency
+    const totalSamples = testConversions + controlConversions;
+    let confidenceLevel: number;
+    if (totalSamples >= 1000 && totalCampaigns >= 10) {
+      confidenceLevel = 0.95;
+    } else if (totalSamples >= 500 && totalCampaigns >= 5) {
+      confidenceLevel = 0.90;
+    } else if (totalSamples >= 100) {
+      confidenceLevel = 0.80;
+    } else {
+      confidenceLevel = Math.round(Math.min(0.5 + (totalSamples / 200) * 0.3, 0.75) * 100) / 100;
+    }
+
     const analysis = await pool.query(
       `UPDATE geo_lift_tests SET incremental_lift = $1, confidence_level = $2, status = $3
        WHERE id = $4 RETURNING *`,

@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 import type { KillSwitchState, AlertItem } from '../types';
 import { useApiQuery } from '../hooks/useApi';
 import { useWebSocket } from '../hooks/useWebSocket';
+import api from '../services/api';
 
 interface AppState {
   sidebarOpen: boolean;
@@ -27,7 +28,7 @@ const AppContext = createContext<AppContextType | null>(null);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>({
     sidebarOpen: true,
-    darkMode: false,
+    darkMode: localStorage.getItem('darkMode') === 'true',
     killSwitch: {
       global: false,
       campaigns: false,
@@ -44,13 +45,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Fetch kill switch state on mount
   const { data: killSwitchData } = useApiQuery<KillSwitchState>(
-    'killswitch-status',
-    '/killswitch/status',
-    {
-      onSuccess: (data) => {
-        setState((s) => ({ ...s, killSwitch: { ...s.killSwitch, ...data } }));
-      },
-    }
+    '/v1/killswitch/status',
   );
 
   // Sync kill switch data when it arrives
@@ -62,13 +57,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Fetch alerts on mount
   const { data: alertsData } = useApiQuery<AlertItem[]>(
-    'alerts',
-    '/alerts',
-    {
-      onSuccess: (data) => {
-        setState((s) => ({ ...s, alerts: data }));
-      },
-    }
+    '/v1/alerts',
   );
 
   // Sync alerts data when it arrives
@@ -79,24 +68,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [alertsData]);
 
   // WebSocket subscription for real-time updates
-  const { subscribe } = useWebSocket({ enabled: true });
+  const { subscribe } = useWebSocket({ autoConnect: true });
 
   useEffect(() => {
-    const unsubKillSwitch = subscribe('killswitch:update', (payload) => {
-      const update = payload as Partial<KillSwitchState>;
+    const unsubKillSwitch = subscribe('killswitch:update', (msg) => {
+      const update = msg.data as Partial<KillSwitchState>;
       setState((s) => ({ ...s, killSwitch: { ...s.killSwitch, ...update } }));
     });
 
-    const unsubAlert = subscribe('alert:new', (payload) => {
-      const alert = payload as AlertItem;
+    const unsubAlert = subscribe('alert:new', (msg) => {
+      const alert = msg.data as AlertItem;
       setState((s) => ({
         ...s,
         alerts: [alert, ...s.alerts].slice(0, 100),
       }));
     });
 
-    const unsubAlertDismiss = subscribe('alert:dismiss', (payload) => {
-      const { id } = payload as { id: string };
+    const unsubAlertDismiss = subscribe('alert:dismiss', (msg) => {
+      const { id } = msg.data as { id: string };
       setState((s) => ({
         ...s,
         alerts: s.alerts.map((a) => (a.id === id ? { ...a, acknowledged: true } : a)),
@@ -117,7 +106,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleDarkMode = useCallback(() => {
-    setState(s => ({ ...s, darkMode: !s.darkMode }));
+    setState(s => {
+      const newDarkMode = !s.darkMode;
+      localStorage.setItem('darkMode', String(newDarkMode));
+      return { ...s, darkMode: newDarkMode };
+    });
   }, []);
 
   const setKillSwitch = useCallback((partial: Partial<KillSwitchState>) => {
@@ -125,11 +118,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState(s => ({ ...s, killSwitch: { ...s.killSwitch, ...partial } }));
 
     // Sync to backend
-    fetch('/api/v1/killswitch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(partial),
-    }).catch((err) => {
+    api.post('/v1/killswitch/activate', partial).catch((err) => {
       console.error('[AppContext] Failed to sync kill switch state:', err);
     });
   }, []);
@@ -139,11 +128,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState(s => ({ ...s, alerts: [alert, ...s.alerts].slice(0, 100) }));
 
     // Sync to backend
-    fetch('/api/v1/alerts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(alert),
-    }).catch((err) => {
+    api.post('/v1/alerts', alert).catch((err) => {
       console.error('[AppContext] Failed to sync alert:', err);
     });
   }, []);
@@ -155,11 +140,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       alerts: s.alerts.map(a => a.id === id ? { ...a, acknowledged: true } : a),
     }));
 
-    // Sync to backend
-    fetch(`/api/v1/alerts/${id}/dismiss`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    }).catch((err) => {
+    // Sync to backend (backend uses PATCH for dismiss)
+    api.put(`/v1/alerts/${id}/dismiss`, {}).catch((err) => {
       console.error('[AppContext] Failed to dismiss alert:', err);
     });
   }, []);

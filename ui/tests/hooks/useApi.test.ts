@@ -1,314 +1,281 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { renderHook, waitFor, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
-import { QueryProvider } from '../../src/providers/QueryProvider';
 import { useApiQuery, useApiMutation } from '../../src/hooks/useApi';
+import { QueryProvider } from '../../src/providers/QueryProvider';
 
-// --- Test setup ---
+// Mock the api service
+vi.mock('../../src/services/api', () => ({
+  default: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+  },
+  api: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+  },
+}));
+
+import api from '../../src/services/api';
 
 const wrapper = ({ children }: { children: ReactNode }) =>
   createElement(QueryProvider, null, children);
 
-const mockFetch = vi.fn();
-
-beforeEach(() => {
-  vi.stubGlobal('fetch', mockFetch);
-  mockFetch.mockReset();
-});
-
-afterEach(() => {
-  vi.restoreAllMocks();
-});
-
-function createFetchResponse<T>(data: T, ok = true, status = 200) {
-  return Promise.resolve({
-    ok,
-    status,
-    statusText: ok ? 'OK' : 'Internal Server Error',
-    json: () => Promise.resolve(data),
-    text: () => Promise.resolve(JSON.stringify(data)),
-  });
-}
-
-// --- useApiQuery tests ---
-
 describe('useApiQuery', () => {
-  it('fetches data on mount', async () => {
-    const mockData = { id: 1, name: 'Test Market' };
-    mockFetch.mockReturnValueOnce(createFetchResponse(mockData));
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-    const { result } = renderHook(
-      () => useApiQuery('test-key', '/markets'),
-      { wrapper }
-    );
+  it('should fetch data on mount', async () => {
+    (api.get as any).mockResolvedValue({ id: 1, name: 'test' });
+    const { result } = renderHook(() => useApiQuery('/v1/test'), { wrapper });
 
-    await waitFor(() => {
-      expect(result.current.data).toEqual(mockData);
-    });
-
-    expect(result.current.isLoading).toBe(false);
-    expect(result.current.isError).toBe(false);
+    expect(result.current.loading).toBe(true);
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.data).toEqual({ id: 1, name: 'test' });
     expect(result.current.error).toBeNull();
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/markets'),
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          'Content-Type': 'application/json',
-        }),
-      })
-    );
   });
 
-  it('shows loading state while fetching', async () => {
-    let resolvePromise: (value: unknown) => void;
-    const pendingPromise = new Promise((resolve) => {
-      resolvePromise = resolve;
-    });
+  it('should set error on fetch failure', async () => {
+    (api.get as any).mockRejectedValue(new Error('Network error'));
+    const { result } = renderHook(() => useApiQuery('/v1/test'), { wrapper });
 
-    mockFetch.mockReturnValueOnce(pendingPromise);
-
-    const { result } = renderHook(
-      () => useApiQuery('loading-test', '/slow-endpoint'),
-      { wrapper }
-    );
-
-    // Should be loading initially
-    expect(result.current.isLoading).toBe(true);
-    expect(result.current.data).toBeNull();
-    expect(result.current.isError).toBe(false);
-
-    // Resolve the fetch
-    resolvePromise!({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve({ loaded: true }),
-      text: () => Promise.resolve('{"loaded":true}'),
-    });
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    expect(result.current.data).toEqual({ loaded: true });
-  });
-
-  it('handles errors gracefully', async () => {
-    mockFetch.mockReturnValueOnce(
-      createFetchResponse({ error: 'Not Found' }, false, 404)
-    );
-
-    const onError = vi.fn();
-
-    const { result } = renderHook(
-      () => useApiQuery('error-test', '/nonexistent', { onError }),
-      { wrapper }
-    );
-
-    await waitFor(() => {
-      expect(result.current.isError).toBe(true);
-    });
-
-    expect(result.current.error).toBeInstanceOf(Error);
-    expect(result.current.error?.message).toContain('API Error 404');
-    expect(result.current.data).toBeNull();
-    expect(result.current.isLoading).toBe(false);
-    expect(onError).toHaveBeenCalledWith(expect.any(Error));
-  });
-
-  it('handles network failures', async () => {
-    mockFetch.mockRejectedValueOnce(new Error('Network error'));
-
-    const { result } = renderHook(
-      () => useApiQuery('network-error-test', '/unreachable'),
-      { wrapper }
-    );
-
-    await waitFor(() => {
-      expect(result.current.isError).toBe(true);
-    });
-
+    await waitFor(() => expect(result.current.error).toBeTruthy());
     expect(result.current.error?.message).toBe('Network error');
     expect(result.current.data).toBeNull();
   });
 
-  it('does not fetch when enabled is false', async () => {
+  it('should not fetch when enabled is false', async () => {
     const { result } = renderHook(
-      () => useApiQuery('disabled-test', '/endpoint', { enabled: false }),
+      () => useApiQuery('/v1/test', { enabled: false }),
       { wrapper }
     );
 
-    // Give time for any async operations
-    await new Promise((r) => setTimeout(r, 50));
-
-    expect(mockFetch).not.toHaveBeenCalled();
-    expect(result.current.isLoading).toBe(false);
-    expect(result.current.data).toBeNull();
+    expect(result.current.loading).toBe(false);
+    expect(api.get).not.toHaveBeenCalled();
   });
 
-  it('refetch re-fetches data and updates state', async () => {
-    const initialData = { count: 1 };
-    const refreshedData = { count: 2 };
+  it('should support refetch', async () => {
+    (api.get as any).mockResolvedValue({ count: 1 });
+    const { result } = renderHook(() => useApiQuery('/v1/test'), { wrapper });
 
-    mockFetch
-      .mockReturnValueOnce(createFetchResponse(initialData))
-      .mockReturnValueOnce(createFetchResponse(refreshedData));
+    await waitFor(() => expect(result.current.data).toEqual({ count: 1 }));
 
+    (api.get as any).mockResolvedValue({ count: 2 });
+    await act(async () => { await result.current.refetch(); });
+
+    await waitFor(() => expect(result.current.data).toEqual({ count: 2 }));
+  });
+
+  it('should serialize params into cache key', async () => {
+    (api.get as any).mockResolvedValue([]);
     const { result } = renderHook(
-      () => useApiQuery('refetch-test', '/counter'),
+      () => useApiQuery('/v1/test', { params: { country: 'US', page: 1 } }),
       { wrapper }
     );
 
-    // Wait for initial fetch
-    await waitFor(() => {
-      expect(result.current.data).toEqual(initialData);
-    });
-
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-
-    // Trigger refetch
-    await act(async () => {
-      await result.current.refetch();
-    });
-
-    await waitFor(() => {
-      expect(result.current.data).toEqual(refreshedData);
-    });
-
-    expect(mockFetch).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(api.get).toHaveBeenCalledWith(expect.stringContaining('country=US'));
   });
 
-  it('calls onSuccess callback with fetched data', async () => {
-    const mockData = { success: true };
-    mockFetch.mockReturnValueOnce(createFetchResponse(mockData));
+  it('should handle params with undefined values', async () => {
+    (api.get as any).mockResolvedValue([]);
+    renderHook(
+      () => useApiQuery('/v1/test', { params: { country: 'US', filter: undefined } }),
+      { wrapper }
+    );
 
-    const onSuccess = vi.fn();
+    await waitFor(() => {
+      const calledWith = (api.get as any).mock.calls[0]?.[0] || '';
+      expect(calledWith).toContain('country=US');
+      expect(calledWith).not.toContain('filter');
+    });
+  });
+
+  it('should use cache for subsequent calls with same key', async () => {
+    (api.get as any).mockResolvedValue({ cached: true });
+    const { result } = renderHook(() => useApiQuery('/v1/cached'), { wrapper });
+
+    await waitFor(() => expect(result.current.data).toEqual({ cached: true }));
+    expect(api.get).toHaveBeenCalledTimes(1);
+  });
+
+  it('should handle polling with refetchInterval', async () => {
+    vi.useFakeTimers();
+    (api.get as any).mockResolvedValue({ polled: true });
 
     renderHook(
-      () => useApiQuery('success-cb-test', '/data', { onSuccess }),
+      () => useApiQuery('/v1/test', { refetchInterval: 5000 }),
       { wrapper }
     );
 
-    await waitFor(() => {
-      expect(onSuccess).toHaveBeenCalledWith(mockData);
-    });
+    expect(api.get).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
+  it('should skip cache when skipCache is true', async () => {
+    (api.get as any).mockResolvedValue({ fresh: true });
+    const { result } = renderHook(
+      () => useApiQuery('/v1/test', { skipCache: true }),
+      { wrapper }
+    );
+
+    await waitFor(() => expect(result.current.data).toBeTruthy());
+  });
+
+  it('should return loading true initially', () => {
+    (api.get as any).mockImplementation(() => new Promise(() => {}));
+    const { result } = renderHook(() => useApiQuery('/v1/test'), { wrapper });
+    expect(result.current.loading).toBe(true);
+  });
+
+  it('should handle empty response', async () => {
+    (api.get as any).mockResolvedValue(null);
+    const { result } = renderHook(() => useApiQuery('/v1/test'), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+  });
+
+  it('should handle array response', async () => {
+    (api.get as any).mockResolvedValue([1, 2, 3]);
+    const { result } = renderHook(() => useApiQuery<number[]>('/v1/test'), { wrapper });
+    await waitFor(() => expect(result.current.data).toEqual([1, 2, 3]));
+  });
+
+  it('should convert non-Error thrown values to Error', async () => {
+    (api.get as any).mockRejectedValue('string error');
+    const { result } = renderHook(() => useApiQuery('/v1/test'), { wrapper });
+    await waitFor(() => expect(result.current.error).toBeInstanceOf(Error));
   });
 });
 
-// --- useApiMutation tests ---
-
 describe('useApiMutation', () => {
-  it('triggers mutation on mutate() call', async () => {
-    const responseData = { id: 1, created: true };
-    mockFetch.mockReturnValueOnce(createFetchResponse(responseData));
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
+  it('should execute POST mutation', async () => {
+    (api.post as any).mockResolvedValue({ id: 1 });
     const { result } = renderHook(
-      () => useApiMutation('/campaigns', 'POST'),
+      () => useApiMutation('/v1/test', { method: 'POST' }),
       { wrapper }
     );
 
-    expect(result.current.isLoading).toBe(false);
-    expect(result.current.data).toBeNull();
+    let response: any;
+    await act(async () => { response = await result.current.mutate({ name: 'test' }); });
 
-    let mutationResult: unknown;
-    await act(async () => {
-      mutationResult = await result.current.mutate({ name: 'New Campaign' });
-    });
-
-    expect(mutationResult).toEqual(responseData);
-    expect(result.current.data).toEqual(responseData);
-    expect(result.current.isLoading).toBe(false);
-    expect(result.current.isError).toBe(false);
-
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/campaigns'),
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({ name: 'New Campaign' }),
-      })
-    );
+    expect(response).toEqual({ id: 1 });
+    expect(api.post).toHaveBeenCalledWith('/v1/test', { name: 'test' });
   });
 
-  it('handles mutation errors', async () => {
-    mockFetch.mockReturnValueOnce(
-      createFetchResponse({ error: 'Validation failed' }, false, 422)
-    );
-
-    const onError = vi.fn();
-
+  it('should execute PUT mutation', async () => {
+    (api.put as any).mockResolvedValue({ updated: true });
     const { result } = renderHook(
-      () => useApiMutation('/campaigns', 'POST', { onError }),
+      () => useApiMutation('/v1/test', { method: 'PUT' }),
       { wrapper }
     );
 
-    await act(async () => {
-      await result.current.mutate({ name: '' });
-    });
-
-    expect(result.current.isError).toBe(true);
-    expect(result.current.error?.message).toContain('API Error 422');
-    expect(onError).toHaveBeenCalledWith(expect.any(Error), { name: '' });
+    await act(async () => { await result.current.mutate({ name: 'updated' }); });
+    expect(api.put).toHaveBeenCalledWith('/v1/test', { name: 'updated' });
   });
 
-  it('calls onSuccess callback after successful mutation', async () => {
-    const responseData = { id: 2, updated: true };
-    mockFetch.mockReturnValueOnce(createFetchResponse(responseData));
+  it('should execute DELETE mutation', async () => {
+    (api.delete as any).mockResolvedValue({ deleted: true });
+    const { result } = renderHook(
+      () => useApiMutation('/v1/test', { method: 'DELETE' }),
+      { wrapper }
+    );
 
+    await act(async () => { await result.current.mutate(); });
+    expect(api.delete).toHaveBeenCalledWith('/v1/test');
+  });
+
+  it('should set loading during mutation', async () => {
+    let resolvePromise: (v: any) => void;
+    (api.post as any).mockImplementation(() => new Promise(r => { resolvePromise = r; }));
+    const { result } = renderHook(() => useApiMutation('/v1/test'), { wrapper });
+
+    expect(result.current.loading).toBe(false);
+
+    let mutatePromise: Promise<any>;
+    act(() => { mutatePromise = result.current.mutate({}); });
+
+    expect(result.current.loading).toBe(true);
+
+    await act(async () => { resolvePromise!({ done: true }); await mutatePromise!; });
+    expect(result.current.loading).toBe(false);
+  });
+
+  it('should handle mutation error', async () => {
+    (api.post as any).mockRejectedValue(new Error('Server error'));
+    const { result } = renderHook(() => useApiMutation('/v1/test'), { wrapper });
+
+    await act(async () => { await result.current.mutate({}); });
+
+    expect(result.current.error?.message).toBe('Server error');
+  });
+
+  it('should call onSuccess callback', async () => {
     const onSuccess = vi.fn();
-
+    (api.post as any).mockResolvedValue({ id: 1 });
     const { result } = renderHook(
-      () => useApiMutation('/campaigns/2', 'PUT', { onSuccess }),
+      () => useApiMutation('/v1/test', { onSuccess }),
       { wrapper }
     );
 
-    await act(async () => {
-      await result.current.mutate({ name: 'Updated Campaign' });
-    });
-
-    expect(onSuccess).toHaveBeenCalledWith(responseData, { name: 'Updated Campaign' });
+    await act(async () => { await result.current.mutate({}); });
+    expect(onSuccess).toHaveBeenCalledWith({ id: 1 });
   });
 
-  it('resets state on reset() call', async () => {
-    const responseData = { id: 1 };
-    mockFetch.mockReturnValueOnce(createFetchResponse(responseData));
-
+  it('should call onError callback', async () => {
+    const onError = vi.fn();
+    (api.post as any).mockRejectedValue(new Error('fail'));
     const { result } = renderHook(
-      () => useApiMutation('/test', 'POST'),
+      () => useApiMutation('/v1/test', { onError }),
       { wrapper }
     );
 
-    await act(async () => {
-      await result.current.mutate({ data: 'test' });
-    });
+    await act(async () => { await result.current.mutate({}); });
+    expect(onError).toHaveBeenCalledWith(expect.any(Error));
+  });
 
-    expect(result.current.data).toEqual(responseData);
+  it('should reset state', async () => {
+    (api.post as any).mockResolvedValue({ id: 1 });
+    const { result } = renderHook(() => useApiMutation('/v1/test'), { wrapper });
 
-    act(() => {
-      result.current.reset();
-    });
+    await act(async () => { await result.current.mutate({}); });
+    expect(result.current.data).toEqual({ id: 1 });
 
+    act(() => { result.current.reset(); });
     expect(result.current.data).toBeNull();
-    expect(result.current.isLoading).toBe(false);
-    expect(result.current.isError).toBe(false);
     expect(result.current.error).toBeNull();
   });
 
-  it('supports DELETE method', async () => {
-    mockFetch.mockReturnValueOnce(createFetchResponse({ deleted: true }));
+  it('should default to POST method', async () => {
+    (api.post as any).mockResolvedValue({});
+    const { result } = renderHook(() => useApiMutation('/v1/test'), { wrapper });
 
-    const { result } = renderHook(
-      () => useApiMutation('/campaigns/5', 'DELETE'),
-      { wrapper }
-    );
+    await act(async () => { await result.current.mutate({}); });
+    expect(api.post).toHaveBeenCalled();
+  });
 
-    await act(async () => {
-      await result.current.mutate({});
-    });
+  it('should return null on error', async () => {
+    (api.post as any).mockRejectedValue(new Error('fail'));
+    const { result } = renderHook(() => useApiMutation('/v1/test'), { wrapper });
 
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/campaigns/5'),
-      expect.objectContaining({ method: 'DELETE' })
-    );
+    let response: any;
+    await act(async () => { response = await result.current.mutate({}); });
+    expect(response).toBeNull();
+  });
+
+  it('should convert non-Error to Error', async () => {
+    (api.post as any).mockRejectedValue('string error');
+    const { result } = renderHook(() => useApiMutation('/v1/test'), { wrapper });
+
+    await act(async () => { await result.current.mutate({}); });
+    expect(result.current.error).toBeInstanceOf(Error);
   });
 });

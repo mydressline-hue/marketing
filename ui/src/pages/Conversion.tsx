@@ -181,15 +181,15 @@ const funnelGradientEnd: Record<number, string> = {
 };
 
 const priorityColor: Record<string, string> = {
-  High: 'bg-red-100 text-red-700',
-  Medium: 'bg-yellow-100 text-yellow-700',
-  Low: 'bg-blue-100 text-blue-700',
+  High: 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-300',
+  Medium: 'bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-300',
+  Low: 'bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300',
 };
 
 const statusColor: Record<string, string> = {
-  'In Progress': 'bg-indigo-100 text-indigo-700',
-  Planned: 'bg-surface-100 text-surface-700',
-  Backlog: 'bg-surface-50 text-surface-500',
+  'In Progress': 'bg-indigo-100 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300',
+  Planned: 'bg-surface-100 dark:bg-surface-700 text-surface-700 dark:text-surface-200',
+  Backlog: 'bg-surface-50 dark:bg-surface-800 text-surface-500 dark:text-surface-400',
 };
 
 const speedStatusColor: Record<string, string> = {
@@ -237,7 +237,7 @@ export default function Conversion() {
     mutate: runConversionAgent,
     loading: agentRunning,
     error: agentError,
-  } = useApiMutation<AgentExecutionResponse>('/v1/agents/10/execute');
+  } = useApiMutation<AgentExecutionResponse>('/v1/agents/conversion/run', { method: 'POST' });
 
   // ---- Agent execution handler ----
 
@@ -308,7 +308,7 @@ export default function Conversion() {
             <select
               value={selectedCountry}
               onChange={(e) => setSelectedCountry(e.target.value)}
-              className="text-sm border border-surface-200 rounded-lg px-3 py-1.5 bg-white text-surface-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="text-sm border border-surface-200 dark:border-surface-700 rounded-lg px-3 py-1.5 bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="all">All Countries</option>
               {countryOptions.map((code) => (
@@ -334,7 +334,7 @@ export default function Conversion() {
                 refetchOverview();
                 refetchCampaigns();
               }}
-              className="inline-flex items-center gap-1 px-2 py-1.5 text-sm text-surface-600 hover:text-surface-800 border border-surface-200 rounded-lg transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-1.5 text-sm text-surface-600 dark:text-surface-300 hover:text-surface-800 dark:hover:text-surface-200 border border-surface-200 dark:border-surface-700 rounded-lg transition-colors"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
@@ -344,7 +344,7 @@ export default function Conversion() {
 
       {/* Agent error */}
       {agentError && (
-        <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+        <div className="p-3 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-sm text-red-700 dark:text-red-300">
           Agent error: {agentError.message}
         </div>
       )}
@@ -415,8 +415,8 @@ export default function Conversion() {
                   {/* Funnel bar */}
                   <div className="flex items-center gap-4">
                     <div className="w-32 sm:w-40 flex items-center gap-2 shrink-0">
-                      <Icon className="w-4 h-4 text-surface-500" />
-                      <span className="text-sm font-medium text-surface-700 truncate">{step.label}</span>
+                      <Icon className="w-4 h-4 text-surface-500 dark:text-surface-400" />
+                      <span className="text-sm font-medium text-surface-700 dark:text-surface-200 truncate">{step.label}</span>
                     </div>
                     <div className="flex-1 flex items-center gap-3">
                       <div className="flex-1 relative">
@@ -431,7 +431,7 @@ export default function Conversion() {
                           <span className="text-white text-sm font-semibold">{step.pct}%</span>
                         </div>
                       </div>
-                      <span className="text-sm text-surface-500 w-20 text-right shrink-0">
+                      <span className="text-sm text-surface-500 dark:text-surface-400 w-20 text-right shrink-0">
                         {step.visitors.toLocaleString()}
                       </span>
                     </div>
@@ -485,7 +485,7 @@ export default function Conversion() {
                       border: '1px solid #e5e7eb',
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
                     }}
-                    formatter={(value: number, name: string) => [`${value}%`, name]}
+                    formatter={(value: number | undefined, name?: string) => [`${value ?? 0}%`, name ?? '']}
                   />
                   <Bar dataKey="productView" name="Product View" fill="#818cf8" radius={[2, 2, 0, 0]} />
                   <Bar dataKey="addToCart" name="Add to Cart" fill="#6366f1" radius={[2, 2, 0, 0]} />
@@ -574,14 +574,14 @@ export default function Conversion() {
                 {heatmapInsights.map((item) => (
                   <div
                     key={item.area}
-                    className="flex items-center gap-4 p-3 rounded-lg bg-surface-50 border border-surface-100"
+                    className="flex items-center gap-4 p-3 rounded-lg bg-surface-50 dark:bg-surface-800 border border-surface-100 dark:border-surface-700"
                   >
                     <div className={`w-12 h-12 rounded-lg ${item.color} bg-opacity-15 flex items-center justify-center shrink-0`}>
-                      <span className="text-sm font-bold text-surface-800">{item.metric}</span>
+                      <span className="text-sm font-bold text-surface-800 dark:text-surface-200">{item.metric}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-surface-800">{item.insight}</p>
-                      <p className="text-xs text-surface-500 mt-0.5">
+                      <p className="text-sm font-medium text-surface-800 dark:text-surface-200">{item.insight}</p>
+                      <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5">
                         {item.area} - {item.type} analysis
                       </p>
                     </div>
@@ -595,10 +595,10 @@ export default function Conversion() {
                 ))}
               </div>
               {aiInsight && (
-                <div className="mt-4 p-3 rounded-lg bg-indigo-50 border border-indigo-100">
+                <div className="mt-4 p-3 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/30">
                   <div className="flex items-start gap-2">
-                    <Lightbulb className="w-4 h-4 text-indigo-600 mt-0.5 shrink-0" />
-                    <p className="text-xs text-indigo-700">
+                    <Lightbulb className="w-4 h-4 text-indigo-600 dark:text-indigo-400 mt-0.5 shrink-0" />
+                    <p className="text-xs text-indigo-700 dark:text-indigo-300">
                       <span className="font-semibold">AI Insight:</span> {aiInsight}
                     </p>
                   </div>
@@ -630,8 +630,8 @@ export default function Conversion() {
                   <div key={item.metric}>
                     <div className="flex items-center justify-between mb-2">
                       <div>
-                        <span className="text-sm font-semibold text-surface-800">{item.metric}</span>
-                        <span className="text-xs text-surface-500 ml-2">{item.label}</span>
+                        <span className="text-sm font-semibold text-surface-800 dark:text-surface-200">{item.metric}</span>
+                        <span className="text-xs text-surface-500 dark:text-surface-400 ml-2">{item.label}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className={`text-lg font-bold ${speedStatusColor[item.status] ?? 'text-surface-600'}`}>
@@ -650,25 +650,25 @@ export default function Conversion() {
                       color={item.status === 'good' ? 'success' : item.status === 'needs-improvement' ? 'warning' : 'danger'}
                       size="sm"
                     />
-                    <p className="text-xs text-surface-400 mt-1">Target: {item.target}{item.unit}</p>
+                    <p className="text-xs text-surface-400 dark:text-surface-500 mt-1">Target: {item.target}{item.unit}</p>
                   </div>
                 ))}
               </div>
 
               {lighthouse && (
-                <div className="mt-6 pt-4 border-t border-surface-100">
+                <div className="mt-6 pt-4 border-t border-surface-100 dark:border-surface-700">
                   <div className="grid grid-cols-3 gap-3 text-center">
                     <div>
-                      <p className="text-lg font-bold text-surface-900">{lighthouse.performance}</p>
-                      <p className="text-xs text-surface-500">Performance</p>
+                      <p className="text-lg font-bold text-surface-900 dark:text-surface-100">{lighthouse.performance}</p>
+                      <p className="text-xs text-surface-500 dark:text-surface-400">Performance</p>
                     </div>
                     <div>
-                      <p className="text-lg font-bold text-surface-900">{lighthouse.accessibility}</p>
-                      <p className="text-xs text-surface-500">Accessibility</p>
+                      <p className="text-lg font-bold text-surface-900 dark:text-surface-100">{lighthouse.accessibility}</p>
+                      <p className="text-xs text-surface-500 dark:text-surface-400">Accessibility</p>
                     </div>
                     <div>
-                      <p className="text-lg font-bold text-surface-900">{lighthouse.bestPractices}</p>
-                      <p className="text-xs text-surface-500">Best Practices</p>
+                      <p className="text-lg font-bold text-surface-900 dark:text-surface-100">{lighthouse.bestPractices}</p>
+                      <p className="text-xs text-surface-500 dark:text-surface-400">Best Practices</p>
                     </div>
                   </div>
                 </div>
@@ -711,9 +711,9 @@ export default function Conversion() {
             {uxRecommendations.map((rec) => (
               <div
                 key={rec.id}
-                className="flex items-start gap-4 p-4 rounded-lg border border-surface-100 hover:border-surface-200 hover:shadow-sm transition-all"
+                className="flex items-start gap-4 p-4 rounded-lg border border-surface-100 dark:border-surface-700 hover:border-surface-200 dark:hover:border-surface-600 hover:shadow-sm transition-all"
               >
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-surface-100 text-surface-600 font-bold text-sm shrink-0">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300 font-bold text-sm shrink-0">
                   {rec.id}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -725,13 +725,13 @@ export default function Conversion() {
                       {rec.status}
                     </span>
                   </div>
-                  <p className="text-sm font-medium text-surface-800 mt-1">{rec.description}</p>
+                  <p className="text-sm font-medium text-surface-800 dark:text-surface-200 mt-1">{rec.description}</p>
                   <div className="flex items-center gap-4 mt-2">
-                    <span className="text-xs text-surface-500">
+                    <span className="text-xs text-surface-500 dark:text-surface-400">
                       Impact: <span className="font-semibold text-green-600">{rec.impact}</span>
                     </span>
-                    <span className="text-xs text-surface-500">
-                      Effort: <span className="font-semibold text-surface-700">{rec.effort}</span>
+                    <span className="text-xs text-surface-500 dark:text-surface-400">
+                      Effort: <span className="font-semibold text-surface-700 dark:text-surface-200">{rec.effort}</span>
                     </span>
                   </div>
                 </div>
@@ -747,10 +747,10 @@ export default function Conversion() {
         subtitle="Active and completed experiments"
         actions={
           <div className="flex items-center gap-2 text-xs">
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-medium">
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-300 font-medium">
               {runningTests} Running
             </span>
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-100 text-surface-600 font-medium">
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300 font-medium">
               {completedTests} Completed
             </span>
           </div>
@@ -769,14 +769,14 @@ export default function Conversion() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-surface-100">
-                  <th className="text-left py-3 px-2 font-semibold text-surface-600">Test Name</th>
-                  <th className="text-left py-3 px-2 font-semibold text-surface-600">Status</th>
-                  <th className="text-left py-3 px-2 font-semibold text-surface-600">Control</th>
-                  <th className="text-left py-3 px-2 font-semibold text-surface-600">Variant</th>
-                  <th className="text-right py-3 px-2 font-semibold text-surface-600">Confidence</th>
-                  <th className="text-right py-3 px-2 font-semibold text-surface-600">Lift</th>
-                  <th className="text-right py-3 px-2 font-semibold text-surface-600">Samples</th>
+                <tr className="border-b border-surface-100 dark:border-surface-700">
+                  <th className="text-left py-3 px-2 font-semibold text-surface-600 dark:text-surface-300">Test Name</th>
+                  <th className="text-left py-3 px-2 font-semibold text-surface-600 dark:text-surface-300">Status</th>
+                  <th className="text-left py-3 px-2 font-semibold text-surface-600 dark:text-surface-300">Control</th>
+                  <th className="text-left py-3 px-2 font-semibold text-surface-600 dark:text-surface-300">Variant</th>
+                  <th className="text-right py-3 px-2 font-semibold text-surface-600 dark:text-surface-300">Confidence</th>
+                  <th className="text-right py-3 px-2 font-semibold text-surface-600 dark:text-surface-300">Lift</th>
+                  <th className="text-right py-3 px-2 font-semibold text-surface-600 dark:text-surface-300">Samples</th>
                 </tr>
               </thead>
               <tbody>
@@ -785,34 +785,34 @@ export default function Conversion() {
                     ? (((test.variantCvr - test.controlCvr) / test.controlCvr) * 100).toFixed(1)
                     : '0.0';
                   return (
-                    <tr key={test.id} className="border-b border-surface-50 hover:bg-surface-50/50">
+                    <tr key={test.id} className="border-b border-surface-50 dark:border-surface-700 hover:bg-surface-50/50 dark:hover:bg-surface-700/50">
                       <td className="py-3 px-2">
-                        <span className="font-medium text-surface-800">{test.name}</span>
-                        <span className="block text-xs text-surface-500">{test.daysRunning} days running</span>
+                        <span className="font-medium text-surface-800 dark:text-surface-200">{test.name}</span>
+                        <span className="block text-xs text-surface-500 dark:text-surface-400">{test.daysRunning} days running</span>
                       </td>
                       <td className="py-3 px-2">
                         <span
                           className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                             test.status === 'running'
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-surface-100 text-surface-600'
+                              ? 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-300'
+                              : 'bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300'
                           }`}
                         >
                           {test.status === 'running' ? 'Running' : 'Completed'}
                         </span>
                       </td>
                       <td className="py-3 px-2">
-                        <span className="text-surface-700">{test.control}</span>
-                        <span className="block text-xs text-surface-500">{test.controlCvr}% CVR</span>
+                        <span className="text-surface-700 dark:text-surface-200">{test.control}</span>
+                        <span className="block text-xs text-surface-500 dark:text-surface-400">{test.controlCvr}% CVR</span>
                       </td>
                       <td className="py-3 px-2">
-                        <span className="text-surface-700">{test.variant}</span>
+                        <span className="text-surface-700 dark:text-surface-200">{test.variant}</span>
                         <span className="block text-xs font-medium text-green-600">{test.variantCvr}% CVR</span>
                       </td>
                       <td className="py-3 px-2 text-right">
                         <span
                           className={`font-semibold ${
-                            test.confidence >= 95 ? 'text-green-600' : test.confidence >= 85 ? 'text-yellow-600' : 'text-surface-600'
+                            test.confidence >= 95 ? 'text-green-600' : test.confidence >= 85 ? 'text-yellow-600' : 'text-surface-600 dark:text-surface-300'
                           }`}
                         >
                           {test.confidence}%
@@ -821,7 +821,7 @@ export default function Conversion() {
                       <td className="py-3 px-2 text-right">
                         <span className="font-semibold text-green-600">+{lift}%</span>
                       </td>
-                      <td className="py-3 px-2 text-right text-surface-600">
+                      <td className="py-3 px-2 text-right text-surface-600 dark:text-surface-300">
                         {test.sampleSize.toLocaleString()}
                       </td>
                     </tr>
@@ -884,7 +884,7 @@ export default function Conversion() {
                         border: '1px solid #e5e7eb',
                         boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
                       }}
-                      formatter={(value: number, name: string) => [`${value}/100`, name]}
+                      formatter={(value: number | undefined, name?: string) => [`${value ?? 0}/100`, name ?? '']}
                     />
                     <Bar dataKey="impact" name="Impact" fill="#6366f1" radius={[0, 4, 4, 0]} />
                     <Bar dataKey="effort" name="Effort" fill="#f59e0b" radius={[0, 4, 4, 0]} />
@@ -894,7 +894,7 @@ export default function Conversion() {
 
               {/* Priority List */}
               <div className="space-y-3">
-                <div className="text-xs font-medium text-surface-500 uppercase tracking-wider mb-2">
+                <div className="text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider mb-2">
                   Ranked by AI Priority Score
                 </div>
                 {improvementMatrix.map((item) => {
@@ -902,25 +902,25 @@ export default function Conversion() {
                   return (
                     <div
                       key={item.initiative}
-                      className="flex items-center gap-3 p-3 rounded-lg bg-surface-50 border border-surface-100"
+                      className="flex items-center gap-3 p-3 rounded-lg bg-surface-50 dark:bg-surface-800 border border-surface-100 dark:border-surface-700"
                     >
-                      <div className="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs shrink-0">
+                      <div className="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-bold text-xs shrink-0">
                         {item.priority}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-surface-800 truncate">{item.initiative}</p>
+                        <p className="text-sm font-medium text-surface-800 dark:text-surface-200 truncate">{item.initiative}</p>
                         <div className="flex items-center gap-3 mt-1">
-                          <span className="text-xs text-surface-500">
-                            Impact: <span className="font-semibold text-indigo-600">{item.impact}</span>
+                          <span className="text-xs text-surface-500 dark:text-surface-400">
+                            Impact: <span className="font-semibold text-indigo-600 dark:text-indigo-400">{item.impact}</span>
                           </span>
-                          <span className="text-xs text-surface-500">
-                            Effort: <span className="font-semibold text-amber-600">{item.effort}</span>
+                          <span className="text-xs text-surface-500 dark:text-surface-400">
+                            Effort: <span className="font-semibold text-amber-600 dark:text-amber-400">{item.effort}</span>
                           </span>
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <span className="text-sm font-bold text-surface-900">{score}</span>
-                        <p className="text-xs text-surface-400">Score</p>
+                        <span className="text-sm font-bold text-surface-900 dark:text-surface-100">{score}</span>
+                        <p className="text-xs text-surface-400 dark:text-surface-500">Score</p>
                       </div>
                     </div>
                   );
@@ -930,12 +930,12 @@ export default function Conversion() {
 
             {/* AI Summary */}
             {aiSummary && (
-              <div className="mt-6 p-4 rounded-lg bg-indigo-50 border border-indigo-100">
+              <div className="mt-6 p-4 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/30">
                 <div className="flex items-start gap-3">
-                  <Lightbulb className="w-5 h-5 text-indigo-600 mt-0.5 shrink-0" />
+                  <Lightbulb className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-0.5 shrink-0" />
                   <div>
-                    <p className="text-sm font-semibold text-indigo-800 mb-1">AI Recommendation Summary</p>
-                    <p className="text-sm text-indigo-700">{aiSummary}</p>
+                    <p className="text-sm font-semibold text-indigo-800 dark:text-indigo-300 mb-1">AI Recommendation Summary</p>
+                    <p className="text-sm text-indigo-700 dark:text-indigo-300">{aiSummary}</p>
                   </div>
                 </div>
               </div>

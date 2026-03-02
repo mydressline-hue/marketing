@@ -10,7 +10,6 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import {
-  AreaChart,
   Area,
   LineChart,
   Line,
@@ -131,8 +130,8 @@ const funnelConversionRate = (from: number, to: number) =>
 function RevenueSpendTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-surface-200 rounded-lg shadow-lg p-3 text-sm">
-      <p className="font-semibold text-surface-800 mb-1">{label}</p>
+    <div className="bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg shadow-lg p-3 text-sm">
+      <p className="font-semibold text-surface-800 dark:text-surface-200 mb-1">{label}</p>
       {payload.map((entry: any) => (
         <p key={entry.dataKey} style={{ color: entry.color }}>
           {entry.name}: {formatCurrency(entry.value)}
@@ -187,19 +186,19 @@ export default function Analytics() {
   // -----------------------------------------------------------------------
 
   const spendQuery = useApiQuery<SpendSummary>('/v1/campaigns/spend/summary', {
-    refreshInterval: REFRESH_INTERVAL,
+    refetchInterval: REFRESH_INTERVAL,
   });
 
   const campaignsQuery = useApiQuery<CampaignRecord[]>('/v1/campaigns', {
-    refreshInterval: REFRESH_INTERVAL,
+    refetchInterval: REFRESH_INTERVAL,
   });
 
   const overviewQuery = useApiQuery<DashboardOverview>('/v1/dashboard/overview', {
-    refreshInterval: REFRESH_INTERVAL,
+    refetchInterval: REFRESH_INTERVAL,
   });
 
   // Agent mutation for on-demand analytics execution
-  const agentMutation = useApiMutation<AgentExecutionResult>('/v1/agents/7/execute');
+  const agentMutation = useApiMutation<AgentExecutionResult>('/v1/agents/analytics/run', { method: 'POST' });
 
   // -----------------------------------------------------------------------
   // Derived data with safe fallbacks
@@ -289,16 +288,16 @@ export default function Analytics() {
           <div className="flex items-center gap-2">
             <button
               onClick={handleRefreshAll}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-surface-600 bg-white border border-surface-200 rounded-lg hover:bg-surface-50 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-surface-600 dark:text-surface-300 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${overviewQuery.loading ? 'animate-spin' : ''}`} />
               Refresh
             </button>
-            <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-surface-600 bg-white border border-surface-200 rounded-lg hover:bg-surface-50 transition-colors">
+            <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-surface-600 dark:text-surface-300 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors">
               <Filter className="w-3.5 h-3.5" />
               Filters
             </button>
-            <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-surface-600 bg-white border border-surface-200 rounded-lg hover:bg-surface-50 transition-colors">
+            <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-surface-600 dark:text-surface-300 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors">
               <Download className="w-3.5 h-3.5" />
               Export
             </button>
@@ -309,7 +308,7 @@ export default function Analytics() {
       {/* Date Range Picker */}
       <div className="flex items-center gap-2">
         <Calendar className="w-4 h-4 text-surface-400" />
-        <div className="inline-flex items-center bg-white border border-surface-200 rounded-lg p-0.5">
+        <div className="inline-flex items-center bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg p-0.5">
           {DATE_RANGES.map((range) => (
             <button
               key={range}
@@ -317,7 +316,7 @@ export default function Analytics() {
               className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                 dateRange === range
                   ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-surface-600 hover:text-surface-900 hover:bg-surface-50'
+                  : 'text-surface-600 dark:text-surface-300 hover:text-surface-900 dark:hover:text-surface-100 hover:bg-surface-50 dark:hover:bg-surface-700'
               }`}
             >
               {range}
@@ -328,13 +327,13 @@ export default function Analytics() {
           <div className="flex items-center gap-2 ml-2">
             <input
               type="date"
-              className="px-2.5 py-1.5 text-sm border border-surface-200 rounded-lg bg-white text-surface-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="px-2.5 py-1.5 text-sm border border-surface-200 dark:border-surface-700 rounded-lg bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               defaultValue="2026-01-01"
             />
             <span className="text-surface-400 text-sm">to</span>
             <input
               type="date"
-              className="px-2.5 py-1.5 text-sm border border-surface-200 rounded-lg bg-white text-surface-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="px-2.5 py-1.5 text-sm border border-surface-200 dark:border-surface-700 rounded-lg bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               defaultValue="2026-01-30"
             />
           </div>
@@ -451,7 +450,7 @@ export default function Analytics() {
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex items-center justify-center gap-6 mt-3 text-xs text-surface-500">
+              <div className="flex items-center justify-center gap-6 mt-3 text-xs text-surface-500 dark:text-surface-400">
                 <span className="flex items-center gap-1.5">
                   <span className="w-3 h-0.5 bg-indigo-500 rounded" />
                   Revenue (Left Axis)
@@ -500,9 +499,9 @@ export default function Analytics() {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: number, name: string) => [
-                        `${value}%`,
-                        name,
+                      formatter={(value: number | undefined, name?: string) => [
+                        `${value ?? 0}%`,
+                        name ?? '',
                       ]}
                       contentStyle={{
                         borderRadius: '8px',
@@ -527,11 +526,11 @@ export default function Analytics() {
                           backgroundColor: PIE_COLORS[idx % PIE_COLORS.length],
                         }}
                       />
-                      <span className="text-surface-700 font-medium">
+                      <span className="text-surface-700 dark:text-surface-200 font-medium">
                         {channel.name}
                       </span>
                     </span>
-                    <span className="text-surface-500">{channel.revenue}</span>
+                    <span className="text-surface-500 dark:text-surface-400">{channel.revenue}</span>
                   </div>
                 ))}
               </div>
@@ -635,30 +634,30 @@ export default function Analytics() {
             </div>
 
             {/* Funnel summary stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 pt-4 border-t border-surface-100">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 pt-4 border-t border-surface-100 dark:border-surface-700">
               <div className="text-center">
-                <p className="text-xs text-surface-500 font-medium">
+                <p className="text-xs text-surface-500 dark:text-surface-400 font-medium">
                   Click-Through Rate
                 </p>
-                <p className="text-lg font-bold text-surface-900 mt-0.5">{ctr}%</p>
+                <p className="text-lg font-bold text-surface-900 dark:text-surface-100 mt-0.5">{ctr}%</p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-surface-500 font-medium">
+                <p className="text-xs text-surface-500 dark:text-surface-400 font-medium">
                   Cart Rate
                 </p>
-                <p className="text-lg font-bold text-surface-900 mt-0.5">{cartRate}%</p>
+                <p className="text-lg font-bold text-surface-900 dark:text-surface-100 mt-0.5">{cartRate}%</p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-surface-500 font-medium">
+                <p className="text-xs text-surface-500 dark:text-surface-400 font-medium">
                   Checkout Rate
                 </p>
-                <p className="text-lg font-bold text-surface-900 mt-0.5">{checkoutRate}%</p>
+                <p className="text-lg font-bold text-surface-900 dark:text-surface-100 mt-0.5">{checkoutRate}%</p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-surface-500 font-medium">
+                <p className="text-xs text-surface-500 dark:text-surface-400 font-medium">
                   Purchase Rate
                 </p>
-                <p className="text-lg font-bold text-surface-900 mt-0.5">{purchaseRate}%</p>
+                <p className="text-lg font-bold text-surface-900 dark:text-surface-100 mt-0.5">{purchaseRate}%</p>
               </div>
             </div>
           </>
@@ -705,9 +704,9 @@ export default function Analytics() {
                       width={110}
                     />
                     <Tooltip
-                      formatter={(value: number, name: string) => [
-                        formatCurrency(value),
-                        name,
+                      formatter={(value: number | undefined, name?: string) => [
+                        formatCurrency(value ?? 0),
+                        name ?? '',
                       ]}
                       contentStyle={{
                         borderRadius: '8px',
@@ -733,13 +732,13 @@ export default function Analytics() {
                 </ResponsiveContainer>
               </div>
               {/* ROAS by country */}
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mt-4 pt-4 border-t border-surface-100">
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mt-4 pt-4 border-t border-surface-100 dark:border-surface-700">
                 {countryPerformanceData.map((c) => (
                   <div key={c.country} className="text-center">
-                    <p className="text-xs text-surface-500 truncate">
+                    <p className="text-xs text-surface-500 dark:text-surface-400 truncate">
                       {c.country.split(' ')[0]}
                     </p>
-                    <p className="text-sm font-bold text-surface-900">
+                    <p className="text-sm font-bold text-surface-900 dark:text-surface-100">
                       {c.roas}x ROAS
                     </p>
                   </div>
@@ -784,11 +783,13 @@ export default function Analytics() {
                         border: '1px solid #e5e7eb',
                         boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
                       }}
-                      formatter={(value: number, name: string) => {
-                        if (name === 'LTV/CAC Ratio') return [`${value}x`, name];
-                        if (name === 'LTV') return [`$${value}`, name];
-                        if (name === 'CAC') return [`$${value}`, name];
-                        return [value, name];
+                      formatter={(value: number | undefined, name?: string) => {
+                        const v = value ?? 0;
+                        const n = name ?? '';
+                        if (n === 'LTV/CAC Ratio') return [`${v}x`, n];
+                        if (n === 'LTV') return [`$${v}`, n];
+                        if (n === 'CAC') return [`$${v}`, n];
+                        return [v, n];
                       }}
                     />
                     <Legend
@@ -833,22 +834,22 @@ export default function Analytics() {
                 </ResponsiveContainer>
               </div>
               {/* Current LTV and CAC callout */}
-              <div className="flex items-center justify-around mt-4 pt-4 border-t border-surface-100">
+              <div className="flex items-center justify-around mt-4 pt-4 border-t border-surface-100 dark:border-surface-700">
                 <div className="text-center">
-                  <p className="text-xs text-surface-500">Current LTV</p>
+                  <p className="text-xs text-surface-500 dark:text-surface-400">Current LTV</p>
                   <p className="text-lg font-bold text-green-600">${currentLtv}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-surface-500">Current CAC</p>
+                  <p className="text-xs text-surface-500 dark:text-surface-400">Current CAC</p>
                   <p className="text-lg font-bold text-red-500">${currentCac}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-surface-500">LTV:CAC Ratio</p>
+                  <p className="text-xs text-surface-500 dark:text-surface-400">LTV:CAC Ratio</p>
                   <p className="text-lg font-bold text-indigo-600">{currentRatio}x</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-surface-500">Payback Period</p>
-                  <p className="text-lg font-bold text-surface-900">{paybackDays} days</p>
+                  <p className="text-xs text-surface-500 dark:text-surface-400">Payback Period</p>
+                  <p className="text-lg font-bold text-surface-900 dark:text-surface-100">{paybackDays} days</p>
                 </div>
               </div>
             </>
@@ -861,7 +862,7 @@ export default function Analytics() {
         title="Cross-Channel Attribution Model Comparison"
         subtitle="How each model distributes credit across channels"
         actions={
-          <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-surface-600 bg-surface-50 border border-surface-200 rounded-lg hover:bg-surface-100 transition-colors">
+          <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-surface-600 dark:text-surface-300 bg-surface-50 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors">
             <Download className="w-3 h-3" />
             Export CSV
           </button>
@@ -876,11 +877,11 @@ export default function Analytics() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-surface-200">
-                    <th className="text-left py-3 px-4 font-semibold text-surface-700">
+                  <tr className="border-b border-surface-200 dark:border-surface-700">
+                    <th className="text-left py-3 px-4 font-semibold text-surface-700 dark:text-surface-200">
                       Attribution Model
                     </th>
-                    <th className="text-right py-3 px-4 font-semibold text-surface-700">
+                    <th className="text-right py-3 px-4 font-semibold text-surface-700 dark:text-surface-200">
                       <span className="inline-flex items-center gap-1">
                         <span
                           className="w-2 h-2 rounded-full"
@@ -889,7 +890,7 @@ export default function Analytics() {
                         Google
                       </span>
                     </th>
-                    <th className="text-right py-3 px-4 font-semibold text-surface-700">
+                    <th className="text-right py-3 px-4 font-semibold text-surface-700 dark:text-surface-200">
                       <span className="inline-flex items-center gap-1">
                         <span
                           className="w-2 h-2 rounded-full"
@@ -898,7 +899,7 @@ export default function Analytics() {
                         Meta
                       </span>
                     </th>
-                    <th className="text-right py-3 px-4 font-semibold text-surface-700">
+                    <th className="text-right py-3 px-4 font-semibold text-surface-700 dark:text-surface-200">
                       <span className="inline-flex items-center gap-1">
                         <span
                           className="w-2 h-2 rounded-full"
@@ -907,7 +908,7 @@ export default function Analytics() {
                         TikTok
                       </span>
                     </th>
-                    <th className="text-right py-3 px-4 font-semibold text-surface-700">
+                    <th className="text-right py-3 px-4 font-semibold text-surface-700 dark:text-surface-200">
                       <span className="inline-flex items-center gap-1">
                         <span
                           className="w-2 h-2 rounded-full"
@@ -916,7 +917,7 @@ export default function Analytics() {
                         Bing
                       </span>
                     </th>
-                    <th className="text-right py-3 px-4 font-semibold text-surface-700">
+                    <th className="text-right py-3 px-4 font-semibold text-surface-700 dark:text-surface-200">
                       <span className="inline-flex items-center gap-1">
                         <span
                           className="w-2 h-2 rounded-full"
@@ -925,10 +926,10 @@ export default function Analytics() {
                         Snap
                       </span>
                     </th>
-                    <th className="text-right py-3 px-4 font-semibold text-surface-700">
+                    <th className="text-right py-3 px-4 font-semibold text-surface-700 dark:text-surface-200">
                       Conversions
                     </th>
-                    <th className="text-right py-3 px-4 font-semibold text-surface-700">
+                    <th className="text-right py-3 px-4 font-semibold text-surface-700 dark:text-surface-200">
                       Blended ROAS
                     </th>
                   </tr>
@@ -939,36 +940,36 @@ export default function Analytics() {
                     return (
                       <tr
                         key={row.model}
-                        className={`border-b border-surface-100 transition-colors hover:bg-surface-50 ${
-                          isRecommended ? 'bg-indigo-50/50' : ''
+                        className={`border-b border-surface-100 dark:border-surface-700 transition-colors hover:bg-surface-50 dark:hover:bg-surface-700 ${
+                          isRecommended ? 'bg-indigo-50/50 dark:bg-indigo-500/10' : ''
                         }`}
                       >
-                        <td className="py-3 px-4 font-medium text-surface-800">
+                        <td className="py-3 px-4 font-medium text-surface-800 dark:text-surface-200">
                           <span className="flex items-center gap-2">
                             {row.model}
                             {isRecommended && (
-                              <span className="px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-indigo-100 text-indigo-700 rounded">
+                              <span className="px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-indigo-100 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 rounded">
                                 Recommended
                               </span>
                             )}
                           </span>
                         </td>
-                        <td className="text-right py-3 px-4 text-surface-600 tabular-nums">
+                        <td className="text-right py-3 px-4 text-surface-600 dark:text-surface-300 tabular-nums">
                           {row.google}%
                         </td>
-                        <td className="text-right py-3 px-4 text-surface-600 tabular-nums">
+                        <td className="text-right py-3 px-4 text-surface-600 dark:text-surface-300 tabular-nums">
                           {row.meta}%
                         </td>
-                        <td className="text-right py-3 px-4 text-surface-600 tabular-nums">
+                        <td className="text-right py-3 px-4 text-surface-600 dark:text-surface-300 tabular-nums">
                           {row.tiktok}%
                         </td>
-                        <td className="text-right py-3 px-4 text-surface-600 tabular-nums">
+                        <td className="text-right py-3 px-4 text-surface-600 dark:text-surface-300 tabular-nums">
                           {row.bing}%
                         </td>
-                        <td className="text-right py-3 px-4 text-surface-600 tabular-nums">
+                        <td className="text-right py-3 px-4 text-surface-600 dark:text-surface-300 tabular-nums">
                           {row.snap}%
                         </td>
-                        <td className="text-right py-3 px-4 font-medium text-surface-800 tabular-nums">
+                        <td className="text-right py-3 px-4 font-medium text-surface-800 dark:text-surface-200 tabular-nums">
                           {row.totalConversions.toLocaleString()}
                         </td>
                         <td className="text-right py-3 px-4 tabular-nums">
@@ -978,7 +979,7 @@ export default function Analytics() {
                                 ? 'text-green-600'
                                 : row.roas >= 4.0
                                   ? 'text-indigo-600'
-                                  : 'text-surface-700'
+                                  : 'text-surface-700 dark:text-surface-200'
                             }`}
                           >
                             {row.roas}x
@@ -992,14 +993,14 @@ export default function Analytics() {
             </div>
 
             {/* Attribution insight */}
-            <div className="mt-4 p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+            <div className="mt-4 p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg border border-indigo-100 dark:border-indigo-500/30">
               <p className="text-sm text-indigo-800">
                 <span className="font-semibold">AI Insight:</span>{' '}
                 {aiInsight
                   ? aiInsight
                   : agentMutation.loading
                     ? 'Analyzing attribution data...'
-                    : 'The Time Decay model most accurately reflects the customer journey for your vertical. Meta\u0027s contribution increases by 3.8pp under Position Based attribution, suggesting strong top-of-funnel influence that Last Click undervalues.'}
+                    : 'Click "Run Agent" to generate AI insights for your attribution data.'}
               </p>
             </div>
           </>

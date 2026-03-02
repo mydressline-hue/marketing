@@ -27,7 +27,7 @@ import Card from '../components/shared/Card';
 import KPICard from '../components/shared/KPICard';
 import StatusBadge from '../components/shared/StatusBadge';
 import { useApiQuery, useApiMutation } from '../hooks/useApi';
-import { TableSkeleton, ChartSkeleton, CardSkeleton, KPISkeleton } from '../components/shared/LoadingSkeleton';
+import { TableSkeleton, ChartSkeleton, CardSkeleton, KPIRowSkeleton } from '../components/shared/LoadingSkeleton';
 import { ApiErrorDisplay } from '../components/shared/ErrorBoundary';
 import EmptyState from '../components/shared/EmptyState';
 
@@ -160,19 +160,19 @@ const permissionBadge = (level: string) => {
   switch (level) {
     case 'full':
       return (
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5">
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 rounded-full px-2 py-0.5">
           Full
         </span>
       );
     case 'read':
       return (
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5">
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-full px-2 py-0.5">
           Read
         </span>
       );
     case 'none':
       return (
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-surface-400 bg-surface-50 border border-surface-200 rounded-full px-2 py-0.5">
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-surface-400 bg-surface-50 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-full px-2 py-0.5">
           None
         </span>
       );
@@ -189,13 +189,13 @@ export default function Security() {
   const [selectedTab, setSelectedTab] = useState<'overview' | 'keys' | 'access' | 'audit'>('overview');
 
   // ---- API queries ---------------------------------------------------------
-  const security = useApiQuery<SecurityData>('/api/v1/infrastructure/security');
-  const apiKeysQuery = useApiQuery<ApiKeysData>('/api/v1/apikeys');
-  const auditQuery = useApiQuery<AuditData>('/api/v1/audit');
+  const security = useApiQuery<SecurityData>('/v1/infrastructure/security');
+  const apiKeysQuery = useApiQuery<ApiKeysData>('/v1/settings/api-keys');
+  const auditQuery = useApiQuery<AuditData>('/v1/audit');
 
   // ---- Mutations -----------------------------------------------------------
-  const scanAgent = useApiMutation<SecurityAgentResult>('/api/v1/agents/18/execute');
-  const rotateKey = useApiMutation<{ success: boolean }>('/api/v1/apikeys', 'PUT');
+  const scanAgent = useApiMutation<SecurityAgentResult>('/v1/agents/security/run', { method: 'POST' });
+  const rotateKey = useApiMutation<{ success: boolean }>('/v1/settings/api-keys', { method: 'PUT' });
 
   // ---- Derived data --------------------------------------------------------
   const secData = security.data;
@@ -248,7 +248,7 @@ export default function Security() {
 
       {/* KPI Row */}
       {security.loading ? (
-        <KPISkeleton count={4} />
+        <KPIRowSkeleton count={4} />
       ) : security.error ? (
         <ApiErrorDisplay error={security.error} onRetry={security.refetch} />
       ) : secData ? (
@@ -281,7 +281,7 @@ export default function Security() {
       ) : null}
 
       {/* Tab Navigation */}
-      <div className="flex items-center gap-1 bg-surface-100 rounded-lg p-1 w-fit">
+      <div className="flex items-center gap-1 bg-surface-100 dark:bg-surface-700 rounded-lg p-1 w-fit">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
@@ -290,8 +290,8 @@ export default function Security() {
               onClick={() => setSelectedTab(tab.key)}
               className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 selectedTab === tab.key
-                  ? 'bg-white text-surface-900 shadow-sm'
-                  : 'text-surface-500 hover:text-surface-700'
+                  ? 'bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 shadow-sm'
+                  : 'text-surface-500 dark:text-surface-400 hover:text-surface-700 dark:hover:text-surface-200'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -327,14 +327,14 @@ export default function Security() {
                 <Card title="Encryption" className="relative">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-surface-600">At Rest</span>
+                      <span className="text-sm text-surface-600 dark:text-surface-300">At Rest</span>
                       <span className="flex items-center gap-1 text-sm font-medium text-green-600">
                         <CheckCircle className="w-4 h-4" />
                         {secData.encryption.atRest}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-surface-600">In Transit</span>
+                      <span className="text-sm text-surface-600 dark:text-surface-300">In Transit</span>
                       <span className="flex items-center gap-1 text-sm font-medium text-green-600">
                         <CheckCircle className="w-4 h-4" />
                         {secData.encryption.inTransit}
@@ -350,16 +350,16 @@ export default function Security() {
                 <Card title="Secret Vault" className="relative">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-surface-600">Provider</span>
-                      <span className="text-sm font-medium text-surface-900">{secData.secretVault.provider}</span>
+                      <span className="text-sm text-surface-600 dark:text-surface-300">Provider</span>
+                      <span className="text-sm font-medium text-surface-900 dark:text-surface-100">{secData.secretVault.provider}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-surface-600">Status</span>
+                      <span className="text-sm text-surface-600 dark:text-surface-300">Status</span>
                       <StatusBadge status={secData.secretVault.status} />
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-surface-600">Last rotation</span>
-                      <span className="flex items-center gap-1 text-sm text-surface-700">
+                      <span className="text-sm text-surface-600 dark:text-surface-300">Last rotation</span>
+                      <span className="flex items-center gap-1 text-sm text-surface-700 dark:text-surface-200">
                         <Clock className="w-3.5 h-3.5 text-surface-400" />
                         {secData.secretVault.lastRotation}
                       </span>
@@ -374,15 +374,15 @@ export default function Security() {
                 <Card title="DDoS Protection" className="relative">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-surface-600">Status</span>
+                      <span className="text-sm text-surface-600 dark:text-surface-300">Status</span>
                       <StatusBadge status={secData.ddosProtection.status} />
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-surface-600">Attacks blocked</span>
+                      <span className="text-sm text-surface-600 dark:text-surface-300">Attacks blocked</span>
                       <span className="text-sm font-semibold text-red-600">{secData.ddosProtection.attacksBlocked}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-surface-600">Uptime</span>
+                      <span className="text-sm text-surface-600 dark:text-surface-300">Uptime</span>
                       <span className="text-sm font-medium text-green-600">{secData.ddosProtection.uptime}</span>
                     </div>
                   </div>
@@ -395,22 +395,22 @@ export default function Security() {
                 <Card title="MFA Status" className="relative">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-surface-600">Admin accounts</span>
+                      <span className="text-sm text-surface-600 dark:text-surface-300">Admin accounts</span>
                       <span className="flex items-center gap-1 text-sm font-medium text-green-600">
                         <CheckCircle className="w-4 h-4" />
                         {secData.mfa.adminAccounts}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-surface-600">All users</span>
+                      <span className="text-sm text-surface-600 dark:text-surface-300">All users</span>
                       <span className="flex items-center gap-1 text-sm font-medium text-green-600">
                         <CheckCircle className="w-4 h-4" />
                         {secData.mfa.allUsers}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-surface-600">Method</span>
-                      <span className="text-sm font-medium text-surface-900">{secData.mfa.method}</span>
+                      <span className="text-sm text-surface-600 dark:text-surface-300">Method</span>
+                      <span className="text-sm font-medium text-surface-900 dark:text-surface-100">{secData.mfa.method}</span>
                     </div>
                   </div>
                   <div className="absolute top-4 right-4">
@@ -459,9 +459,9 @@ export default function Security() {
                                 className="w-3 h-3 rounded-full shrink-0"
                                 style={{ backgroundColor: entry.color }}
                               />
-                              <span className="text-surface-600">{entry.name}</span>
+                              <span className="text-surface-600 dark:text-surface-300">{entry.name}</span>
                             </div>
-                            <span className="font-semibold text-surface-900">{entry.value.toLocaleString()}</span>
+                            <span className="font-semibold text-surface-900 dark:text-surface-100">{entry.value.toLocaleString()}</span>
                           </div>
                         ))}
                       </div>
@@ -474,7 +474,7 @@ export default function Security() {
                   title="Threat Detection"
                   subtitle="Latest scan results"
                   actions={
-                    <span className="flex items-center gap-1.5 text-xs font-medium text-green-600 bg-green-50 px-2.5 py-1 rounded-full">
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-green-600 bg-green-50 dark:bg-green-500/10 px-2.5 py-1 rounded-full">
                       <CheckCircle className="w-3 h-3" />
                       Scan complete
                     </span>
@@ -489,8 +489,8 @@ export default function Security() {
                           key={scan.id}
                           className={`flex items-center justify-between rounded-lg border px-4 py-3 ${
                             scan.vulnerabilities > 0
-                              ? 'border-yellow-200 bg-yellow-50/50'
-                              : 'border-surface-200 bg-surface-50/40'
+                              ? 'border-yellow-200 dark:border-yellow-500/30 bg-yellow-50 dark:bg-yellow-500/10'
+                              : 'border-surface-200 dark:border-surface-700 bg-surface-50/40 dark:bg-surface-800/40'
                           }`}
                         >
                           <div className="flex items-center gap-3">
@@ -500,8 +500,8 @@ export default function Security() {
                               <AlertTriangle className="w-4 h-4 text-yellow-500 shrink-0" />
                             )}
                             <div>
-                              <p className="text-sm font-medium text-surface-900">{scan.target}</p>
-                              <p className="text-xs text-surface-500">{scan.lastScan}</p>
+                              <p className="text-sm font-medium text-surface-900 dark:text-surface-100">{scan.target}</p>
+                              <p className="text-xs text-surface-500 dark:text-surface-400">{scan.lastScan}</p>
                             </div>
                           </div>
                           <div className="text-right">
@@ -525,7 +525,7 @@ export default function Security() {
                 subtitle="Type II compliance status"
                 actions={
                   secData.soc2Checklist.length > 0 ? (
-                    <span className="text-xs text-surface-500">Last audit: {secData.soc2Checklist[0].lastAudit}</span>
+                    <span className="text-xs text-surface-500 dark:text-surface-400">Last audit: {secData.soc2Checklist[0].lastAudit}</span>
                   ) : undefined
                 }
               >
@@ -538,8 +538,8 @@ export default function Security() {
                         key={item.id}
                         className={`flex items-start gap-3 rounded-lg border p-4 ${
                           item.status === 'pass'
-                            ? 'border-green-200 bg-green-50/50'
-                            : 'border-yellow-200 bg-yellow-50/50'
+                            ? 'border-green-200 dark:border-green-500/30 bg-green-50 dark:bg-green-500/10'
+                            : 'border-yellow-200 dark:border-yellow-500/30 bg-yellow-50 dark:bg-yellow-500/10'
                         }`}
                       >
                         {item.status === 'pass' ? (
@@ -548,8 +548,8 @@ export default function Security() {
                           <AlertTriangle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
                         )}
                         <div>
-                          <p className="text-sm font-semibold text-surface-900">{item.category}</p>
-                          <p className="text-xs text-surface-500 mt-0.5">{item.detail}</p>
+                          <p className="text-sm font-semibold text-surface-900 dark:text-surface-100">{item.category}</p>
+                          <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5">{item.detail}</p>
                           <p className="text-xs text-surface-400 mt-1">Audited: {item.lastAudit}</p>
                         </div>
                       </div>
@@ -593,34 +593,34 @@ export default function Security() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-surface-200">
-                        <th className="text-left py-3 px-4 font-semibold text-surface-600">Key Name</th>
-                        <th className="text-left py-3 px-4 font-semibold text-surface-600">Service</th>
-                        <th className="text-left py-3 px-4 font-semibold text-surface-600">Created</th>
-                        <th className="text-left py-3 px-4 font-semibold text-surface-600">Last Used</th>
-                        <th className="text-left py-3 px-4 font-semibold text-surface-600">Status</th>
-                        <th className="text-left py-3 px-4 font-semibold text-surface-600">Rotation Schedule</th>
-                        <th className="text-left py-3 px-4 font-semibold text-surface-600">Actions</th>
+                      <tr className="border-b border-surface-200 dark:border-surface-700">
+                        <th className="text-left py-3 px-4 font-semibold text-surface-600 dark:text-surface-300">Key Name</th>
+                        <th className="text-left py-3 px-4 font-semibold text-surface-600 dark:text-surface-300">Service</th>
+                        <th className="text-left py-3 px-4 font-semibold text-surface-600 dark:text-surface-300">Created</th>
+                        <th className="text-left py-3 px-4 font-semibold text-surface-600 dark:text-surface-300">Last Used</th>
+                        <th className="text-left py-3 px-4 font-semibold text-surface-600 dark:text-surface-300">Status</th>
+                        <th className="text-left py-3 px-4 font-semibold text-surface-600 dark:text-surface-300">Rotation Schedule</th>
+                        <th className="text-left py-3 px-4 font-semibold text-surface-600 dark:text-surface-300">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {apiKeys.map((key) => (
-                        <tr key={key.id} className="border-b border-surface-100 hover:bg-surface-50 transition-colors">
+                        <tr key={key.id} className="border-b border-surface-100 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors">
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-2">
                               <Key className="w-4 h-4 text-indigo-400" />
-                              <span className="font-medium text-surface-900">{key.name}</span>
+                              <span className="font-medium text-surface-900 dark:text-surface-100">{key.name}</span>
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-surface-600">{key.service}</td>
-                          <td className="py-3 px-4 text-surface-600">{key.created}</td>
-                          <td className="py-3 px-4 text-surface-600">{key.lastUsed}</td>
+                          <td className="py-3 px-4 text-surface-600 dark:text-surface-300">{key.service}</td>
+                          <td className="py-3 px-4 text-surface-600 dark:text-surface-300">{key.created}</td>
+                          <td className="py-3 px-4 text-surface-600 dark:text-surface-300">{key.lastUsed}</td>
                           <td className="py-3 px-4">
                             <StatusBadge status={key.status} />
                           </td>
                           <td className="py-3 px-4">
                             <div>
-                              <span className="text-surface-700">{key.rotation}</span>
+                              <span className="text-surface-700 dark:text-surface-200">{key.rotation}</span>
                               <p className="text-xs text-surface-400">Expires in {key.expiresIn}</p>
                             </div>
                           </td>
@@ -629,12 +629,12 @@ export default function Security() {
                               <button
                                 onClick={() => handleRotateKey(key.id)}
                                 disabled={rotateKey.loading}
-                                className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-md hover:bg-indigo-100 transition-colors disabled:opacity-50"
+                                className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/30 rounded-md hover:bg-indigo-100 transition-colors disabled:opacity-50"
                               >
                                 <RefreshCw className={`w-3 h-3 ${rotateKey.loading ? 'animate-spin' : ''}`} />
                                 Rotate
                               </button>
-                              <button className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-surface-600 bg-surface-50 border border-surface-200 rounded-md hover:bg-surface-100 transition-colors">
+                              <button className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-surface-600 dark:text-surface-300 bg-surface-50 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-md hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors">
                                 <Eye className="w-3 h-3" />
                                 View
                               </button>
@@ -667,7 +667,7 @@ export default function Security() {
                           border: '1px solid #e5e7eb',
                           boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
                         }}
-                        formatter={(value: number) => [value.toLocaleString(), 'Requests']}
+                        formatter={(value: number | undefined) => [(value ?? 0).toLocaleString(), 'Requests']}
                       />
                       <Bar dataKey="requests" fill="#6366f1" radius={[4, 4, 0, 0]} name="Requests" />
                     </BarChart>
@@ -695,7 +695,7 @@ export default function Security() {
                 title="Role-Based Access Control"
                 subtitle="Permission matrix by role"
                 actions={
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors">
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/30 rounded-lg hover:bg-indigo-100 transition-colors">
                     <Users className="w-3.5 h-3.5" />
                     Manage Roles
                   </button>
@@ -707,11 +707,11 @@ export default function Security() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b border-surface-200">
-                          <th className="text-left py-3 px-4 font-semibold text-surface-600">Role</th>
-                          <th className="text-left py-3 px-4 font-semibold text-surface-600">Users</th>
+                        <tr className="border-b border-surface-200 dark:border-surface-700">
+                          <th className="text-left py-3 px-4 font-semibold text-surface-600 dark:text-surface-300">Role</th>
+                          <th className="text-left py-3 px-4 font-semibold text-surface-600 dark:text-surface-300">Users</th>
                           {permissionColumns.map((col) => (
-                            <th key={col} className="text-center py-3 px-4 font-semibold text-surface-600">
+                            <th key={col} className="text-center py-3 px-4 font-semibold text-surface-600 dark:text-surface-300">
                               {col}
                             </th>
                           ))}
@@ -721,16 +721,16 @@ export default function Security() {
                         {secData.roles.map((role) => {
                           const Icon = roleIconMap[role.iconType] ?? Shield;
                           return (
-                            <tr key={role.role} className="border-b border-surface-100 hover:bg-surface-50 transition-colors">
+                            <tr key={role.role} className="border-b border-surface-100 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors">
                               <td className="py-3 px-4">
                                 <div className="flex items-center gap-2">
-                                  <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
+                                  <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center">
                                     <Icon className="w-4 h-4 text-indigo-500" />
                                   </div>
-                                  <span className="font-medium text-surface-900">{role.role}</span>
+                                  <span className="font-medium text-surface-900 dark:text-surface-100">{role.role}</span>
                                 </div>
                               </td>
-                              <td className="py-3 px-4 text-surface-600">{role.users}</td>
+                              <td className="py-3 px-4 text-surface-600 dark:text-surface-300">{role.users}</td>
                               {permissionColumns.map((col) => (
                                 <td key={col} className="py-3 px-4 text-center">
                                   {permissionBadge(role.permissions[col] ?? 'none')}
@@ -754,19 +754,19 @@ export default function Security() {
                     {secData.sessions.map((session) => (
                       <div
                         key={session.user}
-                        className="flex items-center justify-between rounded-lg border border-surface-200 px-4 py-3 hover:bg-surface-50 transition-colors"
+                        className="flex items-center justify-between rounded-lg border border-surface-200 dark:border-surface-700 px-4 py-3 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-semibold text-indigo-600">
                             {session.user.split('.')[0]?.[0]?.toUpperCase() ?? ''}{session.user.split('.')[1]?.[0]?.toUpperCase() ?? ''}
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-surface-900">{session.user}</p>
-                            <p className="text-xs text-surface-500">{session.role} -- {session.location}</p>
+                            <p className="text-sm font-medium text-surface-900 dark:text-surface-100">{session.user}</p>
+                            <p className="text-xs text-surface-500 dark:text-surface-400">{session.role} -- {session.location}</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm text-surface-600">{session.device}</p>
+                          <p className="text-sm text-surface-600 dark:text-surface-300">{session.device}</p>
                           <p className="text-xs text-surface-400">Active for {session.since}</p>
                         </div>
                       </div>
@@ -797,7 +797,7 @@ export default function Security() {
                 title="Audit Log"
                 subtitle={`Last ${auditEntries.length} security events`}
                 actions={
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-surface-600 bg-surface-50 border border-surface-200 rounded-lg hover:bg-surface-100 transition-colors">
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-surface-600 dark:text-surface-300 bg-surface-50 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors">
                     Export Log
                   </button>
                 }
@@ -808,26 +808,26 @@ export default function Security() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b border-surface-200">
-                          <th className="text-left py-3 px-4 font-semibold text-surface-600">Timestamp</th>
-                          <th className="text-left py-3 px-4 font-semibold text-surface-600">User</th>
-                          <th className="text-left py-3 px-4 font-semibold text-surface-600">Action</th>
-                          <th className="text-left py-3 px-4 font-semibold text-surface-600">IP Address</th>
-                          <th className="text-left py-3 px-4 font-semibold text-surface-600">Status</th>
+                        <tr className="border-b border-surface-200 dark:border-surface-700">
+                          <th className="text-left py-3 px-4 font-semibold text-surface-600 dark:text-surface-300">Timestamp</th>
+                          <th className="text-left py-3 px-4 font-semibold text-surface-600 dark:text-surface-300">User</th>
+                          <th className="text-left py-3 px-4 font-semibold text-surface-600 dark:text-surface-300">Action</th>
+                          <th className="text-left py-3 px-4 font-semibold text-surface-600 dark:text-surface-300">IP Address</th>
+                          <th className="text-left py-3 px-4 font-semibold text-surface-600 dark:text-surface-300">Status</th>
                         </tr>
                       </thead>
                       <tbody>
                         {auditEntries.map((event) => (
-                          <tr key={event.id} className="border-b border-surface-100 hover:bg-surface-50 transition-colors">
+                          <tr key={event.id} className="border-b border-surface-100 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors">
                             <td className="py-3 px-4">
-                              <span className="flex items-center gap-1.5 text-surface-600">
+                              <span className="flex items-center gap-1.5 text-surface-600 dark:text-surface-300">
                                 <Clock className="w-3.5 h-3.5 text-surface-400" />
                                 {event.timestamp}
                               </span>
                             </td>
-                            <td className="py-3 px-4 font-medium text-surface-800">{event.user}</td>
-                            <td className="py-3 px-4 text-surface-600">{event.action}</td>
-                            <td className="py-3 px-4 font-mono text-xs text-surface-500">{event.ip}</td>
+                            <td className="py-3 px-4 font-medium text-surface-800 dark:text-surface-200">{event.user}</td>
+                            <td className="py-3 px-4 text-surface-600 dark:text-surface-300">{event.action}</td>
+                            <td className="py-3 px-4 font-mono text-xs text-surface-500 dark:text-surface-400">{event.ip}</td>
                             <td className="py-3 px-4">
                               <StatusBadge status={event.status} />
                             </td>
@@ -846,7 +846,7 @@ export default function Security() {
                   subtitle="Type II compliance status"
                   actions={
                     secData.soc2Checklist.length > 0 ? (
-                      <span className="text-xs text-surface-500">Last audit: {secData.soc2Checklist[0].lastAudit}</span>
+                      <span className="text-xs text-surface-500 dark:text-surface-400">Last audit: {secData.soc2Checklist[0].lastAudit}</span>
                     ) : undefined
                   }
                 >
@@ -859,8 +859,8 @@ export default function Security() {
                           key={item.id}
                           className={`flex items-start gap-3 rounded-lg border p-4 ${
                             item.status === 'pass'
-                              ? 'border-green-200 bg-green-50/50'
-                              : 'border-yellow-200 bg-yellow-50/50'
+                              ? 'border-green-200 dark:border-green-500/30 bg-green-50 dark:bg-green-500/10'
+                              : 'border-yellow-200 dark:border-yellow-500/30 bg-yellow-50 dark:bg-yellow-500/10'
                           }`}
                         >
                           {item.status === 'pass' ? (
@@ -869,8 +869,8 @@ export default function Security() {
                             <AlertTriangle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
                           )}
                           <div>
-                            <p className="text-sm font-semibold text-surface-900">{item.category}</p>
-                            <p className="text-xs text-surface-500 mt-0.5">{item.detail}</p>
+                            <p className="text-sm font-semibold text-surface-900 dark:text-surface-100">{item.category}</p>
+                            <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5">{item.detail}</p>
                             <p className="text-xs text-surface-400 mt-1">Audited: {item.lastAudit}</p>
                           </div>
                         </div>
@@ -916,9 +916,9 @@ export default function Security() {
                               className="w-3 h-3 rounded-full shrink-0"
                               style={{ backgroundColor: entry.color }}
                             />
-                            <span className="text-surface-600">{entry.name}</span>
+                            <span className="text-surface-600 dark:text-surface-300">{entry.name}</span>
                           </div>
-                          <span className="font-semibold text-surface-900">{entry.value.toLocaleString()}</span>
+                          <span className="font-semibold text-surface-900 dark:text-surface-100">{entry.value.toLocaleString()}</span>
                         </div>
                       ))}
                     </div>

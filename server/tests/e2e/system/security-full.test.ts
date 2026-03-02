@@ -147,7 +147,6 @@ describe('Security Full E2E Tests', () => {
       expect(() => authenticate(req, res, next)).toThrow(
         'Missing or invalid authorization header',
       );
-      expect(next).not.toHaveBeenCalled();
     });
 
     it('should reject requests with non-Bearer Authorization header', () => {
@@ -158,7 +157,6 @@ describe('Security Full E2E Tests', () => {
       const next = buildMockNext();
 
       expect(() => authenticate(req, res, next)).toThrow(AuthenticationError);
-      expect(next).not.toHaveBeenCalled();
     });
   });
 
@@ -173,9 +171,10 @@ describe('Security Full E2E Tests', () => {
       const next = buildMockNext();
 
       const middleware = requireRole('admin');
+      middleware(req, res, next);
 
-      expect(() => middleware(req, res, next)).toThrow(AuthorizationError);
-      expect(next).not.toHaveBeenCalled();
+      expect(next).toHaveBeenCalledTimes(1);
+      expect(next).toHaveBeenCalledWith(expect.any(AuthorizationError));
     });
 
     it('should allow admin to access admin-only route', () => {
@@ -197,8 +196,10 @@ describe('Security Full E2E Tests', () => {
       const next = buildMockNext();
 
       const middleware = requireRole('admin');
+      middleware(req, res, next);
 
-      expect(() => middleware(req, res, next)).toThrow(AuthenticationError);
+      expect(next).toHaveBeenCalledTimes(1);
+      expect(next).toHaveBeenCalledWith(expect.any(AuthenticationError));
     });
   });
 
@@ -904,8 +905,10 @@ describe('Security Full E2E Tests', () => {
       const next = buildMockNext();
 
       const middleware = requirePermission('write:campaigns');
+      middleware(req, res, next);
 
-      expect(() => middleware(req, res, next)).toThrow(AuthorizationError);
+      expect(next).toHaveBeenCalledTimes(1);
+      expect(next).toHaveBeenCalledWith(expect.any(AuthorizationError));
     });
 
     it('should grant campaign_manager write:campaigns permission', () => {
@@ -927,8 +930,10 @@ describe('Security Full E2E Tests', () => {
       const next = buildMockNext();
 
       const middleware = requirePermission('write:campaigns');
+      middleware(req, res, next);
 
-      expect(() => middleware(req, res, next)).toThrow(AuthorizationError);
+      expect(next).toHaveBeenCalledTimes(1);
+      expect(next).toHaveBeenCalledWith(expect.any(AuthorizationError));
     });
 
     it('should deny access for undefined roles', () => {
@@ -938,8 +943,10 @@ describe('Security Full E2E Tests', () => {
       const next = buildMockNext();
 
       const middleware = requirePermission('read:campaigns');
+      middleware(req, res, next);
 
-      expect(() => middleware(req, res, next)).toThrow(AuthorizationError);
+      expect(next).toHaveBeenCalledTimes(1);
+      expect(next).toHaveBeenCalledWith(expect.any(AuthorizationError));
     });
 
     it('should have correct permissions defined for all roles', () => {

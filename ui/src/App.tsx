@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
+import { useTheme } from './hooks/useTheme';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const MarketIntelligence = lazy(() => import('./pages/MarketIntelligence'));
@@ -31,18 +32,21 @@ const SettingsPage = lazy(() => import('./pages/Settings'));
 function LoadingSpinner() {
   return (
     <div className="flex items-center justify-center h-64">
-      <div className="w-8 h-8 border-3 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+      <div className="w-8 h-8 border-3 border-primary-200 dark:border-surface-700 border-t-primary-600 dark:border-t-primary-400 rounded-full animate-spin" />
     </div>
   );
 }
 
 export default function App() {
+  useTheme();
+
   return (
-    <div className="min-h-screen bg-surface-50">
+    <div className="min-h-screen bg-surface-50 dark:bg-surface-900 transition-colors duration-200">
+      <a href="#main-content" className="skip-to-content">Skip to content</a>
       <Sidebar />
       <div className="lg:ml-[260px]">
         <Header />
-        <main className="p-6">
+        <main id="main-content" role="main" className="p-6">
           <ErrorBoundary>
             <Suspense fallback={<LoadingSpinner />}>
               <Routes>

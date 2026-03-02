@@ -134,14 +134,14 @@ interface TrendsResponse {
 const trendIcon = (trend: 'growing' | 'declining' | 'stable') => {
   if (trend === 'growing') return <TrendingUp className="w-4 h-4 text-green-600" />;
   if (trend === 'declining') return <TrendingDown className="w-4 h-4 text-red-500" />;
-  return <span className="text-xs text-surface-500 font-medium">--</span>;
+  return <span className="text-xs text-surface-500 dark:text-surface-400 font-medium">--</span>;
 };
 
 const trendLabel = (trend: 'growing' | 'declining' | 'stable') => {
   const colors: Record<string, string> = {
     growing: 'text-green-600',
     declining: 'text-red-500',
-    stable: 'text-surface-500',
+    stable: 'text-surface-500 dark:text-surface-400',
   };
   return (
     <span className={`text-xs font-medium capitalize ${colors[trend]}`}>
@@ -152,27 +152,27 @@ const trendLabel = (trend: 'growing' | 'declining' | 'stable') => {
 
 const channelPillColor = (channel: string) => {
   const colors: Record<string, string> = {
-    Google: 'bg-blue-50 text-blue-700 border-blue-200',
-    Meta: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-    TikTok: 'bg-pink-50 text-pink-700 border-pink-200',
-    LinkedIn: 'bg-sky-50 text-sky-700 border-sky-200',
-    Bing: 'bg-teal-50 text-teal-700 border-teal-200',
-    Snapchat: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-    YouTube: 'bg-red-50 text-red-700 border-red-200',
+    Google: 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-500/30',
+    Meta: 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-500/30',
+    TikTok: 'bg-pink-50 dark:bg-pink-500/10 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-500/30',
+    LinkedIn: 'bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-500/30',
+    Bing: 'bg-teal-50 dark:bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-500/30',
+    Snapchat: 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-500/30',
+    YouTube: 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/30',
   };
-  return colors[channel] || 'bg-surface-100 text-surface-600 border-surface-200';
+  return colors[channel] || 'bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300 border-surface-200 dark:border-surface-700';
 };
 
 const timelineTypeStyles: Record<string, { bg: string; icon: string; label: string }> = {
-  campaign: { bg: 'bg-blue-100 text-blue-700', icon: 'bg-blue-500', label: 'New Campaign' },
-  price_change: { bg: 'bg-amber-100 text-amber-700', icon: 'bg-amber-500', label: 'Price Change' },
-  product: { bg: 'bg-purple-100 text-purple-700', icon: 'bg-purple-500', label: 'Product Release' },
+  campaign: { bg: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300', icon: 'bg-blue-500', label: 'New Campaign' },
+  price_change: { bg: 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300', icon: 'bg-amber-500', label: 'Price Change' },
+  product: { bg: 'bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300', icon: 'bg-purple-500', label: 'Product Release' },
 };
 
 const impactColors: Record<string, string> = {
-  high: 'bg-green-50 text-green-700 border-green-200',
-  medium: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-  low: 'bg-surface-100 text-surface-600 border-surface-200',
+  high: 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-300 border-green-200 dark:border-green-500/30',
+  medium: 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-500/30',
+  low: 'bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300 border-surface-200 dark:border-surface-700',
 };
 
 const relevanceColors: Record<string, string> = {
@@ -207,7 +207,7 @@ export default function CompetitiveIntel() {
   const {
     mutate: runAgent,
     loading: agentRunning,
-  } = useApiMutation<{ status: string }>('/v1/agents/14/execute');
+  } = useApiMutation<{ status: string }>('/v1/agents/competitive-intel/run', { method: 'POST' });
 
   // ------ Derived data ------
   const competitors = competitorData?.competitors ?? [];
@@ -255,7 +255,7 @@ export default function CompetitiveIntel() {
                 placeholder="Search competitors..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-4 py-2 text-sm border border-surface-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 w-56"
+                className="pl-9 pr-4 py-2 text-sm border border-surface-200 dark:border-surface-700 rounded-lg bg-white dark:bg-surface-800 dark:text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 w-56"
               />
             </div>
           </div>
@@ -266,7 +266,7 @@ export default function CompetitiveIntel() {
       {competitorLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-surface-200 p-5">
+            <div key={i} className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 p-5">
               <CardSkeleton lines={2} />
             </div>
           ))}
@@ -324,20 +324,20 @@ export default function CompetitiveIntel() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-surface-100">
-                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Name</th>
-                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Est. Ad Spend</th>
-                  <th className="text-left py-3 px-3 font-semibold text-surface-600">Top Channels</th>
-                  <th className="text-right py-3 px-3 font-semibold text-surface-600">Market Share</th>
-                  <th className="text-center py-3 px-3 font-semibold text-surface-600">Trend</th>
-                  <th className="text-center py-3 px-3 font-semibold text-surface-600">Threat Level</th>
+                <tr className="border-b border-surface-100 dark:border-surface-700">
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Name</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Est. Ad Spend</th>
+                  <th className="text-left py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Top Channels</th>
+                  <th className="text-right py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Market Share</th>
+                  <th className="text-center py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Trend</th>
+                  <th className="text-center py-3 px-3 font-semibold text-surface-600 dark:text-surface-300">Threat Level</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredCompetitors.map((c) => (
-                  <tr key={c.name} className="border-b border-surface-50 hover:bg-surface-50/50 transition-colors">
-                    <td className="py-3 px-3 font-medium text-surface-900">{c.name}</td>
-                    <td className="py-3 px-3 text-surface-600">{c.estAdSpend}</td>
+                  <tr key={c.name} className="border-b border-surface-50 dark:border-surface-700 hover:bg-surface-50/50 dark:hover:bg-surface-700/50 transition-colors">
+                    <td className="py-3 px-3 font-medium text-surface-900 dark:text-surface-100">{c.name}</td>
+                    <td className="py-3 px-3 text-surface-600 dark:text-surface-300">{c.estAdSpend}</td>
                     <td className="py-3 px-3">
                       <div className="flex flex-wrap gap-1.5">
                         {c.topChannels.map((ch) => (
@@ -350,7 +350,7 @@ export default function CompetitiveIntel() {
                         ))}
                       </div>
                     </td>
-                    <td className="py-3 px-3 text-right font-semibold text-surface-900">{c.marketShare}%</td>
+                    <td className="py-3 px-3 text-right font-semibold text-surface-900 dark:text-surface-100">{c.marketShare}%</td>
                     <td className="py-3 px-3">
                       <div className="flex items-center justify-center gap-1.5">
                         {trendIcon(c.trend)}
@@ -390,7 +390,7 @@ export default function CompetitiveIntel() {
                   <XAxis type="number" tick={{ fontSize: 12 }} stroke="#9ca3af" tickFormatter={(v) => `${v}%`} />
                   <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} stroke="#9ca3af" width={100} />
                   <Tooltip
-                    formatter={(value: number) => [`${value}%`, 'Market Share']}
+                    formatter={(value: number | undefined) => [`${value ?? 0}%`, 'Market Share']}
                     contentStyle={{
                       borderRadius: '8px',
                       border: '1px solid #e5e7eb',
@@ -440,17 +440,17 @@ export default function CompetitiveIntel() {
                   <div key={event.id} className="flex gap-3">
                     <div className="flex flex-col items-center">
                       <div className={`w-3 h-3 rounded-full ${style.icon} mt-1.5 shrink-0`} />
-                      <div className="w-px flex-1 bg-surface-200" />
+                      <div className="w-px flex-1 bg-surface-200 dark:bg-surface-700" />
                     </div>
                     <div className="pb-4 flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="font-medium text-sm text-surface-900">{event.competitor}</span>
+                        <span className="font-medium text-sm text-surface-900 dark:text-surface-100">{event.competitor}</span>
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${style.bg}`}>
                           {style.label}
                         </span>
                         <span className="text-xs text-surface-400 ml-auto shrink-0">{event.date}</span>
                       </div>
-                      <p className="text-sm text-surface-600 leading-relaxed">{event.description}</p>
+                      <p className="text-sm text-surface-600 dark:text-surface-300 leading-relaxed">{event.description}</p>
                     </div>
                   </div>
                 );
@@ -518,13 +518,13 @@ export default function CompetitiveIntel() {
               </div>
               {/* Legend */}
               <div className="flex items-center justify-center gap-6 mt-2">
-                <div className="flex items-center gap-2 text-xs font-medium text-surface-600">
+                <div className="flex items-center gap-2 text-xs font-medium text-surface-600 dark:text-surface-300">
                   <span className="w-3 h-3 rounded-full bg-green-500" /> Our Brand
                 </div>
-                <div className="flex items-center gap-2 text-xs font-medium text-surface-600">
+                <div className="flex items-center gap-2 text-xs font-medium text-surface-600 dark:text-surface-300">
                   <span className="w-3 h-3 rounded-full bg-indigo-500" /> GlobalReach AI
                 </div>
-                <div className="flex items-center gap-2 text-xs font-medium text-surface-600">
+                <div className="flex items-center gap-2 text-xs font-medium text-surface-600 dark:text-surface-300">
                   <span className="w-3 h-3 rounded-full bg-amber-500" /> AdScale Intl
                 </div>
               </div>
@@ -541,7 +541,7 @@ export default function CompetitiveIntel() {
           {competitorLoading ? (
             <div className="space-y-4">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="rounded-lg border border-surface-200 p-4">
+                <div key={i} className="rounded-lg border border-surface-200 dark:border-surface-700 p-4">
                   <CardSkeleton lines={3} />
                 </div>
               ))}
@@ -555,10 +555,10 @@ export default function CompetitiveIntel() {
               {messagingGaps.map((gap) => (
                 <div
                   key={gap.id}
-                  className="rounded-lg border border-surface-200 p-4 hover:shadow-sm transition-shadow"
+                  className="rounded-lg border border-surface-200 dark:border-surface-700 p-4 hover:shadow-sm transition-shadow"
                 >
                   <div className="flex items-start justify-between gap-3 mb-2">
-                    <h4 className="text-sm font-semibold text-surface-900 leading-snug">
+                    <h4 className="text-sm font-semibold text-surface-900 dark:text-surface-100 leading-snug">
                       {gap.opportunity}
                     </h4>
                     <span
@@ -567,10 +567,10 @@ export default function CompetitiveIntel() {
                       {gap.impact} impact
                     </span>
                   </div>
-                  <p className="text-xs text-surface-500 mb-2 leading-relaxed">{gap.detail}</p>
+                  <p className="text-xs text-surface-500 dark:text-surface-400 mb-2 leading-relaxed">{gap.detail}</p>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-medium text-surface-400">Market:</span>
-                    <span className="text-xs font-semibold text-surface-700">{gap.market}</span>
+                    <span className="text-xs font-semibold text-surface-700 dark:text-surface-200">{gap.market}</span>
                   </div>
                 </div>
               ))}
@@ -598,40 +598,40 @@ export default function CompetitiveIntel() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-surface-100">
-                    <th className="text-left py-2.5 px-3 font-semibold text-surface-600">Competitor</th>
-                    <th className="text-left py-2.5 px-3 font-semibold text-surface-600">Platform</th>
-                    <th className="text-right py-2.5 px-3 font-semibold text-surface-600">Posts/Week</th>
-                    <th className="text-right py-2.5 px-3 font-semibold text-surface-600">Avg Engagement</th>
-                    <th className="text-right py-2.5 px-3 font-semibold text-surface-600">Follower Growth</th>
-                    <th className="text-left py-2.5 px-3 font-semibold text-surface-600">Top Content</th>
+                  <tr className="border-b border-surface-100 dark:border-surface-700">
+                    <th className="text-left py-2.5 px-3 font-semibold text-surface-600 dark:text-surface-300">Competitor</th>
+                    <th className="text-left py-2.5 px-3 font-semibold text-surface-600 dark:text-surface-300">Platform</th>
+                    <th className="text-right py-2.5 px-3 font-semibold text-surface-600 dark:text-surface-300">Posts/Week</th>
+                    <th className="text-right py-2.5 px-3 font-semibold text-surface-600 dark:text-surface-300">Avg Engagement</th>
+                    <th className="text-right py-2.5 px-3 font-semibold text-surface-600 dark:text-surface-300">Follower Growth</th>
+                    <th className="text-left py-2.5 px-3 font-semibold text-surface-600 dark:text-surface-300">Top Content</th>
                   </tr>
                 </thead>
                 <tbody>
                   {socialMonitoring.map((row) => (
                     <tr
                       key={`${row.competitor}-${row.platform}`}
-                      className={`border-b border-surface-50 transition-colors ${
+                      className={`border-b border-surface-50 dark:border-surface-700 transition-colors ${
                         row.competitor === 'Our Brand'
-                          ? 'bg-green-50/40'
-                          : 'hover:bg-surface-50/50'
+                          ? 'bg-green-50/40 dark:bg-green-500/5'
+                          : 'hover:bg-surface-50/50 dark:hover:bg-surface-700/50'
                       }`}
                     >
-                      <td className="py-2.5 px-3 font-medium text-surface-900">
+                      <td className="py-2.5 px-3 font-medium text-surface-900 dark:text-surface-100">
                         {row.competitor}
                         {row.competitor === 'Our Brand' && (
                           <span className="ml-1.5 text-xs text-green-600 font-normal">(you)</span>
                         )}
                       </td>
-                      <td className="py-2.5 px-3 text-surface-600">{row.platform}</td>
-                      <td className="py-2.5 px-3 text-right font-semibold text-surface-900">{row.postsPerWeek}</td>
-                      <td className="py-2.5 px-3 text-right text-surface-700">{row.avgEngagement}%</td>
+                      <td className="py-2.5 px-3 text-surface-600 dark:text-surface-300">{row.platform}</td>
+                      <td className="py-2.5 px-3 text-right font-semibold text-surface-900 dark:text-surface-100">{row.postsPerWeek}</td>
+                      <td className="py-2.5 px-3 text-right text-surface-700 dark:text-surface-200">{row.avgEngagement}%</td>
                       <td className="py-2.5 px-3 text-right">
-                        <span className={`font-medium ${row.followerGrowth > 10 ? 'text-green-600' : 'text-surface-700'}`}>
+                        <span className={`font-medium ${row.followerGrowth > 10 ? 'text-green-600' : 'text-surface-700 dark:text-surface-200'}`}>
                           +{row.followerGrowth}%
                         </span>
                       </td>
-                      <td className="py-2.5 px-3 text-surface-600">{row.topContentType}</td>
+                      <td className="py-2.5 px-3 text-surface-600 dark:text-surface-300">{row.topContentType}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -677,16 +677,16 @@ export default function CompetitiveIntel() {
               </div>
               {/* Compact Legend */}
               <div className="grid grid-cols-2 gap-1.5 mt-3">
-                <div className="flex items-center gap-1.5 text-xs text-surface-600">
+                <div className="flex items-center gap-1.5 text-xs text-surface-600 dark:text-surface-300">
                   <span className="w-2.5 h-2.5 rounded-full bg-green-500" /> Our Brand
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-surface-600">
+                <div className="flex items-center gap-1.5 text-xs text-surface-600 dark:text-surface-300">
                   <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" /> GlobalReach
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-surface-600">
+                <div className="flex items-center gap-1.5 text-xs text-surface-600 dark:text-surface-300">
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> AdScale
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-surface-600">
+                <div className="flex items-center gap-1.5 text-xs text-surface-600 dark:text-surface-300">
                   <span className="w-2.5 h-2.5 rounded-full bg-pink-500" /> CrossBorder
                 </div>
               </div>
@@ -701,7 +701,7 @@ export default function CompetitiveIntel() {
         subtitle="Emerging market trends identified by AI monitoring"
         actions={
           trendsLoading ? null : (
-            <span className="flex items-center gap-1.5 text-xs font-medium text-primary-700 bg-primary-50 px-2.5 py-1 rounded-full">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-primary-700 bg-primary-50 dark:bg-primary-500/10 dark:text-primary-300 px-2.5 py-1 rounded-full">
               <Zap className="w-3 h-3" />
               {trendAlerts.length} trends detected
             </span>
@@ -711,7 +711,7 @@ export default function CompetitiveIntel() {
         {trendsLoading ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="rounded-lg border border-surface-200 p-4">
+              <div key={i} className="rounded-lg border border-surface-200 dark:border-surface-700 p-4">
                 <CardSkeleton lines={3} />
               </div>
             ))}
@@ -745,14 +745,14 @@ export default function CompetitiveIntel() {
                         alert.relevance === 'high' ? 'text-red-500' : 'text-amber-500'
                       }`}
                     />
-                    <h4 className="text-sm font-semibold text-surface-900 leading-snug">
+                    <h4 className="text-sm font-semibold text-surface-900 dark:text-surface-100 leading-snug">
                       {alert.trend}
                     </h4>
                   </div>
                   <span className="text-xs text-surface-400 shrink-0">{alert.detectedAt}</span>
                 </div>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-medium text-surface-500 bg-surface-100 px-2 py-0.5 rounded-full">
+                  <span className="text-xs font-medium text-surface-500 dark:text-surface-400 bg-surface-100 dark:bg-surface-700 px-2 py-0.5 rounded-full">
                     {alert.category}
                   </span>
                   <span
@@ -762,7 +762,7 @@ export default function CompetitiveIntel() {
                   </span>
                 </div>
                 {selectedTrend === String(alert.id) && (
-                  <p className="text-sm text-surface-600 leading-relaxed mt-2 pt-2 border-t border-surface-200/60">
+                  <p className="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mt-2 pt-2 border-t border-surface-200/60 dark:border-surface-700/60">
                     {alert.description}
                   </p>
                 )}

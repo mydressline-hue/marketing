@@ -149,10 +149,10 @@ export default function OrganicSocial() {
 
   // ---- Mutations -----------------------------------------------------------
   const { mutate: createPost, loading: createLoading } =
-    useApiMutation<SocialPost>('/v1/content', 'POST');
+    useApiMutation<SocialPost>('/v1/content', { method: 'POST' });
 
   const { mutate: runAgent, loading: agentLoading } =
-    useApiMutation<AgentExecuteResponse>('/v1/agents/4/execute', 'POST');
+    useApiMutation<AgentExecuteResponse>('/v1/agents/organic-social/run', { method: 'POST' });
 
   // ---- Derived data --------------------------------------------------------
   const posts = socialData?.posts ?? [];
@@ -277,7 +277,7 @@ export default function OrganicSocial() {
             <button
               onClick={handleRunAgent}
               disabled={agentLoading}
-              className="px-4 py-2 bg-surface-100 text-surface-700 rounded-lg text-sm font-medium hover:bg-surface-200 transition-colors flex items-center gap-2 disabled:opacity-50"
+              className="px-4 py-2 bg-surface-100 dark:bg-surface-700 text-surface-700 dark:text-surface-200 rounded-lg text-sm font-medium hover:bg-surface-200 dark:hover:bg-surface-600 transition-colors flex items-center gap-2 disabled:opacity-50"
             >
               <Sparkles className="w-4 h-4" />
               {agentLoading ? 'Optimizing...' : 'AI Optimize'}
@@ -316,7 +316,7 @@ export default function OrganicSocial() {
                   className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
                     selectedDay === d
                       ? 'bg-primary-600 text-white'
-                      : 'bg-surface-100 text-surface-600 hover:bg-surface-200'
+                      : 'bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300 hover:bg-surface-200 dark:hover:bg-surface-600'
                   }`}
                 >
                   {d}
@@ -344,12 +344,12 @@ export default function OrganicSocial() {
               <table className="w-full text-xs">
                 <thead>
                   <tr>
-                    <th className="text-left text-surface-500 font-medium py-2 pr-2 w-20">Time</th>
+                    <th className="text-left text-surface-500 dark:text-surface-400 font-medium py-2 pr-2 w-20">Time</th>
                     {calendarDays.map((d) => (
                       <th
                         key={d}
                         className={`text-center font-medium py-2 px-1 ${
-                          selectedDay === d ? 'text-primary-600' : 'text-surface-500'
+                          selectedDay === d ? 'text-primary-600' : 'text-surface-500 dark:text-surface-400'
                         }`}
                       >
                         {d}
@@ -359,8 +359,8 @@ export default function OrganicSocial() {
                 </thead>
                 <tbody>
                   {calendarSlots.map((slot) => (
-                    <tr key={slot} className="border-t border-surface-100">
-                      <td className="py-3 pr-2 text-surface-400 font-mono">{slot}</td>
+                    <tr key={slot} className="border-t border-surface-100 dark:border-surface-700">
+                      <td className="py-3 pr-2 text-surface-400 dark:text-surface-500 font-mono">{slot}</td>
                       {calendarDays.map((day) => {
                         const post = getCalendarCell(day, slot);
                         return (
@@ -379,7 +379,7 @@ export default function OrganicSocial() {
                                 </span>
                               </div>
                             ) : (
-                              <span className="text-surface-200">--</span>
+                              <span className="text-surface-200 dark:text-surface-600">--</span>
                             )}
                           </td>
                         );
@@ -405,7 +405,7 @@ export default function OrganicSocial() {
               {filteredPosts.map((post) => (
                 <div
                   key={post.id}
-                  className="border border-surface-100 rounded-lg p-3 hover:border-surface-300 transition-colors cursor-pointer"
+                  className="border border-surface-100 dark:border-surface-700 rounded-lg p-3 hover:border-surface-300 dark:hover:border-surface-500 transition-colors cursor-pointer"
                   onClick={() => setEditingPost(post)}
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -419,8 +419,8 @@ export default function OrganicSocial() {
                       <StatusBadge status={post.status} size="sm" />
                     </div>
                   </div>
-                  <p className="text-sm text-surface-700 line-clamp-2 mb-2">{post.content}</p>
-                  <div className="flex items-center justify-between text-xs text-surface-500">
+                  <p className="text-sm text-surface-700 dark:text-surface-200 line-clamp-2 mb-2">{post.content}</p>
+                  <div className="flex items-center justify-between text-xs text-surface-500 dark:text-surface-400">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {post.scheduledDay} {post.scheduledTime}
@@ -468,7 +468,7 @@ export default function OrganicSocial() {
                     <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="#94a3b8" />
                     <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" />
                     <Tooltip
-                      contentStyle={{ borderRadius: '8px', fontSize: '12px', border: '1px solid #e5e7eb' }}
+                      contentStyle={{ borderRadius: '8px', fontSize: '12px', border: '1px solid #e5e7eb', backgroundColor: 'var(--color-surface-50, #fff)', color: 'var(--color-surface-900, #111)' }}
                     />
                     <Area
                       type="monotone"
@@ -497,7 +497,7 @@ export default function OrganicSocial() {
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex items-center justify-center gap-6 mt-3 text-xs text-surface-600">
+              <div className="flex items-center justify-center gap-6 mt-3 text-xs text-surface-600 dark:text-surface-300">
                 <span className="flex items-center gap-1.5">
                   <span className="w-3 h-3 rounded-full bg-rose-500" /> Likes
                 </span>
@@ -525,7 +525,7 @@ export default function OrganicSocial() {
               {topPosts.map((post, idx) => (
                 <div
                   key={post.id}
-                  className="border border-surface-100 rounded-lg p-4 hover:shadow-sm transition-shadow"
+                  className="border border-surface-100 dark:border-surface-700 rounded-lg p-4 hover:shadow-sm transition-shadow"
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-sm">
@@ -533,32 +533,32 @@ export default function OrganicSocial() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-medium text-surface-500">
+                        <span className="text-xs font-medium text-surface-500 dark:text-surface-400">
                           {platformLabels[post.platform] || post.platform}
                         </span>
-                        <span className="text-xs text-surface-400">-- {post.country}</span>
+                        <span className="text-xs text-surface-400 dark:text-surface-500">-- {post.country}</span>
                       </div>
-                      <p className="text-sm text-surface-800 mb-3">{post.content}</p>
+                      <p className="text-sm text-surface-800 dark:text-surface-200 mb-3">{post.content}</p>
                       <div className="grid grid-cols-4 gap-2">
                         <div className="text-center">
                           <Heart className="w-3.5 h-3.5 mx-auto text-rose-500 mb-0.5" />
-                          <p className="text-xs font-semibold text-surface-800">{formatNumber(post.likes ?? 0)}</p>
-                          <p className="text-[10px] text-surface-400">Likes</p>
+                          <p className="text-xs font-semibold text-surface-800 dark:text-surface-200">{formatNumber(post.likes ?? 0)}</p>
+                          <p className="text-[10px] text-surface-400 dark:text-surface-500">Likes</p>
                         </div>
                         <div className="text-center">
                           <MessageCircle className="w-3.5 h-3.5 mx-auto text-indigo-500 mb-0.5" />
-                          <p className="text-xs font-semibold text-surface-800">{formatNumber(post.comments ?? 0)}</p>
-                          <p className="text-[10px] text-surface-400">Comments</p>
+                          <p className="text-xs font-semibold text-surface-800 dark:text-surface-200">{formatNumber(post.comments ?? 0)}</p>
+                          <p className="text-[10px] text-surface-400 dark:text-surface-500">Comments</p>
                         </div>
                         <div className="text-center">
                           <Share2 className="w-3.5 h-3.5 mx-auto text-sky-500 mb-0.5" />
-                          <p className="text-xs font-semibold text-surface-800">{formatNumber(post.shares ?? 0)}</p>
-                          <p className="text-[10px] text-surface-400">Shares</p>
+                          <p className="text-xs font-semibold text-surface-800 dark:text-surface-200">{formatNumber(post.shares ?? 0)}</p>
+                          <p className="text-[10px] text-surface-400 dark:text-surface-500">Shares</p>
                         </div>
                         <div className="text-center">
                           <Eye className="w-3.5 h-3.5 mx-auto text-amber-500 mb-0.5" />
-                          <p className="text-xs font-semibold text-surface-800">{formatNumber(post.reach ?? 0)}</p>
-                          <p className="text-[10px] text-surface-400">Reach</p>
+                          <p className="text-xs font-semibold text-surface-800 dark:text-surface-200">{formatNumber(post.reach ?? 0)}</p>
+                          <p className="text-[10px] text-surface-400 dark:text-surface-500">Reach</p>
                         </div>
                       </div>
                     </div>
@@ -595,13 +595,13 @@ export default function OrganicSocial() {
                 <div key={group.platform}>
                   <div className="flex items-center gap-2 mb-2">
                     <PlatformIcon platform={group.platform} />
-                    <h4 className="text-sm font-semibold text-surface-800">{group.platform}</h4>
+                    <h4 className="text-sm font-semibold text-surface-800 dark:text-surface-200">{group.platform}</h4>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {group.hashtags.map((tag) => (
                       <span
                         key={tag}
-                        className="inline-block bg-surface-100 text-surface-700 text-xs font-medium px-2.5 py-1 rounded-full hover:bg-primary-50 hover:text-primary-700 transition-colors cursor-pointer"
+                        className="inline-block bg-surface-100 dark:bg-surface-700 text-surface-700 dark:text-surface-200 text-xs font-medium px-2.5 py-1 rounded-full hover:bg-primary-50 dark:hover:bg-primary-500/10 hover:text-primary-700 dark:hover:text-primary-400 transition-colors cursor-pointer"
                       >
                         {tag}
                       </span>
@@ -635,12 +635,12 @@ export default function OrganicSocial() {
               {toneSettings.map((cfg) => (
                 <div
                   key={cfg.country}
-                  className="border border-surface-100 rounded-lg p-3 hover:border-surface-300 transition-colors"
+                  className="border border-surface-100 dark:border-surface-700 rounded-lg p-3 hover:border-surface-300 dark:hover:border-surface-500 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{cfg.flag}</span>
-                      <span className="text-sm font-semibold text-surface-800">{cfg.country}</span>
+                      <span className="text-sm font-semibold text-surface-800 dark:text-surface-200">{cfg.country}</span>
                     </div>
                     <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
                       {cfg.tone}
@@ -648,19 +648,19 @@ export default function OrganicSocial() {
                   </div>
                   <div className="grid grid-cols-3 gap-2 mb-2">
                     <div>
-                      <p className="text-[10px] text-surface-400 uppercase tracking-wide">Formality</p>
-                      <p className="text-xs font-medium text-surface-700">{cfg.formality}</p>
+                      <p className="text-[10px] text-surface-400 dark:text-surface-500 uppercase tracking-wide">Formality</p>
+                      <p className="text-xs font-medium text-surface-700 dark:text-surface-200">{cfg.formality}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-surface-400 uppercase tracking-wide">Emoji Use</p>
-                      <p className="text-xs font-medium text-surface-700">{cfg.emojiUsage}</p>
+                      <p className="text-[10px] text-surface-400 dark:text-surface-500 uppercase tracking-wide">Emoji Use</p>
+                      <p className="text-xs font-medium text-surface-700 dark:text-surface-200">{cfg.emojiUsage}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-surface-400 uppercase tracking-wide">Humor</p>
-                      <p className="text-xs font-medium text-surface-700">{cfg.humor}</p>
+                      <p className="text-[10px] text-surface-400 dark:text-surface-500 uppercase tracking-wide">Humor</p>
+                      <p className="text-xs font-medium text-surface-700 dark:text-surface-200">{cfg.humor}</p>
                     </div>
                   </div>
-                  <p className="text-xs text-surface-500 italic">{cfg.keyNotes}</p>
+                  <p className="text-xs text-surface-500 dark:text-surface-400 italic">{cfg.keyNotes}</p>
                 </div>
               ))}
             </div>
@@ -711,12 +711,12 @@ function PostFormModal({ post, loading, onClose, onSubmit }: PostFormModalProps)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-surface-100">
-          <h2 className="text-lg font-semibold text-surface-800">
+      <div className="bg-white dark:bg-surface-800 rounded-xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-5 border-b border-surface-100 dark:border-surface-700">
+          <h2 className="text-lg font-semibold text-surface-800 dark:text-surface-200">
             {post ? 'Edit Post' : 'Schedule New Post'}
           </h2>
-          <button onClick={onClose} className="text-surface-400 hover:text-surface-600 transition-colors">
+          <button onClick={onClose} className="text-surface-400 dark:text-surface-500 hover:text-surface-600 dark:hover:text-surface-300 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -724,11 +724,11 @@ function PostFormModal({ post, loading, onClose, onSubmit }: PostFormModalProps)
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {/* Platform */}
           <div>
-            <label className="block text-sm font-medium text-surface-700 mb-1">Platform</label>
+            <label className="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-1">Platform</label>
             <select
               value={platform}
               onChange={(e) => setPlatform(e.target.value as SocialPost['platform'])}
-              className="w-full border border-surface-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              className="w-full border border-surface-200 dark:border-surface-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none bg-white dark:bg-surface-800 dark:text-surface-100"
             >
               <option value="instagram">Instagram</option>
               <option value="tiktok">TikTok</option>
@@ -739,12 +739,12 @@ function PostFormModal({ post, loading, onClose, onSubmit }: PostFormModalProps)
 
           {/* Content */}
           <div>
-            <label className="block text-sm font-medium text-surface-700 mb-1">Content</label>
+            <label className="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-1">Content</label>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={4}
-              className="w-full border border-surface-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none resize-none"
+              className="w-full border border-surface-200 dark:border-surface-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none resize-none bg-white dark:bg-surface-800 dark:text-surface-100"
               placeholder="Write your post content..."
               required
             />
@@ -753,11 +753,11 @@ function PostFormModal({ post, loading, onClose, onSubmit }: PostFormModalProps)
           {/* Schedule */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">Day</label>
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-1">Day</label>
               <select
                 value={scheduledDay}
                 onChange={(e) => setScheduledDay(e.target.value)}
-                className="w-full border border-surface-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                className="w-full border border-surface-200 dark:border-surface-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none bg-white dark:bg-surface-800 dark:text-surface-100"
               >
                 {calendarDays.map((d) => (
                   <option key={d} value={d}>{d}</option>
@@ -765,11 +765,11 @@ function PostFormModal({ post, loading, onClose, onSubmit }: PostFormModalProps)
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">Time</label>
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-1">Time</label>
               <select
                 value={scheduledTime}
                 onChange={(e) => setScheduledTime(e.target.value)}
-                className="w-full border border-surface-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                className="w-full border border-surface-200 dark:border-surface-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none bg-white dark:bg-surface-800 dark:text-surface-100"
               >
                 {calendarSlots.map((s) => (
                   <option key={s} value={s}>{s}</option>
@@ -781,23 +781,23 @@ function PostFormModal({ post, loading, onClose, onSubmit }: PostFormModalProps)
           {/* Country / Language */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">Country</label>
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-1">Country</label>
               <input
                 type="text"
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
-                className="w-full border border-surface-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                className="w-full border border-surface-200 dark:border-surface-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none bg-white dark:bg-surface-800 dark:text-surface-100"
                 placeholder="e.g. Japan"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">Language</label>
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-1">Language</label>
               <input
                 type="text"
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
-                className="w-full border border-surface-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                className="w-full border border-surface-200 dark:border-surface-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none bg-white dark:bg-surface-800 dark:text-surface-100"
                 placeholder="e.g. English"
                 required
               />
@@ -806,11 +806,11 @@ function PostFormModal({ post, loading, onClose, onSubmit }: PostFormModalProps)
 
           {/* Status */}
           <div>
-            <label className="block text-sm font-medium text-surface-700 mb-1">Status</label>
+            <label className="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-1">Status</label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as SocialPost['status'])}
-              className="w-full border border-surface-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              className="w-full border border-surface-200 dark:border-surface-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none bg-white dark:bg-surface-800 dark:text-surface-100"
             >
               <option value="draft">Draft</option>
               <option value="scheduled">Scheduled</option>
@@ -823,7 +823,7 @@ function PostFormModal({ post, loading, onClose, onSubmit }: PostFormModalProps)
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-surface-600 bg-surface-100 rounded-lg hover:bg-surface-200 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-surface-600 dark:text-surface-300 bg-surface-100 dark:bg-surface-700 rounded-lg hover:bg-surface-200 dark:hover:bg-surface-600 transition-colors"
             >
               Cancel
             </button>

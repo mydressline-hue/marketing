@@ -340,7 +340,7 @@ class GovernanceSimulator {
       }
 
       decision.audit_trail.push({
-        action: `approval_${action}d`,
+        action: action === 'approve' ? 'approval_approved' : 'approval_rejected',
         actor: userId,
         timestamp: new Date().toISOString(),
         details: { approval_id: approvalId, reason },

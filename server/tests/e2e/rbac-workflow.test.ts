@@ -160,6 +160,7 @@ describe('RBAC Workflow (E2E)', () => {
   describe('Step 1: Admin has full access', () => {
     it('should allow admin to CREATE a campaign', async () => {
       mockPool.query
+        .mockResolvedValueOnce({ rows: [{ max_level: 0 }], rowCount: 1 }) // kill switch check
         .mockResolvedValueOnce({ rows: [{ id: 'c0000000-0000-4000-8000-000000000001' }], rowCount: 1 }) // country exists
         .mockResolvedValueOnce({ rows: [mockCampaignRow], rowCount: 1 });     // INSERT campaign
 
@@ -272,6 +273,7 @@ describe('RBAC Workflow (E2E)', () => {
   describe('Step 2: Campaign Manager permissions', () => {
     it('should allow campaign_manager to CREATE campaigns', async () => {
       mockPool.query
+        .mockResolvedValueOnce({ rows: [{ max_level: 0 }], rowCount: 1 }) // kill switch check
         .mockResolvedValueOnce({ rows: [{ id: 'c0000000-0000-4000-8000-000000000001' }], rowCount: 1 })
         .mockResolvedValueOnce({ rows: [mockCampaignRow], rowCount: 1 });
 
@@ -631,14 +633,13 @@ describe('RBAC Workflow (E2E)', () => {
   // =======================================================================
   describe('Step 5: API key management (admin only)', () => {
     it('should allow admin to view API key configuration', async () => {
-      // SettingsService.getApiKeyConfig
-      mockPool.query.mockResolvedValueOnce({
-        rows: [
-          { platform: 'google', is_configured: true },
-          { platform: 'meta', is_configured: false },
-        ],
-        rowCount: 2,
-      });
+      // SettingsService.getApiKeyConfig makes 6 SettingsService.get() calls:
+      //   1. shopify_api_key
+      //   2-6. platform_google_ads, platform_meta_ads, platform_tiktok_ads, platform_shopify, platform_klaviyo
+      // Each does a pool.query that returns { rows: [] } (not configured)
+      for (let i = 0; i < 6; i++) {
+        mockPool.query.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+      }
 
       const res = await request(app)
         .get(`${API}/settings/api-keys`)
@@ -678,7 +679,7 @@ describe('RBAC Workflow (E2E)', () => {
   // =======================================================================
   describe('Step 6: Audit log verification', () => {
     it('should insert audit log on login', async () => {
-      const bcryptLib = require('bcrypt');
+      const bcryptLib = require('bcryptjs');
       const hashedPassword = await bcryptLib.hash('AdminPass1', 12);
 
       mockPool.query
@@ -739,6 +740,7 @@ describe('RBAC Workflow (E2E)', () => {
       const activeCampaign = { ...mockCampaignRow, status: 'active' };
 
       mockPool.query
+        .mockResolvedValueOnce({ rows: [{ max_level: 0 }], rowCount: 1 }) // kill switch check
         .mockResolvedValueOnce({ rows: [mockCampaignRow], rowCount: 1 }) // getById (draft)
         .mockResolvedValueOnce({ rows: [activeCampaign], rowCount: 1 }) // UPDATE status
         .mockResolvedValueOnce({ rows: [], rowCount: 1 }); // INSERT campaign_status_audit

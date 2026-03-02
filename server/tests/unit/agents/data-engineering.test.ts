@@ -82,6 +82,10 @@ describe('DataEngineeringAgent', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockQuery.mockReset();
+    mockCacheGet.mockReset();
+    mockCacheSet.mockReset();
+    mockQuery.mockResolvedValue({ rows: [] });
     mockCacheGet.mockResolvedValue(null);
     mockCacheSet.mockResolvedValue(undefined);
     agent = new DataEngineeringAgent();
@@ -492,9 +496,8 @@ describe('DataEngineeringAgent', () => {
         ],
       });
 
-      // Previously cached column count was different
+      // Previously cached column count was different (5 vs current 3)
       mockCacheGet
-        .mockResolvedValueOnce(null)  // pipeline status cache miss
         .mockResolvedValueOnce(5);    // schema cache returns 5 columns
 
       const result: DataAnomaly[] = await agent.detectDataAnomalies('test_table');

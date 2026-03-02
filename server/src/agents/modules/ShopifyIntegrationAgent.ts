@@ -1855,8 +1855,10 @@ export class ShopifyIntegrationAgent extends BaseAgent {
         type = 'upsell';
       } else if (productPrice < primaryPrice * 0.7) {
         type = 'downsell';
-        // Apply a modest discount to downsell items to increase conversion
-        discount = Math.round(Math.random() * 10 + 5); // 5-15% discount range
+        // Apply a discount proportional to how far below the primary price the downsell is
+        // Deeper downsells get a larger discount (5-15% range)
+        const priceRatio = primaryPrice > 0 ? productPrice / primaryPrice : 0.5;
+        discount = Math.round(5 + (1 - priceRatio / 0.7) * 10);
       } else {
         type = 'cross_sell';
       }

@@ -28,6 +28,7 @@ import { logger } from '../utils/logger';
 import roiProjectionRoutes from './final-outputs-roi.routes';
 import perfectionRoutes from './final-outputs-perfection.routes';
 import riskAssessmentRoutes from './final-outputs-risk.routes';
+import { CountryRankingService } from '../services/final-outputs/CountryRankingService';
 
 // ---------------------------------------------------------------------------
 // Router
@@ -96,51 +97,15 @@ async function cachedQuery<T>(
 router.get(
   '/country-ranking',
   asyncHandler(async (_req: Request, res: Response) => {
-    const cacheKey = 'final-outputs:country-ranking';
-    const cached = await cacheGet<unknown>(cacheKey);
-    if (cached) return ok(res, cached);
-
-    const rows = await pool.query(`
-      SELECT c.code AS country_code, c.name AS country_name,
-             c.gdp, c.internet_penetration, c.ecommerce_adoption,
-             COALESCE(c.opportunity_score, 0) AS opportunity_score
-      FROM countries c
-      ORDER BY opportunity_score DESC
-    `);
-
-    const rankings = rows.rows.map((row: Record<string, unknown>, idx: number) => ({
-      rank: idx + 1,
-      ...row,
-    }));
-
-    const data = {
-      rankings,
-      generated_at: new Date().toISOString(),
-      total_countries: rankings.length,
-    };
-
-    await cacheSet(cacheKey, data, 300).catch(() => {});
-    ok(res, data);
+    const ranking = await CountryRankingService.generateCountryRanking();
+    ok(res, ranking);
   }),
 );
 
 router.get(
   '/country-ranking/methodology',
   asyncHandler(async (_req: Request, res: Response) => {
-    const methodology = {
-      name: 'Weighted Multi-Factor Opportunity Scoring',
-      version: '1.0',
-      factors: [
-        { name: 'GDP', weight: 0.2, description: 'Gross domestic product as proxy for market size' },
-        { name: 'Internet Penetration', weight: 0.2, description: 'Percentage of population with internet access' },
-        { name: 'E-commerce Adoption', weight: 0.2, description: 'Percentage of internet users buying online' },
-        { name: 'Social Media Usage', weight: 0.15, description: 'Average platform penetration rate' },
-        { name: 'Ad Cost Efficiency', weight: 0.1, description: 'Inverse of average CPC relative to GDP per capita' },
-        { name: 'Regulatory Environment', weight: 0.15, description: 'Ease of doing digital marketing business' },
-      ],
-      score_range: { min: 0, max: 100 },
-      updated_at: new Date().toISOString(),
-    };
+    const methodology = CountryRankingService.getMethodology();
     ok(res, methodology);
   }),
 );

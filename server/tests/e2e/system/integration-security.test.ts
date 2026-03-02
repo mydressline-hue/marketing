@@ -74,10 +74,9 @@ import { ROLE_PERMISSIONS } from '../../../src/middleware/rbac';
 // ---------------------------------------------------------------------------
 
 const WEBHOOK_SECRET = 'whsec_test_webhook_secret_key_1234';
-// Must match the key used by SecurityHardeningService at module level:
-// process.env.ENCRYPTION_KEY || 'default-security-key-32-chars!!'
-const ENCRYPTION_KEY =
-  process.env.ENCRYPTION_KEY || 'default-security-key-32-chars!!';
+// Must match the key used by SecurityHardeningService at module level
+// (which reads env.ENCRYPTION_KEY from the mocked config/env).
+const ENCRYPTION_KEY = 'test-encryption-key-32-chars!!!!';
 
 /**
  * Compute HMAC-SHA256 signature for a webhook payload, matching the

@@ -124,9 +124,9 @@ const pixelHealthColor = (health: string) => {
 };
 
 const pixelHealthBg = (health: string) => {
-  if (health === 'healthy') return 'bg-green-50 border-green-200';
-  if (health === 'warning') return 'bg-yellow-50 border-yellow-200';
-  return 'bg-surface-50 border-surface-200';
+  if (health === 'healthy') return 'bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/30';
+  if (health === 'warning') return 'bg-yellow-50 dark:bg-yellow-500/10 border-yellow-200 dark:border-yellow-500/30';
+  return 'bg-surface-50 dark:bg-surface-800 border-surface-200 dark:border-surface-700';
 };
 
 // ---------------------------------------------------------------------------
@@ -142,28 +142,28 @@ export default function Shopify() {
     loading: productsLoading,
     error: productsError,
     refetch: refetchProducts,
-  } = useApiQuery<Product[]>('/api/v1/products');
+  } = useApiQuery<Product[]>('/v1/products');
 
   const {
     data: syncStatus,
     loading: syncLoading,
     error: syncError,
     refetch: refetchSync,
-  } = useApiQuery<SyncStatus>('/api/v1/integrations/shopify/products');
+  } = useApiQuery<SyncStatus>('/v1/integrations/shopify/products');
 
   const {
     data: webhooks,
     loading: webhooksLoading,
     error: webhooksError,
     refetch: refetchWebhooks,
-  } = useApiQuery<Webhook[]>('/api/v1/integrations/shopify/webhooks');
+  } = useApiQuery<Webhook[]>('/v1/integrations/shopify/webhooks');
 
   // ---- API mutations ----
   const { mutate: triggerSync, loading: isSyncing } =
-    useApiMutation<SyncResponse>('/api/v1/integrations/shopify/sync');
+    useApiMutation<SyncResponse>('/v1/integrations/shopify/sync', { method: 'POST' });
 
   const { mutate: runAgent, loading: agentRunning } =
-    useApiMutation<unknown>('/api/v1/agents/11/execute');
+    useApiMutation<unknown>('/v1/agents/shopify/run', { method: 'POST' });
 
   // ---- Handlers ----
   const handleManualSync = useCallback(async () => {
@@ -205,8 +205,8 @@ export default function Shopify() {
       label: 'Product',
       render: (item: Product) => (
         <div>
-          <p className="font-medium text-surface-900">{item.title}</p>
-          <p className="text-xs text-surface-500">{item.sku}</p>
+          <p className="font-medium text-surface-900 dark:text-surface-100">{item.title}</p>
+          <p className="text-xs text-surface-500 dark:text-surface-400">{item.sku}</p>
         </div>
       ),
     },
@@ -225,7 +225,7 @@ export default function Shopify() {
               ? 'text-red-600'
               : item.inventory <= 50
                 ? 'text-yellow-600'
-                : 'text-surface-900'
+                : 'text-surface-900 dark:text-surface-100'
           }`}
         >
           {item.inventory.toLocaleString()}
@@ -236,7 +236,7 @@ export default function Shopify() {
       key: 'variants',
       label: 'Variants',
       render: (item: Product) => (
-        <span className="text-surface-700">{item.variants}</span>
+        <span className="text-surface-700 dark:text-surface-200">{item.variants}</span>
       ),
     },
     {
@@ -253,7 +253,7 @@ export default function Shopify() {
       key: 'lastSync',
       label: 'Last Sync',
       render: (item: Product) => (
-        <span className="text-sm text-surface-500">{item.lastSync}</span>
+        <span className="text-sm text-surface-500 dark:text-surface-400">{item.lastSync}</span>
       ),
     },
     {
@@ -289,7 +289,7 @@ export default function Shopify() {
             <button
               onClick={handleRunAgent}
               disabled={agentRunning}
-              className="flex items-center gap-1.5 text-sm text-surface-600 hover:text-surface-800 font-medium disabled:opacity-50"
+              className="flex items-center gap-1.5 text-sm text-surface-600 dark:text-surface-300 hover:text-surface-800 dark:hover:text-surface-200 font-medium disabled:opacity-50"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${agentRunning ? 'animate-spin' : ''}`} />
               {agentRunning ? 'Running Agent...' : 'Run Agent'}
@@ -311,7 +311,7 @@ export default function Shopify() {
       {syncLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-surface-200 p-5">
+            <div key={i} className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 p-5">
               <CardSkeleton lines={2} />
             </div>
           ))}
@@ -363,24 +363,24 @@ export default function Shopify() {
           ) : (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-surface-600">Last Sync</span>
-                <span className="text-sm font-medium text-surface-900 flex items-center gap-1.5">
+                <span className="text-sm text-surface-600 dark:text-surface-300">Last Sync</span>
+                <span className="text-sm font-medium text-surface-900 dark:text-surface-100 flex items-center gap-1.5">
                   <CheckCircle className="w-3.5 h-3.5 text-green-500" />
                   {sync?.lastSync ?? '--'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-surface-600">Next Scheduled Sync</span>
-                <span className="text-sm font-medium text-surface-900">
+                <span className="text-sm text-surface-600 dark:text-surface-300">Next Scheduled Sync</span>
+                <span className="text-sm font-medium text-surface-900 dark:text-surface-100">
                   {sync?.nextSync ?? '--'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-surface-600">Sync Frequency</span>
+                <span className="text-sm text-surface-600 dark:text-surface-300">Sync Frequency</span>
                 <select
                   value={syncFrequency}
                   onChange={(e) => setSyncFrequency(e.target.value)}
-                  className="text-sm border border-surface-200 rounded-lg px-3 py-1.5 bg-white text-surface-700 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                  className="text-sm border border-surface-200 dark:border-surface-700 rounded-lg px-3 py-1.5 bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                 >
                   <option value="5">Every 5 minutes</option>
                   <option value="15">Every 15 minutes</option>
@@ -389,7 +389,7 @@ export default function Shopify() {
                 </select>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-surface-600">Sync Health</span>
+                <span className="text-sm text-surface-600 dark:text-surface-300">Sync Health</span>
                 <ProgressBar
                   value={sync?.syncHealth ?? 0}
                   color="success"
@@ -423,19 +423,19 @@ export default function Shopify() {
           ) : (
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-4">
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 rounded-lg p-4 text-center">
                   <p className="text-2xl font-bold text-green-700">
                     {sync?.blogStats?.published ?? 0}
                   </p>
                   <p className="text-xs text-green-600 font-medium mt-1">Published</p>
                 </div>
-                <div className="bg-surface-50 border border-surface-200 rounded-lg p-4 text-center">
-                  <p className="text-2xl font-bold text-surface-700">
+                <div className="bg-surface-50 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg p-4 text-center">
+                  <p className="text-2xl font-bold text-surface-700 dark:text-surface-200">
                     {sync?.blogStats?.drafts ?? 0}
                   </p>
-                  <p className="text-xs text-surface-500 font-medium mt-1">Drafts</p>
+                  <p className="text-xs text-surface-500 dark:text-surface-400 font-medium mt-1">Drafts</p>
                 </div>
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-lg p-4 text-center">
                   <p className="text-2xl font-bold text-red-700">
                     {sync?.blogStats?.failed ?? 0}
                   </p>
@@ -444,8 +444,8 @@ export default function Shopify() {
               </div>
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-surface-600">SEO Metadata Synced</span>
-                  <span className="font-medium text-surface-900">
+                  <span className="text-surface-600 dark:text-surface-300">SEO Metadata Synced</span>
+                  <span className="font-medium text-surface-900 dark:text-surface-100">
                     {sync?.blogStats?.seoSynced ?? 0} / {sync?.blogStats?.seoTotal ?? 0}
                   </span>
                 </div>
@@ -456,14 +456,14 @@ export default function Shopify() {
                   size="sm"
                 />
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-surface-600">Localized Versions</span>
-                  <span className="font-medium text-surface-900">
+                  <span className="text-surface-600 dark:text-surface-300">Localized Versions</span>
+                  <span className="font-medium text-surface-900 dark:text-surface-100">
                     {sync?.blogStats?.localizedPosts ?? 0} posts across{' '}
                     {sync?.blogStats?.languages ?? 0} languages
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-surface-600">Failed Posts</span>
+                  <span className="text-surface-600 dark:text-surface-300">Failed Posts</span>
                   <div className="flex items-center gap-1.5">
                     <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
                     <span className="font-medium text-red-600">
@@ -487,7 +487,7 @@ export default function Shopify() {
         noPadding
         actions={
           <div className="flex items-center gap-2">
-            <span className="text-xs text-surface-500">
+            <span className="text-xs text-surface-500 dark:text-surface-400">
               {productList.length} total products
             </span>
             <Package className="w-4 h-4 text-surface-400" />
@@ -518,7 +518,7 @@ export default function Shopify() {
         title="Inventory Alerts"
         subtitle="Products below reorder threshold"
         actions={
-          <span className="flex items-center gap-1 text-xs text-red-600 font-medium bg-red-50 px-2 py-0.5 rounded-full">
+          <span className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400 font-medium bg-red-50 dark:bg-red-500/10 px-2 py-0.5 rounded-full">
             <AlertTriangle className="w-3 h-3" />
             {inventoryAlerts.length} alerts
           </span>
@@ -539,23 +539,23 @@ export default function Shopify() {
             {inventoryAlerts.map((alert) => (
               <div
                 key={alert.id}
-                className="flex items-start gap-3 rounded-lg border-l-4 border-l-red-500 bg-red-50 p-3"
+                className="flex items-start gap-3 rounded-lg border-l-4 border-l-red-500 bg-red-50 dark:bg-red-500/10 p-3"
               >
                 <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-red-600" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-surface-900">{alert.product}</p>
-                    <span className="text-xs text-surface-500">{alert.sku}</span>
+                    <p className="text-sm font-medium text-surface-900 dark:text-surface-100">{alert.product}</p>
+                    <span className="text-xs text-surface-500 dark:text-surface-400">{alert.sku}</span>
                   </div>
-                  <p className="text-sm text-surface-600 mt-0.5">{alert.message}</p>
+                  <p className="text-sm text-surface-600 dark:text-surface-300 mt-0.5">{alert.message}</p>
                   <div className="flex items-center gap-4 mt-2">
-                    <span className="text-xs text-surface-500">
+                    <span className="text-xs text-surface-500 dark:text-surface-400">
                       Current:{' '}
                       <span className="font-semibold text-red-600">{alert.currentStock}</span>
                     </span>
-                    <span className="text-xs text-surface-500">
+                    <span className="text-xs text-surface-500 dark:text-surface-400">
                       Reorder Point:{' '}
-                      <span className="font-semibold text-surface-700">
+                      <span className="font-semibold text-surface-700 dark:text-surface-200">
                         {alert.reorderPoint}
                       </span>
                     </span>
@@ -601,7 +601,7 @@ export default function Shopify() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-surface-900">{pixel.name}</p>
+                      <p className="text-sm font-medium text-surface-900 dark:text-surface-100">{pixel.name}</p>
                       <StatusBadge
                         status={
                           pixel.status === 'connected'
@@ -612,7 +612,7 @@ export default function Shopify() {
                         }
                       />
                     </div>
-                    <p className="text-xs text-surface-600 mt-1">{pixel.detail}</p>
+                    <p className="text-xs text-surface-600 dark:text-surface-300 mt-1">{pixel.detail}</p>
                     {pixel.eventsToday > 0 && (
                       <p
                         className={`text-xs mt-1 font-medium ${pixelHealthColor(pixel.health)}`}
@@ -632,7 +632,7 @@ export default function Shopify() {
           title="Webhook Status"
           subtitle="Active Shopify webhooks"
           actions={
-            <span className="text-xs text-surface-500">{webhookList.length} active</span>
+            <span className="text-xs text-surface-500 dark:text-surface-400">{webhookList.length} active</span>
           }
         >
           {webhooksLoading ? (
@@ -649,7 +649,7 @@ export default function Shopify() {
               {webhookList.map((wh) => (
                 <div
                   key={wh.topic}
-                  className="flex items-center justify-between rounded-lg border border-surface-200 bg-surface-50/50 px-3 py-2.5"
+                  className="flex items-center justify-between rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50/50 dark:bg-surface-800/50 px-3 py-2.5"
                 >
                   <div className="flex items-center gap-2.5">
                     <span className="relative flex h-2 w-2">
@@ -657,11 +657,11 @@ export default function Shopify() {
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
                     </span>
                     <div>
-                      <p className="text-sm font-medium text-surface-800">{wh.topic}</p>
-                      <p className="text-xs text-surface-400">{wh.endpoint}</p>
+                      <p className="text-sm font-medium text-surface-800 dark:text-surface-200">{wh.topic}</p>
+                      <p className="text-xs text-surface-400 dark:text-surface-500">{wh.endpoint}</p>
                     </div>
                   </div>
-                  <span className="text-xs text-surface-500 whitespace-nowrap">
+                  <span className="text-xs text-surface-500 dark:text-surface-400 whitespace-nowrap">
                     {wh.lastTriggered}
                   </span>
                 </div>
@@ -719,8 +719,8 @@ export default function Shopify() {
                     border: '1px solid #e5e7eb',
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
                   }}
-                  formatter={(value: number, name: string) =>
-                    name === 'Revenue' ? `$${value.toLocaleString()}` : value
+                  formatter={(value: number | undefined, name?: string) =>
+                    name === 'Revenue' ? `$${(value ?? 0).toLocaleString()}` : (value ?? 0)
                   }
                 />
                 <Line
@@ -792,7 +792,7 @@ export default function Shopify() {
                       border: '1px solid #e5e7eb',
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
                     }}
-                    formatter={(value: number) => value.toLocaleString()}
+                    formatter={(value: number | undefined) => (value ?? 0).toLocaleString()}
                   />
                   <Bar
                     dataKey="count"
@@ -825,10 +825,10 @@ export default function Shopify() {
               {upsellIntegrations.map((integration) => (
                 <div
                   key={integration.name}
-                  className="rounded-lg border border-surface-200 p-4"
+                  className="rounded-lg border border-surface-200 dark:border-surface-700 p-4"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-surface-900">
+                    <p className="text-sm font-medium text-surface-900 dark:text-surface-100">
                       {integration.name}
                     </p>
                     <StatusBadge status={integration.status} />
@@ -836,31 +836,31 @@ export default function Shopify() {
                   {integration.status === 'active' ? (
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-xs text-surface-500">Conversion Rate</p>
-                        <p className="text-lg font-bold text-surface-900">
+                        <p className="text-xs text-surface-500 dark:text-surface-400">Conversion Rate</p>
+                        <p className="text-lg font-bold text-surface-900 dark:text-surface-100">
                           {integration.conversionRate}%
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-surface-500">Revenue Impact</p>
+                        <p className="text-xs text-surface-500 dark:text-surface-400">Revenue Impact</p>
                         <p className="text-lg font-bold text-green-600">
                           {integration.revenueImpact}
                         </p>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-xs text-surface-500">
+                    <p className="text-xs text-surface-500 dark:text-surface-400">
                       Not yet activated. Configure in Shopify app settings to enable.
                     </p>
                   )}
                 </div>
               ))}
-              <div className="mt-3 pt-3 border-t border-surface-100 flex items-center justify-between">
+              <div className="mt-3 pt-3 border-t border-surface-100 dark:border-surface-700 flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-surface-900">
+                  <p className="text-sm font-semibold text-surface-900 dark:text-surface-100">
                     Total Upsell Revenue
                   </p>
-                  <p className="text-xs text-surface-500">
+                  <p className="text-xs text-surface-500 dark:text-surface-400">
                     Across all active integrations
                   </p>
                 </div>

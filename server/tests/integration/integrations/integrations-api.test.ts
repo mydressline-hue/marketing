@@ -505,8 +505,9 @@ describe('Integrations API Integration Tests', () => {
     it('returns 404 when platform is not connected', async () => {
       const token = generateTestToken('admin');
 
+      const { NotFoundError } = jest.requireActual('../../../src/utils/errors') as { NotFoundError: new (msg: string) => Error };
       mockIntegrationsService.disconnectPlatform.mockRejectedValueOnce(
-        Object.assign(new Error('Platform tiktok_ads is not connected'), { statusCode: 404, code: 'NOT_FOUND' }),
+        new NotFoundError('Platform tiktok_ads is not connected'),
       );
 
       const response = await request(app)
@@ -681,8 +682,9 @@ describe('Integrations API Integration Tests', () => {
     it('returns 404 when platform is not connected', async () => {
       const token = generateTestToken('admin');
 
+      const { NotFoundError } = jest.requireActual('../../../src/utils/errors') as { NotFoundError: new (msg: string) => Error };
       mockIntegrationsService.triggerSync.mockRejectedValueOnce(
-        Object.assign(new Error('Platform linkedin_ads is not connected'), { statusCode: 404, code: 'NOT_FOUND' }),
+        new NotFoundError('Platform linkedin_ads is not connected'),
       );
 
       const response = await request(app)

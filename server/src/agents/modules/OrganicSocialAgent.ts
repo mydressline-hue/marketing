@@ -461,7 +461,7 @@ export class OrganicSocialAgent extends BaseAgent {
     const systemPrompt = this.getSystemPrompt();
     const userPrompt = [
       `Adapt the following social media content for ${countryProfile.name} (${countryProfile.language}).`,
-      `Cultural context: ${JSON.stringify(culturalBehavior)}.`,
+      `cultural_behavior: ${JSON.stringify(culturalBehavior)}.`,
       'Preserve the core message but adjust tone, idioms, and cultural references.',
       `Original content:\n${content}`,
       'Return only the adapted content text, no additional commentary.',

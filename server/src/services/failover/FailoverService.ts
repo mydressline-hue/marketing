@@ -1029,6 +1029,27 @@ export class FailoverService {
   /**
    * Get the most recent successful backup.
    */
+  /**
+   * Basic health check returning status, timestamp and version.
+   * Used by the public /system/health endpoint.
+   */
+  static async healthCheck(): Promise<{ status: string; timestamp: string; version: string }> {
+    const state = await FailoverService.getFailoverState();
+    return {
+      status: state.mode === 'normal' ? 'healthy' : state.mode,
+      timestamp: new Date().toISOString(),
+      version: '1.0.0',
+    };
+  }
+
+  /**
+   * Detailed health check returning subsystem statuses.
+   * Used by the admin /system/health/detailed endpoint.
+   */
+  static async detailedHealthCheck(): Promise<Record<string, unknown>> {
+    return FailoverService.getRecoveryStatus();
+  }
+
   private static async getLastSuccessfulBackup(): Promise<BackupResult | null> {
     const result = await pool.query(
       `SELECT id, type, status, started_at, completed_at, size_mb,

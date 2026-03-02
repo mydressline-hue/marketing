@@ -31,70 +31,74 @@ import { logger } from '../utils/logger';
  */
 export function apiKeyAuth(requiredScope?: string) {
   return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
-    const apiKey = req.headers['x-api-key'] as string | undefined;
+    try {
+      const apiKey = req.headers['x-api-key'] as string | undefined;
 
-    if (!apiKey) {
-      throw new AuthenticationError('Missing X-API-Key header');
-    }
-
-    // Determine the client IP for IP whitelist checks
-    const clientIp =
-      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-      req.socket.remoteAddress ||
-      '';
-
-    // Determine platform type from header or query parameter
-    const platformType =
-      (req.headers['x-platform-type'] as string) ||
-      (req.query.platform as string) ||
-      undefined;
-
-    const result = await ApiKeyScopingService.validateScopedKey(
-      apiKey,
-      requiredScope,
-      platformType,
-      clientIp,
-    );
-
-    if (!result.isValid) {
-      // Differentiate between auth failures and rate limit failures
-      if (result.reason?.includes('Rate limit exceeded')) {
-        throw new RateLimitError(result.reason);
+      if (!apiKey) {
+        return next(new AuthenticationError('Missing X-API-Key header'));
       }
-      if (result.reason?.includes('not authorized for platform') ||
-          result.reason?.includes('does not have required scope') ||
-          result.reason?.includes('not in the API key whitelist')) {
-        throw new AuthorizationError(result.reason);
+
+      // Determine the client IP for IP whitelist checks
+      const clientIp =
+        (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+        req.socket.remoteAddress ||
+        '';
+
+      // Determine platform type from header or query parameter
+      const platformType =
+        (req.headers['x-platform-type'] as string) ||
+        (req.query.platform as string) ||
+        undefined;
+
+      const result = await ApiKeyScopingService.validateScopedKey(
+        apiKey,
+        requiredScope,
+        platformType,
+        clientIp,
+      );
+
+      if (!result.isValid) {
+        // Differentiate between auth failures and rate limit failures
+        if (result.reason?.includes('Rate limit exceeded')) {
+          return next(new RateLimitError(result.reason));
+        }
+        if (result.reason?.includes('not authorized for platform') ||
+            result.reason?.includes('does not have required scope') ||
+            result.reason?.includes('not in the API key whitelist')) {
+          return next(new AuthorizationError(result.reason));
+        }
+        return next(new AuthenticationError(result.reason || 'API key validation failed'));
       }
-      throw new AuthenticationError(result.reason || 'API key validation failed');
+
+      // Look up the user's email and role from the database so we can
+      // populate req.user with the same shape as JWT auth
+      const userResult = await pool.query(
+        `SELECT id, email, role FROM users WHERE id = $1`,
+        [result.userId],
+      );
+
+      if (userResult.rows.length === 0) {
+        return next(new AuthenticationError('API key belongs to a non-existent user'));
+      }
+
+      const user = userResult.rows[0];
+
+      req.user = {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      };
+
+      logger.debug('API key authentication successful', {
+        userId: user.id,
+        scopes: result.scopes,
+        platforms: result.platforms,
+      });
+
+      next();
+    } catch (error) {
+      next(error);
     }
-
-    // Look up the user's email and role from the database so we can
-    // populate req.user with the same shape as JWT auth
-    const userResult = await pool.query(
-      `SELECT id, email, role FROM users WHERE id = $1`,
-      [result.userId],
-    );
-
-    if (userResult.rows.length === 0) {
-      throw new AuthenticationError('API key belongs to a non-existent user');
-    }
-
-    const user = userResult.rows[0];
-
-    req.user = {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-    };
-
-    logger.debug('API key authentication successful', {
-      userId: user.id,
-      scopes: result.scopes,
-      platforms: result.platforms,
-    });
-
-    next();
   };
 }
 
@@ -114,46 +118,50 @@ export function apiKeyAuth(requiredScope?: string) {
  */
 export function authenticateAny(requiredScope?: string) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const authHeader = req.headers.authorization;
-    const apiKey = req.headers['x-api-key'] as string | undefined;
+    try {
+      const authHeader = req.headers.authorization;
+      const apiKey = req.headers['x-api-key'] as string | undefined;
 
-    // Try JWT first if an Authorization header is present
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      try {
-        // Dynamically import to avoid circular dependencies
-        const jwt = await import('jsonwebtoken');
-        const { env } = await import('../config/env');
+      // Try JWT first if an Authorization header is present
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        try {
+          // Dynamically import to avoid circular dependencies
+          const jwt = await import('jsonwebtoken');
+          const { env } = await import('../config/env');
 
-        const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, env.JWT_SECRET!) as {
-          id: string;
-          email: string;
-          role: string;
-        };
+          const token = authHeader.split(' ')[1];
+          const decoded = jwt.verify(token, env.JWT_SECRET!) as {
+            id: string;
+            email: string;
+            role: string;
+          };
 
-        req.user = {
-          id: decoded.id,
-          email: decoded.email,
-          role: decoded.role,
-        };
+          req.user = {
+            id: decoded.id,
+            email: decoded.email,
+            role: decoded.role,
+          };
 
-        return next();
-      } catch {
-        // JWT failed -- if there's also an API key, try that
-        if (!apiKey) {
-          throw new AuthenticationError('Invalid or expired JWT token');
+          return next();
+        } catch {
+          // JWT failed -- if there's also an API key, try that
+          if (!apiKey) {
+            return next(new AuthenticationError('Invalid or expired JWT token'));
+          }
         }
       }
-    }
 
-    // Fall back to API key authentication
-    if (apiKey) {
-      const handler = apiKeyAuth(requiredScope);
-      return handler(req, res, next);
-    }
+      // Fall back to API key authentication
+      if (apiKey) {
+        const handler = apiKeyAuth(requiredScope);
+        return handler(req, res, next);
+      }
 
-    throw new AuthenticationError(
-      'Authentication required. Provide a Bearer token or X-API-Key header.',
-    );
+      return next(new AuthenticationError(
+        'Authentication required. Provide a Bearer token or X-API-Key header.',
+      ));
+    } catch (error) {
+      next(error);
+    }
   };
 }

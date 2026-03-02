@@ -129,26 +129,25 @@ export default function CountryStrategy() {
   }, [countries, selectedCountryId]);
 
   // Fetch selected country detail + strategy
-  const countryEndpoint = selectedCountryId
-    ? `/v1/countries/${selectedCountryId}`
-    : null;
-  const strategyEndpoint = selectedCountryId
-    ? `/v1/countries/${selectedCountryId}/strategy`
-    : null;
+  const countryEndpoint = `/v1/countries/${selectedCountryId ?? ''}`;
 
   const {
     data: countryDetailRaw,
     loading: detailLoading,
     error: detailError,
     refetch: refetchDetail,
-  } = useApiQuery<CountryDetailResponse | CountryDetail>(countryEndpoint);
+  } = useApiQuery<CountryDetailResponse | CountryDetail>(countryEndpoint, {
+    enabled: !!selectedCountryId,
+  });
 
   const {
     data: strategyRaw,
     loading: strategyLoading,
     error: strategyError,
     refetch: refetchStrategy,
-  } = useApiQuery<CountryStrategyResponse | CountryDetail>(strategyEndpoint);
+  } = useApiQuery<CountryStrategyResponse | CountryDetail>(countryEndpoint, {
+    enabled: !!selectedCountryId,
+  });
 
   // Normalize detail response
   const countryDetail: CountryDetail | null = countryDetailRaw
@@ -226,7 +225,7 @@ export default function CountryStrategy() {
         />
         <Card>
           <EmptyState
-            icon={<Globe2 className="w-6 h-6 text-surface-400" />}
+            icon={<Globe2 className="w-6 h-6 text-surface-400 dark:text-surface-500" />}
             title="No countries configured"
             description="Add target countries to start building market entry strategies."
           />
@@ -243,7 +242,7 @@ export default function CountryStrategy() {
         subtitle="Brand Positioning & Market Entry Blueprints"
         icon={<Target className="w-5 h-5" />}
         actions={
-          <div className="flex items-center gap-2 text-sm text-surface-500">
+          <div className="flex items-center gap-2 text-sm text-surface-500 dark:text-surface-400">
             <Globe2 className="w-4 h-4" />
             <span>{countries.length} Markets</span>
           </div>
@@ -261,7 +260,7 @@ export default function CountryStrategy() {
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 selectedCountryId === id
                   ? 'bg-primary-600 text-white shadow-sm'
-                  : 'bg-white text-surface-600 border border-surface-200 hover:border-primary-300 hover:text-primary-600'
+                  : 'bg-white dark:bg-surface-800 text-surface-600 dark:text-surface-300 border border-surface-200 dark:border-surface-700 hover:border-primary-300 hover:text-primary-600'
               }`}
             >
               <span>{c.flag}</span>
@@ -313,7 +312,7 @@ export default function CountryStrategy() {
       {!isLoading && !data && !detailError && !strategyError && (
         <Card>
           <EmptyState
-            icon={<Target className="w-6 h-6 text-surface-400" />}
+            icon={<Target className="w-6 h-6 text-surface-400 dark:text-surface-500" />}
             title="No strategy data"
             description="Strategy data for this country is not yet available."
           />
@@ -326,7 +325,7 @@ export default function CountryStrategy() {
           {/* Country name banner */}
           <div className="flex items-center gap-3">
             <span className="text-2xl">{data.flag}</span>
-            <h2 className="text-lg font-semibold text-surface-900">{data.label}</h2>
+            <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-100">{data.label}</h2>
             <StatusBadge status={data.entryPhases?.find((p) => p.status === 'in_progress') ? 'in_progress' : 'planned'} />
           </div>
 
@@ -337,21 +336,21 @@ export default function CountryStrategy() {
               {data.overview ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-xs font-medium text-surface-500 uppercase tracking-wide">
+                    <div className="flex items-center gap-2 text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wide">
                       <Target className="w-3.5 h-3.5" />
                       Brand Positioning
                     </div>
-                    <p className="text-sm text-surface-800">{data.overview.positioning}</p>
+                    <p className="text-sm text-surface-800 dark:text-surface-200">{data.overview.positioning}</p>
                   </div>
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-xs font-medium text-surface-500 uppercase tracking-wide">
+                    <div className="flex items-center gap-2 text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wide">
                       <MessageSquare className="w-3.5 h-3.5" />
                       Cultural Tone
                     </div>
-                    <p className="text-sm text-surface-800">{data.overview.culturalTone}</p>
+                    <p className="text-sm text-surface-800 dark:text-surface-200">{data.overview.culturalTone}</p>
                   </div>
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-xs font-medium text-surface-500 uppercase tracking-wide">
+                    <div className="flex items-center gap-2 text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wide">
                       <TrendingUp className="w-3.5 h-3.5" />
                       Price Sensitivity
                     </div>
@@ -364,11 +363,11 @@ export default function CountryStrategy() {
                     </span>
                   </div>
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-xs font-medium text-surface-500 uppercase tracking-wide">
+                    <div className="flex items-center gap-2 text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wide">
                       <Users className="w-3.5 h-3.5" />
                       Messaging Style
                     </div>
-                    <p className="text-sm text-surface-800">{data.overview.messagingStyle}</p>
+                    <p className="text-sm text-surface-800 dark:text-surface-200">{data.overview.messagingStyle}</p>
                   </div>
                 </div>
               ) : (
@@ -435,11 +434,13 @@ export default function CountryStrategy() {
                         width={60}
                       />
                       <Tooltip
-                        formatter={(value: number) => [`${value}%`, 'Allocation']}
+                        formatter={(value: number | undefined) => [`${value ?? 0}%`, 'Allocation']}
                         contentStyle={{
                           borderRadius: '8px',
                           border: '1px solid #e2e8f0',
                           boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
+                          backgroundColor: 'var(--color-surface-50, #fff)',
+                          color: 'var(--color-surface-900, #111)',
                         }}
                       />
                       <Bar
@@ -447,7 +448,7 @@ export default function CountryStrategy() {
                         radius={[0, 6, 6, 0]}
                         barSize={28}
                         fill="#6366f1"
-                        label={{ position: 'right', fill: '#475569', fontSize: 12, formatter: (v: number) => `${v}%` }}
+                        label={{ position: 'right', fill: '#475569', fontSize: 12, formatter: (v: unknown) => `${v ?? 0}%` }}
                       />
                     </BarChart>
                   </ResponsiveContainer>
@@ -466,7 +467,7 @@ export default function CountryStrategy() {
                       <span className="mt-1 flex-shrink-0 w-6 h-6 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center text-xs font-bold">
                         {idx + 1}
                       </span>
-                      <p className="text-sm text-surface-700 leading-relaxed">{insight}</p>
+                      <p className="text-sm text-surface-700 dark:text-surface-200 leading-relaxed">{insight}</p>
                     </li>
                   ))}
                 </ul>
@@ -489,13 +490,13 @@ export default function CountryStrategy() {
                     <div key={idx} className="space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="w-6 h-6 rounded-full bg-surface-100 text-surface-600 flex items-center justify-center text-xs font-bold">
+                          <span className="w-6 h-6 rounded-full bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300 flex items-center justify-center text-xs font-bold">
                             {idx + 1}
                           </span>
-                          <span className="text-sm font-medium text-surface-800">{comp.name}</span>
+                          <span className="text-sm font-medium text-surface-800 dark:text-surface-200">{comp.name}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-surface-700">{comp.share}%</span>
+                          <span className="text-sm font-semibold text-surface-700 dark:text-surface-200">{comp.share}%</span>
                           <StatusBadge status={comp.status} size="sm" />
                         </div>
                       </div>
@@ -507,10 +508,10 @@ export default function CountryStrategy() {
                       />
                     </div>
                   ))}
-                  <div className="pt-3 border-t border-surface-100">
-                    <div className="flex items-center justify-between text-xs text-surface-500">
+                  <div className="pt-3 border-t border-surface-100 dark:border-surface-700">
+                    <div className="flex items-center justify-between text-xs text-surface-500 dark:text-surface-400">
                       <span>Combined competitor share</span>
-                      <span className="font-semibold text-surface-700">
+                      <span className="font-semibold text-surface-700 dark:text-surface-200">
                         {data.competitors.reduce((sum, c) => sum + c.share, 0)}%
                       </span>
                     </div>
@@ -532,7 +533,7 @@ export default function CountryStrategy() {
                     <div key={idx} className="relative flex gap-4">
                       {/* Vertical connector line */}
                       {idx < data.entryPhases.length - 1 && (
-                        <div className="absolute left-[15px] top-9 bottom-0 w-px bg-surface-200" />
+                        <div className="absolute left-[15px] top-9 bottom-0 w-px bg-surface-200 dark:bg-surface-700" />
                       )}
                       {/* Phase dot */}
                       <div
@@ -541,7 +542,7 @@ export default function CountryStrategy() {
                             ? 'bg-success-100 text-success-700'
                             : phase.status === 'in_progress'
                             ? 'bg-primary-100 text-primary-700'
-                            : 'bg-surface-100 text-surface-500'
+                            : 'bg-surface-100 dark:bg-surface-700 text-surface-500 dark:text-surface-400'
                         }`}
                       >
                         {idx + 1}
@@ -549,11 +550,11 @@ export default function CountryStrategy() {
                       {/* Phase details */}
                       <div className="flex-1 pb-2">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-semibold text-surface-900">{phase.name}</span>
+                          <span className="text-sm font-semibold text-surface-900 dark:text-surface-100">{phase.name}</span>
                           <StatusBadge status={phase.status} size="sm" />
                         </div>
                         <p className="text-xs font-medium text-primary-600 mb-1">{phase.timeline}</p>
-                        <p className="text-sm text-surface-600 leading-relaxed">{phase.description}</p>
+                        <p className="text-sm text-surface-600 dark:text-surface-300 leading-relaxed">{phase.description}</p>
                       </div>
                     </div>
                   ))}
@@ -573,14 +574,14 @@ export default function CountryStrategy() {
             <Card title="Strategy Confidence">
               <div className="flex flex-col items-center justify-center py-4 space-y-4">
                 <ConfidenceScore score={data.confidence ?? 0} size="lg" />
-                <p className="text-sm text-surface-500 text-center max-w-[220px]">
+                <p className="text-sm text-surface-500 dark:text-surface-400 text-center max-w-[220px]">
                   Overall confidence in the {data.label} market entry strategy
                 </p>
-                <div className="w-full pt-3 border-t border-surface-100 space-y-2">
+                <div className="w-full pt-3 border-t border-surface-100 dark:border-surface-700 space-y-2">
                   {(data.radarData ?? []).slice(0, 4).map((item) => (
                     <div key={item.axis} className="flex items-center justify-between">
-                      <span className="text-xs text-surface-500">{item.axis}</span>
-                      <span className="text-xs font-semibold text-surface-700">{item.value}/100</span>
+                      <span className="text-xs text-surface-500 dark:text-surface-400">{item.axis}</span>
+                      <span className="text-xs font-semibold text-surface-700 dark:text-surface-200">{item.value}/100</span>
                     </div>
                   ))}
                 </div>
@@ -598,13 +599,13 @@ export default function CountryStrategy() {
                   {data.blueprintActions.map((action, idx) => (
                     <div
                       key={idx}
-                      className="flex items-start gap-3 p-3 rounded-lg bg-surface-50 border border-surface-100"
+                      className="flex items-start gap-3 p-3 rounded-lg bg-surface-50 dark:bg-surface-800 border border-surface-100 dark:border-surface-700"
                     >
                       <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center">
                         <TrendingUp className="w-3.5 h-3.5" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm text-surface-800 leading-relaxed">{action}</p>
+                        <p className="text-sm text-surface-800 dark:text-surface-200 leading-relaxed">{action}</p>
                       </div>
                       <StatusBadge status="planned" size="sm" />
                     </div>

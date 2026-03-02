@@ -267,11 +267,13 @@ describe('Campaign Management Workflow (E2E)', () => {
   // -----------------------------------------------------------------------
   describe('Step 3: Create a new campaign', () => {
     it('should create a campaign with status draft and return 201', async () => {
+      // KillSwitchService.getCurrentLevel -> SELECT from kill_switch_state
       // CampaignsService.create:
       //   1. SELECT country to verify it exists
       //   2. INSERT campaign RETURNING *
       //   3. cacheFlush (mock)
       mockPool.query
+        .mockResolvedValueOnce({ rows: [{ max_level: 0 }], rowCount: 1 }) // kill switch check
         .mockResolvedValueOnce({ rows: [{ id: 'c0000000-0000-4000-8000-000000000001' }], rowCount: 1 })
         .mockResolvedValueOnce({ rows: [mockCampaignRow], rowCount: 1 });
 
@@ -343,11 +345,13 @@ describe('Campaign Management Workflow (E2E)', () => {
     it('should change status from draft to active', async () => {
       const activeCampaign = { ...mockCampaignRow, status: 'active' };
 
+      // KillSwitchService.getCurrentLevel -> SELECT from kill_switch_state
       // CampaignsService.updateStatus:
       //   1. getById -> SELECT (to get current status)
       //   2. UPDATE status RETURNING *
       //   3. INSERT campaign_status_audit
       mockPool.query
+        .mockResolvedValueOnce({ rows: [{ max_level: 0 }], rowCount: 1 }) // kill switch check
         .mockResolvedValueOnce({ rows: [mockCampaignRow], rowCount: 1 }) // current status = 'draft'
         .mockResolvedValueOnce({ rows: [activeCampaign], rowCount: 1 })
         .mockResolvedValueOnce({ rows: [], rowCount: 1 }); // audit log
@@ -622,8 +626,9 @@ describe('Campaign Management Workflow (E2E)', () => {
   // -----------------------------------------------------------------------
   describe('Bonus: Full status transition chain', () => {
     it('should walk through draft -> active -> paused -> active -> completed', async () => {
-      // draft -> active
+      // draft -> active (kill switch check needed for status = 'active')
       mockPool.query
+        .mockResolvedValueOnce({ rows: [{ max_level: 0 }], rowCount: 1 }) // kill switch
         .mockResolvedValueOnce({ rows: [{ ...mockCampaignRow, status: 'draft' }], rowCount: 1 })
         .mockResolvedValueOnce({ rows: [{ ...mockCampaignRow, status: 'active' }], rowCount: 1 })
         .mockResolvedValueOnce({ rows: [], rowCount: 1 });
@@ -634,7 +639,7 @@ describe('Campaign Management Workflow (E2E)', () => {
         .send({ status: 'active' });
       expect(res.body.data.status).toBe('active');
 
-      // active -> paused
+      // active -> paused (no kill switch check for 'paused')
       mockPool.query
         .mockResolvedValueOnce({ rows: [{ ...mockCampaignRow, status: 'active' }], rowCount: 1 })
         .mockResolvedValueOnce({ rows: [{ ...mockCampaignRow, status: 'paused' }], rowCount: 1 })
@@ -646,8 +651,9 @@ describe('Campaign Management Workflow (E2E)', () => {
         .send({ status: 'paused' });
       expect(res.body.data.status).toBe('paused');
 
-      // paused -> active
+      // paused -> active (kill switch check needed for status = 'active')
       mockPool.query
+        .mockResolvedValueOnce({ rows: [{ max_level: 0 }], rowCount: 1 }) // kill switch
         .mockResolvedValueOnce({ rows: [{ ...mockCampaignRow, status: 'paused' }], rowCount: 1 })
         .mockResolvedValueOnce({ rows: [{ ...mockCampaignRow, status: 'active' }], rowCount: 1 })
         .mockResolvedValueOnce({ rows: [], rowCount: 1 });
@@ -658,7 +664,7 @@ describe('Campaign Management Workflow (E2E)', () => {
         .send({ status: 'active' });
       expect(res.body.data.status).toBe('active');
 
-      // active -> completed
+      // active -> completed (no kill switch check for 'completed')
       mockPool.query
         .mockResolvedValueOnce({ rows: [{ ...mockCampaignRow, status: 'active' }], rowCount: 1 })
         .mockResolvedValueOnce({ rows: [{ ...mockCampaignRow, status: 'completed' }], rowCount: 1 })

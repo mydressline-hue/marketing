@@ -295,9 +295,14 @@ class InfrastructureWorkflowSimulator {
   }
 
   getBackupHistory(): BackupRecord[] {
-    return [...this.backups].sort((a, b) =>
-      new Date(b.started_at).getTime() - new Date(a.started_at).getTime(),
-    );
+    return [...this.backups].sort((a, b) => {
+      const timeDiff = new Date(b.started_at).getTime() - new Date(a.started_at).getTime();
+      if (timeDiff !== 0) return timeDiff;
+      // Tiebreak by id number (most recent first)
+      const aNum = parseInt(a.id.replace(/\D/g, ''), 10) || 0;
+      const bNum = parseInt(b.id.replace(/\D/g, ''), 10) || 0;
+      return bNum - aNum;
+    });
   }
 
   // -- Circuit breaker / failover lifecycle --

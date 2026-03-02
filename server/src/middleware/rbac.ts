@@ -111,13 +111,13 @@ function hasPermission(role: string, permission: string): boolean {
 export function requireRole(...roles: string[]) {
   return (req: Request, _res: Response, next: NextFunction): void => {
     if (!req.user) {
-      throw new AuthenticationError('Authentication required');
+      return next(new AuthenticationError('Authentication required'));
     }
 
     if (!roles.includes(req.user.role)) {
-      throw new AuthorizationError(
+      return next(new AuthorizationError(
         `Role '${req.user.role}' is not authorised for this action. Required: ${roles.join(', ')}`,
-      );
+      ));
     }
 
     next();
@@ -134,13 +134,13 @@ export function requireRole(...roles: string[]) {
 export function requirePermission(permission: string) {
   return (req: Request, _res: Response, next: NextFunction): void => {
     if (!req.user) {
-      throw new AuthenticationError('Authentication required');
+      return next(new AuthenticationError('Authentication required'));
     }
 
     if (!hasPermission(req.user.role, permission)) {
-      throw new AuthorizationError(
+      return next(new AuthorizationError(
         `Permission '${permission}' is not granted to role '${req.user.role}'`,
-      );
+      ));
     }
 
     next();

@@ -13,7 +13,7 @@ import {
   NotFoundError,
   ExternalServiceError,
 } from '../utils/errors';
-import logger from '../utils/logger';
+import { logger } from '../utils/logger';
 
 // ---------------------------------------------------------------------------
 // Error metrics – simple in-memory counters keyed by error code

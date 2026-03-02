@@ -1,10 +1,7 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Globe,
   TrendingUp,
-  DollarSign,
-  Users,
-  Activity,
   BarChart3,
   Zap,
   AlertTriangle,
@@ -19,9 +16,6 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
 } from 'recharts';
 import KPICard from '../components/shared/KPICard';
 import Card from '../components/shared/Card';
@@ -29,7 +23,7 @@ import StatusBadge from '../components/shared/StatusBadge';
 import ConfidenceScore from '../components/shared/ConfidenceScore';
 import PageHeader from '../components/shared/PageHeader';
 import { useApiQuery } from '../hooks/useApi';
-import { useWebSocket } from '../hooks/useApi';
+import { useWebSocket } from '../hooks/useWebSocket';
 import { KPISkeleton, ChartSkeleton, CardSkeleton } from '../components/shared/LoadingSkeleton';
 import { ApiErrorDisplay } from '../components/shared/ErrorBoundary';
 
@@ -71,7 +65,6 @@ interface AlertItem {
 // ---------------------------------------------------------------------------
 
 const POLL_INTERVAL = 30_000; // 30 seconds
-const CHART_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#3b82f6', '#ec4899'];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -93,15 +86,15 @@ const statusDot = (status: string) => {
 };
 
 const severityStyles: Record<string, string> = {
-  critical: 'border-l-red-500 bg-red-50',
-  warning: 'border-l-yellow-500 bg-yellow-50',
-  info: 'border-l-blue-500 bg-blue-50',
+  critical: 'border-l-red-500 bg-red-50 dark:bg-red-500/10',
+  warning: 'border-l-yellow-500 bg-yellow-50 dark:bg-yellow-500/10',
+  info: 'border-l-blue-500 bg-blue-50 dark:bg-blue-500/10',
 };
 
 const severityIcon: Record<string, string> = {
-  critical: 'text-red-600',
-  warning: 'text-yellow-600',
-  info: 'text-blue-600',
+  critical: 'text-red-600 dark:text-red-400',
+  warning: 'text-yellow-600 dark:text-yellow-400',
+  info: 'text-blue-600 dark:text-blue-400',
 };
 
 // ---------------------------------------------------------------------------
@@ -115,28 +108,28 @@ export default function Dashboard() {
     loading: overviewLoading,
     error: overviewError,
     refetch: refetchOverview,
-  } = useApiQuery<DashboardOverview>('/v1/dashboard/overview', { pollInterval: POLL_INTERVAL });
+  } = useApiQuery<DashboardOverview>('/v1/dashboard/overview', { refetchInterval: POLL_INTERVAL });
 
   const {
     data: spendSummary,
     loading: spendLoading,
     error: spendError,
     refetch: refetchSpend,
-  } = useApiQuery<SpendSummary>('/v1/campaigns/spend/summary', { pollInterval: POLL_INTERVAL });
+  } = useApiQuery<SpendSummary>('/v1/campaigns/spend/summary', { refetchInterval: POLL_INTERVAL });
 
   const {
     data: agentsData,
     loading: agentsLoading,
     error: agentsError,
     refetch: refetchAgents,
-  } = useApiQuery<AgentStatusItem[]>('/v1/agents/status', { pollInterval: POLL_INTERVAL });
+  } = useApiQuery<AgentStatusItem[]>('/v1/agents', { refetchInterval: POLL_INTERVAL });
 
   const {
     data: alertsData,
     loading: alertsLoading,
     error: alertsError,
     refetch: refetchAlerts,
-  } = useApiQuery<AlertItem[]>('/v1/alerts?limit=5', { pollInterval: POLL_INTERVAL });
+  } = useApiQuery<AlertItem[]>('/v1/alerts?limit=5', { refetchInterval: POLL_INTERVAL });
 
   // ---- WebSocket for real-time updates ----
   const { connected, subscribe } = useWebSocket();
@@ -146,15 +139,15 @@ export default function Dashboard() {
   const [realtimeAlerts, setRealtimeAlerts] = useState<AlertItem[] | null>(null);
 
   useEffect(() => {
-    const unsubAgents = subscribe('agent_status', (payload) => {
-      const update = payload as AgentStatusItem[];
+    const unsubAgents = subscribe('agent_status', (msg) => {
+      const update = msg.data as AgentStatusItem[];
       if (Array.isArray(update)) {
         setRealtimeAgents(update);
       }
     });
 
-    const unsubAlerts = subscribe('alert', (payload) => {
-      const newAlert = payload as AlertItem;
+    const unsubAlerts = subscribe('alert', (msg) => {
+      const newAlert = msg.data as AlertItem;
       setRealtimeAlerts((prev) => {
         const current = prev ?? alertsData ?? [];
         return [newAlert, ...current].slice(0, 5);
@@ -190,7 +183,7 @@ export default function Dashboard() {
         icon={<Globe className="w-5 h-5" />}
         actions={
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 text-sm text-surface-500">
+            <span className="flex items-center gap-1.5 text-sm text-surface-500 dark:text-surface-400">
               <span className="relative flex h-2 w-2">
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${systemPingColor} opacity-75`} />
                 <span className={`relative inline-flex rounded-full h-2 w-2 ${systemStatusColor}`} />
@@ -248,7 +241,7 @@ export default function Dashboard() {
           <Card
             title="Revenue Trends"
             subtitle="Last 6 months"
-            actions={<TrendingUp className="w-4 h-4 text-surface-400" />}
+            actions={<TrendingUp className="w-4 h-4 text-surface-400 dark:text-surface-500" />}
           >
             <ApiErrorDisplay error={overviewError} onRetry={refetchOverview} />
           </Card>
@@ -258,7 +251,7 @@ export default function Dashboard() {
           <Card
             title="Revenue Trends"
             subtitle="Last 6 months"
-            actions={<TrendingUp className="w-4 h-4 text-surface-400" />}
+            actions={<TrendingUp className="w-4 h-4 text-surface-400 dark:text-surface-500" />}
           >
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
@@ -277,11 +270,13 @@ export default function Dashboard() {
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#9ca3af" />
                   <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} stroke="#9ca3af" />
                   <Tooltip
-                    formatter={(value: number) => formatCurrency(value)}
+                    formatter={(value: number | undefined) => formatCurrency(value ?? 0)}
                     contentStyle={{
                       borderRadius: '8px',
                       border: '1px solid #e5e7eb',
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
+                      backgroundColor: 'var(--color-surface-50, #fff)',
+                      color: 'var(--color-surface-900, #111)',
                     }}
                   />
                   <Area
@@ -311,7 +306,7 @@ export default function Dashboard() {
           <Card
             title="Channel Performance"
             subtitle="Spend vs Revenue by channel"
-            actions={<BarChart3 className="w-4 h-4 text-surface-400" />}
+            actions={<BarChart3 className="w-4 h-4 text-surface-400 dark:text-surface-500" />}
           >
             <ApiErrorDisplay error={spendError} onRetry={refetchSpend} />
           </Card>
@@ -321,7 +316,7 @@ export default function Dashboard() {
           <Card
             title="Channel Performance"
             subtitle="Spend vs Revenue by channel"
-            actions={<BarChart3 className="w-4 h-4 text-surface-400" />}
+            actions={<BarChart3 className="w-4 h-4 text-surface-400 dark:text-surface-500" />}
           >
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
@@ -330,11 +325,13 @@ export default function Dashboard() {
                   <XAxis dataKey="channel" tick={{ fontSize: 12 }} stroke="#9ca3af" />
                   <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 12 }} stroke="#9ca3af" />
                   <Tooltip
-                    formatter={(value: number) => formatCurrency(value)}
+                    formatter={(value: number | undefined) => formatCurrency(value ?? 0)}
                     contentStyle={{
                       borderRadius: '8px',
                       border: '1px solid #e5e7eb',
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
+                      backgroundColor: 'var(--color-surface-50, #fff)',
+                      color: 'var(--color-surface-900, #111)',
                     }}
                   />
                   <Bar dataKey="spend" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Spend" />
@@ -367,7 +364,7 @@ export default function Dashboard() {
             subtitle={`${agents.length} AI agents`}
             className="lg:col-span-2"
             actions={
-              <div className="flex items-center gap-3 text-xs text-surface-500">
+              <div className="flex items-center gap-3 text-xs text-surface-500 dark:text-surface-400">
                 <span className="flex items-center gap-1">{statusDot('active')} Active</span>
                 <span className="flex items-center gap-1">{statusDot('idle')} Idle</span>
                 <span className="flex items-center gap-1">{statusDot('error')} Error</span>
@@ -380,14 +377,14 @@ export default function Dashboard() {
                   key={agent.name}
                   className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-colors ${
                     agent.status === 'error'
-                      ? 'border-red-200 bg-red-50'
+                      ? 'border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10'
                       : agent.status === 'idle'
-                        ? 'border-yellow-200 bg-yellow-50/50'
-                        : 'border-surface-200 bg-surface-50/50'
+                        ? 'border-yellow-200 dark:border-yellow-500/30 bg-yellow-50/50 dark:bg-yellow-500/10'
+                        : 'border-surface-200 dark:border-surface-700 bg-surface-50/50 dark:bg-surface-800/50'
                   }`}
                 >
                   {statusDot(agent.status)}
-                  <span className="truncate font-medium text-surface-700">{agent.name}</span>
+                  <span className="truncate font-medium text-surface-700 dark:text-surface-200">{agent.name}</span>
                 </div>
               ))}
             </div>
@@ -399,7 +396,7 @@ export default function Dashboard() {
           <Card
             title="Top Countries by Revenue"
             subtitle="Current month"
-            actions={<Globe className="w-4 h-4 text-surface-400" />}
+            actions={<Globe className="w-4 h-4 text-surface-400 dark:text-surface-500" />}
           >
             <ApiErrorDisplay error={overviewError} onRetry={refetchOverview} />
           </Card>
@@ -409,20 +406,20 @@ export default function Dashboard() {
           <Card
             title="Top Countries by Revenue"
             subtitle="Current month"
-            actions={<Globe className="w-4 h-4 text-surface-400" />}
+            actions={<Globe className="w-4 h-4 text-surface-400 dark:text-surface-500" />}
           >
             <div className="space-y-4">
               {topCountries.map((c) => (
                 <div key={c.country}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-surface-700">
+                    <span className="text-sm font-medium text-surface-700 dark:text-surface-200">
                       {c.flag} {c.country}
                     </span>
-                    <span className="text-sm font-semibold text-surface-900">
+                    <span className="text-sm font-semibold text-surface-900 dark:text-surface-100">
                       {formatCurrency(c.revenue)}
                     </span>
                   </div>
-                  <div className="w-full bg-surface-100 rounded-full h-2">
+                  <div className="w-full bg-surface-100 dark:bg-surface-700 rounded-full h-2">
                     <div
                       className="bg-indigo-500 h-2 rounded-full transition-all"
                       style={{ width: `${c.pct}%` }}
@@ -456,7 +453,7 @@ export default function Dashboard() {
             subtitle="Requires attention"
             className="lg:col-span-2"
             actions={
-              <span className="flex items-center gap-1 text-xs text-red-600 font-medium bg-red-50 px-2 py-0.5 rounded-full">
+              <span className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400 font-medium bg-red-50 dark:bg-red-500/10 px-2 py-0.5 rounded-full">
                 <AlertTriangle className="w-3 h-3" />
                 {alerts.filter((a) => a.severity === 'critical').length} critical
               </span>
@@ -472,8 +469,8 @@ export default function Dashboard() {
                     className={`w-4 h-4 mt-0.5 shrink-0 ${severityIcon[alert.severity]}`}
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-surface-800">{alert.message}</p>
-                    <p className="text-xs text-surface-500 mt-1">{alert.time}</p>
+                    <p className="text-sm text-surface-800 dark:text-surface-200">{alert.message}</p>
+                    <p className="text-xs text-surface-500 dark:text-surface-400 mt-1">{alert.time}</p>
                   </div>
                   <StatusBadge status={alert.severity} size="sm" />
                 </div>
@@ -487,7 +484,7 @@ export default function Dashboard() {
           <Card
             title="System Confidence"
             subtitle="AI engine health"
-            actions={<Zap className="w-4 h-4 text-surface-400" />}
+            actions={<Zap className="w-4 h-4 text-surface-400 dark:text-surface-500" />}
           >
             <ApiErrorDisplay error={overviewError} onRetry={refetchOverview} />
           </Card>
@@ -497,22 +494,22 @@ export default function Dashboard() {
           <Card
             title="System Confidence"
             subtitle="AI engine health"
-            actions={<Zap className="w-4 h-4 text-surface-400" />}
+            actions={<Zap className="w-4 h-4 text-surface-400 dark:text-surface-500" />}
           >
             <div className="space-y-5">
               {systemConfidenceMetrics.map((metric) => (
                 <div key={metric.label} className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-surface-700">{metric.label}</span>
+                  <span className="text-sm font-medium text-surface-700 dark:text-surface-200">{metric.label}</span>
                   <ConfidenceScore score={metric.score} size="sm" />
                 </div>
               ))}
             </div>
 
             {/* Overall score */}
-            <div className="mt-6 pt-5 border-t border-surface-100 flex items-center justify-between">
+            <div className="mt-6 pt-5 border-t border-surface-100 dark:border-surface-700 flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-surface-900">Overall Confidence</p>
-                <p className="text-xs text-surface-500 mt-0.5">Weighted average across all metrics</p>
+                <p className="text-sm font-semibold text-surface-900 dark:text-surface-100">Overall Confidence</p>
+                <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5">Weighted average across all metrics</p>
               </div>
               <ConfidenceScore score={overallConfidence} size="md" />
             </div>

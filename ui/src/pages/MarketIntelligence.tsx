@@ -73,36 +73,36 @@ const regions = ['All', 'Europe', 'Asia', 'Americas', 'Middle East', 'Africa'];
 type SortKey = 'rank' | 'opportunityScore' | 'gdpValue' | 'internetPenetration' | 'ecommerceAdoption' | 'adCostIndex';
 
 function getScoreBadgeClasses(score: number): string {
-  if (score >= 85) return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
-  if (score >= 70) return 'bg-blue-100 text-blue-800 border border-blue-200';
-  if (score >= 55) return 'bg-amber-100 text-amber-800 border border-amber-200';
-  return 'bg-red-100 text-red-800 border border-red-200';
+  if (score >= 85) return 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30';
+  if (score >= 70) return 'bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30';
+  if (score >= 55) return 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30';
+  return 'bg-red-100 dark:bg-red-500/20 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-500/30';
 }
 
 const insightColorMap = {
   emerald: {
-    bg: 'bg-emerald-50',
-    border: 'border-emerald-100',
-    badge: 'bg-emerald-100',
-    text: 'text-emerald-600',
+    bg: 'bg-emerald-50 dark:bg-emerald-500/10',
+    border: 'border-emerald-100 dark:border-emerald-500/30',
+    badge: 'bg-emerald-100 dark:bg-emerald-500/20',
+    text: 'text-emerald-600 dark:text-emerald-400',
   },
   blue: {
-    bg: 'bg-blue-50',
-    border: 'border-blue-100',
-    badge: 'bg-blue-100',
-    text: 'text-blue-600',
+    bg: 'bg-blue-50 dark:bg-blue-500/10',
+    border: 'border-blue-100 dark:border-blue-500/30',
+    badge: 'bg-blue-100 dark:bg-blue-500/20',
+    text: 'text-blue-600 dark:text-blue-400',
   },
   amber: {
-    bg: 'bg-amber-50',
-    border: 'border-amber-100',
-    badge: 'bg-amber-100',
-    text: 'text-amber-600',
+    bg: 'bg-amber-50 dark:bg-amber-500/10',
+    border: 'border-amber-100 dark:border-amber-500/30',
+    badge: 'bg-amber-100 dark:bg-amber-500/20',
+    text: 'text-amber-600 dark:text-amber-400',
   },
   violet: {
-    bg: 'bg-violet-50',
-    border: 'border-violet-100',
-    badge: 'bg-violet-100',
-    text: 'text-violet-600',
+    bg: 'bg-violet-50 dark:bg-violet-500/10',
+    border: 'border-violet-100 dark:border-violet-500/30',
+    badge: 'bg-violet-100 dark:bg-violet-500/20',
+    text: 'text-violet-600 dark:text-violet-400',
   },
 };
 
@@ -125,13 +125,13 @@ export default function MarketIntelligence() {
     loading: _agentStatusLoading,
     error: _agentStatusError,
     refetch: refetchAgentStatus,
-  } = useApiQuery<AgentStatusResponse>('/v1/agents/status/market-intelligence');
+  } = useApiQuery<AgentStatusResponse>('/v1/agents/market-intelligence');
 
   const {
     mutate: runAnalysis,
     loading: analysisRunning,
     error: analysisError,
-  } = useApiMutation<AgentExecutionResponse>('/v1/agents/1/execute');
+  } = useApiMutation<AgentExecutionResponse>('/v1/agents/market-intelligence/run', { method: 'POST' });
 
   const handleRunAnalysis = async () => {
     try {
@@ -197,12 +197,12 @@ export default function MarketIntelligence() {
   const SortableHeader = ({ label, sortField }: { label: string; sortField: SortKey }) => (
     <button
       onClick={() => handleSort(sortField)}
-      className="flex items-center gap-1 font-semibold text-surface-600 hover:text-surface-900 transition-colors group"
+      className="flex items-center gap-1 font-semibold text-surface-600 dark:text-surface-300 hover:text-surface-900 dark:hover:text-surface-100 transition-colors group"
     >
       {label}
       <ArrowUpDown
         className={`w-3.5 h-3.5 transition-colors ${
-          sortKey === sortField ? 'text-primary-600' : 'text-surface-300 group-hover:text-surface-500'
+          sortKey === sortField ? 'text-primary-600' : 'text-surface-300 dark:text-surface-600 group-hover:text-surface-500'
         }`}
       />
     </button>
@@ -242,7 +242,7 @@ export default function MarketIntelligence() {
         actions={
           <div className="flex items-center gap-2">
             {agentStatus && (
-              <span className="text-xs text-surface-500 mr-2">
+              <span className="text-xs text-surface-500 dark:text-surface-400 mr-2">
                 Last run: {agentStatus.lastRun}
               </span>
             )}
@@ -261,12 +261,12 @@ export default function MarketIntelligence() {
             <button
               onClick={refetchCountries}
               disabled={countriesLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-surface-200 text-surface-700 rounded-lg hover:bg-surface-50 transition-colors text-sm font-medium disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 text-surface-700 dark:text-surface-200 rounded-lg hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors text-sm font-medium disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 ${countriesLoading ? 'animate-spin' : ''}`} />
               Refresh
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-surface-200 text-surface-700 rounded-lg hover:bg-surface-50 transition-colors text-sm font-medium">
+            <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 text-surface-700 dark:text-surface-200 rounded-lg hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors text-sm font-medium">
               <Download className="w-4 h-4" />
               Export Report
             </button>
@@ -287,21 +287,21 @@ export default function MarketIntelligence() {
       <Card>
         <div className="flex flex-wrap items-center gap-4">
           <div className="relative flex-1 min-w-[240px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400 dark:text-surface-500" />
             <input
               type="text"
               placeholder="Search countries, strategies..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-surface-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
+              className="w-full pl-10 pr-4 py-2 border border-surface-200 dark:border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-surface-800 dark:text-surface-100"
             />
           </div>
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-surface-400" />
+            <Filter className="w-4 h-4 text-surface-400 dark:text-surface-500" />
             <select
               value={selectedRegion}
               onChange={e => setSelectedRegion(e.target.value)}
-              className="px-3 py-2 border border-surface-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white text-surface-700"
+              className="px-3 py-2 border border-surface-200 dark:border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-200"
             >
               {regions.map(region => (
                 <option key={region} value={region}>
@@ -311,7 +311,7 @@ export default function MarketIntelligence() {
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <ArrowUpDown className="w-4 h-4 text-surface-400" />
+            <ArrowUpDown className="w-4 h-4 text-surface-400 dark:text-surface-500" />
             <select
               value={sortKey}
               onChange={e => {
@@ -319,7 +319,7 @@ export default function MarketIntelligence() {
                 setSortKey(key);
                 setSortDirection(key === 'rank' ? 'asc' : 'desc');
               }}
-              className="px-3 py-2 border border-surface-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white text-surface-700"
+              className="px-3 py-2 border border-surface-200 dark:border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-200"
             >
               <option value="rank">Rank</option>
               <option value="opportunityScore">Opportunity Score</option>
@@ -337,7 +337,7 @@ export default function MarketIntelligence() {
         title="Country Opportunity Ranking"
         subtitle={`${filteredAndSorted.length} markets analyzed`}
         actions={
-          <div className="flex items-center gap-3 text-xs text-surface-500">
+          <div className="flex items-center gap-3 text-xs text-surface-500 dark:text-surface-400">
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-emerald-500" /> 85+
             </span>
@@ -362,7 +362,7 @@ export default function MarketIntelligence() {
             message={searchQuery || selectedRegion !== 'All'
               ? 'Try adjusting your search or filter criteria.'
               : 'Run an analysis to populate market data.'}
-            icon={<Globe className="w-6 h-6 text-surface-400" />}
+            icon={<Globe className="w-6 h-6 text-surface-400 dark:text-surface-500" />}
             action={
               !searchQuery && selectedRegion === 'All' ? (
                 <button
@@ -380,7 +380,7 @@ export default function MarketIntelligence() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-surface-200">
+                <tr className="border-b border-surface-200 dark:border-surface-700">
                   <th className="text-left py-3 px-4 w-16">
                     <SortableHeader label="#" sortField="rank" />
                   </th>
@@ -408,17 +408,17 @@ export default function MarketIntelligence() {
                 {filteredAndSorted.map(item => (
                   <tr
                     key={item.country}
-                    className="border-b border-surface-100 hover:bg-surface-50 transition-colors"
+                    className="border-b border-surface-100 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
                   >
                     <td className="py-3 px-4">
-                      <span className="text-sm font-bold text-surface-400">#{item.rank}</span>
+                      <span className="text-sm font-bold text-surface-400 dark:text-surface-500">#{item.rank}</span>
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <span className="text-xl">{item.flag}</span>
                         <div>
-                          <span className="font-medium text-surface-900">{item.country}</span>
-                          <span className="block text-xs text-surface-400">{item.region}</span>
+                          <span className="font-medium text-surface-900 dark:text-surface-100">{item.country}</span>
+                          <span className="block text-xs text-surface-400 dark:text-surface-500">{item.region}</span>
                         </div>
                       </div>
                     </td>
@@ -430,37 +430,37 @@ export default function MarketIntelligence() {
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <span className="text-sm text-surface-700 font-medium">{item.gdp}</span>
+                      <span className="text-sm text-surface-700 dark:text-surface-200 font-medium">{item.gdp}</span>
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-16 h-2 bg-surface-100 rounded-full overflow-hidden">
+                        <div className="w-16 h-2 bg-surface-100 dark:bg-surface-700 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-primary-500 rounded-full"
                             style={{ width: `${item.internetPenetration}%` }}
                           />
                         </div>
-                        <span className="text-sm text-surface-600">{item.internetPenetration}%</span>
+                        <span className="text-sm text-surface-600 dark:text-surface-300">{item.internetPenetration}%</span>
                       </div>
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-16 h-2 bg-surface-100 rounded-full overflow-hidden">
+                        <div className="w-16 h-2 bg-surface-100 dark:bg-surface-700 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-violet-500 rounded-full"
                             style={{ width: `${item.ecommerceAdoption}%` }}
                           />
                         </div>
-                        <span className="text-sm text-surface-600">{item.ecommerceAdoption}%</span>
+                        <span className="text-sm text-surface-600 dark:text-surface-300">{item.ecommerceAdoption}%</span>
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <span className="text-sm font-mono text-surface-700">
+                      <span className="text-sm font-mono text-surface-700 dark:text-surface-200">
                         {item.adCostIndex.toFixed(2)}
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <span className="text-sm text-surface-600">{item.entryStrategy}</span>
+                      <span className="text-sm text-surface-600 dark:text-surface-300">{item.entryStrategy}</span>
                     </td>
                     <td className="py-3 px-4">
                       <StatusBadge status={item.status} />
@@ -513,14 +513,14 @@ export default function MarketIntelligence() {
                       if (active && payload && payload.length) {
                         const data = payload[0].payload;
                         return (
-                          <div className="bg-white border border-surface-200 rounded-lg p-3 shadow-lg">
-                            <p className="font-semibold text-surface-900">
+                          <div className="bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg p-3 shadow-lg">
+                            <p className="font-semibold text-surface-900 dark:text-surface-100">
                               {data.flag} {data.country}
                             </p>
-                            <p className="text-sm text-surface-600">
+                            <p className="text-sm text-surface-600 dark:text-surface-300">
                               Opportunity: <span className="font-medium">{data.opportunityScore}</span>
                             </p>
-                            <p className="text-sm text-surface-600">
+                            <p className="text-sm text-surface-600 dark:text-surface-300">
                               Ad Cost: <span className="font-medium">{data.adCostIndex}</span>
                             </p>
                           </div>
@@ -589,8 +589,8 @@ export default function MarketIntelligence() {
                     content={({ active, payload, label }) => {
                       if (active && payload && payload.length) {
                         return (
-                          <div className="bg-white border border-surface-200 rounded-lg p-3 shadow-lg">
-                            <p className="font-semibold text-surface-900 mb-1">{label}</p>
+                          <div className="bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg p-3 shadow-lg">
+                            <p className="font-semibold text-surface-900 dark:text-surface-100 mb-1">{label}</p>
                             {payload.map((entry, i) => (
                               <p key={i} className="text-sm" style={{ color: entry.color }}>
                                 {entry.name}: <span className="font-medium">{entry.value}</span>
@@ -617,12 +617,12 @@ export default function MarketIntelligence() {
         {countriesLoading && !insights.length ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="animate-pulse flex gap-3 p-4 bg-surface-50 rounded-lg border border-surface-100">
-                <div className="w-8 h-8 bg-surface-200 rounded-full flex-shrink-0" />
+              <div key={i} className="animate-pulse flex gap-3 p-4 bg-surface-50 dark:bg-surface-800 rounded-lg border border-surface-100 dark:border-surface-700">
+                <div className="w-8 h-8 bg-surface-200 dark:bg-surface-700 rounded-full flex-shrink-0" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-surface-200 rounded w-3/4" />
-                  <div className="h-3 bg-surface-200 rounded w-full" />
-                  <div className="h-3 bg-surface-200 rounded w-5/6" />
+                  <div className="h-4 bg-surface-200 dark:bg-surface-700 rounded w-3/4" />
+                  <div className="h-3 bg-surface-200 dark:bg-surface-700 rounded w-full" />
+                  <div className="h-3 bg-surface-200 dark:bg-surface-700 rounded w-5/6" />
                 </div>
               </div>
             ))}
@@ -655,8 +655,8 @@ export default function MarketIntelligence() {
                     <span className={`${colors.text} font-bold text-sm`}>{index + 1}</span>
                   </div>
                   <div>
-                    <p className="font-semibold text-surface-900 text-sm">{insight.title}</p>
-                    <p className="text-sm text-surface-600 mt-1">{insight.description}</p>
+                    <p className="font-semibold text-surface-900 dark:text-surface-100 text-sm">{insight.title}</p>
+                    <p className="text-sm text-surface-600 dark:text-surface-300 mt-1">{insight.description}</p>
                   </div>
                 </div>
               );

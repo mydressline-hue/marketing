@@ -109,9 +109,9 @@ const formatEvents = (val: number) => {
 };
 
 const severityStyles: Record<string, string> = {
-  critical: 'border-l-red-500 bg-red-50',
-  error: 'border-l-orange-500 bg-orange-50',
-  warning: 'border-l-yellow-500 bg-yellow-50',
+  critical: 'border-l-red-500 bg-red-50 dark:bg-red-500/10',
+  error: 'border-l-orange-500 bg-orange-50 dark:bg-orange-500/10',
+  warning: 'border-l-yellow-500 bg-yellow-50 dark:bg-yellow-500/10',
 };
 
 const severityTextColor: Record<string, string> = {
@@ -123,10 +123,10 @@ const severityTextColor: Record<string, string> = {
 const serverStatusDot = (status: string) => {
   const color =
     status === 'operational'
-      ? 'bg-green-500'
+      ? 'bg-green-50 dark:bg-green-500/10'
       : status === 'degraded'
         ? 'bg-yellow-400'
-        : 'bg-red-500';
+        : 'bg-red-50 dark:bg-red-500/10';
   return (
     <span className="relative flex h-2.5 w-2.5">
       {status === 'operational' && (
@@ -150,20 +150,20 @@ export default function DataEngineering() {
     loading: monitoringLoading,
     error: monitoringError,
     refetch: refetchMonitoring,
-  } = useApiQuery<MonitoringResponse>('/api/v1/infrastructure/monitoring');
+  } = useApiQuery<MonitoringResponse>('/v1/infrastructure/monitoring');
 
   const {
     data: qualityData,
     loading: qualityLoading,
     error: qualityError,
     refetch: refetchQuality,
-  } = useApiQuery<DataQualityResponse>('/api/v1/infrastructure/dataquality');
+  } = useApiQuery<DataQualityResponse>('/v1/infrastructure/data-quality');
 
   // Agent execution mutation
   const {
     mutate: runAgent,
     loading: agentRunning,
-  } = useApiMutation<AgentExecuteResponse>('/api/v1/agents/17/execute');
+  } = useApiMutation<AgentExecuteResponse>('/v1/agents/data-engineering/run', { method: 'POST' });
 
   const handleRunAgent = async () => {
     const result = await runAgent();
@@ -207,12 +207,12 @@ export default function DataEngineering() {
             </button>
             <button
               onClick={handleRefresh}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-surface-600 bg-surface-100 hover:bg-surface-200 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-surface-600 dark:text-surface-300 bg-surface-100 dark:bg-surface-700 hover:bg-surface-200 transition-colors"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Refresh
             </button>
-            <span className="flex items-center gap-1.5 text-sm text-surface-500">
+            <span className="flex items-center gap-1.5 text-sm text-surface-500 dark:text-surface-400">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
@@ -231,7 +231,7 @@ export default function DataEngineering() {
           {monitoringLoading ? (
             <>
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-xl border border-surface-200 p-5">
+                <div key={i} className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 p-5">
                   <CardSkeleton lines={2} />
                 </div>
               ))}
@@ -272,7 +272,7 @@ export default function DataEngineering() {
         title="Pipeline Status"
         subtitle="Real-time pipeline health monitoring"
         actions={
-          <div className="flex items-center gap-2 text-xs text-surface-500">
+          <div className="flex items-center gap-2 text-xs text-surface-500 dark:text-surface-400">
             <Clock className="w-3.5 h-3.5" />
             Updated just now
           </div>
@@ -288,32 +288,32 @@ export default function DataEngineering() {
           <div className="overflow-x-auto -mx-5">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-surface-100">
-                  <th className="text-left font-medium text-surface-500 px-5 py-3">Pipeline Name</th>
-                  <th className="text-left font-medium text-surface-500 px-3 py-3">Source</th>
-                  <th className="text-left font-medium text-surface-500 px-3 py-3">Destination</th>
-                  <th className="text-left font-medium text-surface-500 px-3 py-3">Status</th>
-                  <th className="text-right font-medium text-surface-500 px-3 py-3">Throughput</th>
-                  <th className="text-right font-medium text-surface-500 px-3 py-3">Errors</th>
-                  <th className="text-left font-medium text-surface-500 px-3 py-3">Last Run</th>
-                  <th className="text-right font-medium text-surface-500 px-5 py-3">Actions</th>
+                <tr className="border-b border-surface-100 dark:border-surface-700">
+                  <th className="text-left font-medium text-surface-500 dark:text-surface-400 px-5 py-3">Pipeline Name</th>
+                  <th className="text-left font-medium text-surface-500 dark:text-surface-400 px-3 py-3">Source</th>
+                  <th className="text-left font-medium text-surface-500 dark:text-surface-400 px-3 py-3">Destination</th>
+                  <th className="text-left font-medium text-surface-500 dark:text-surface-400 px-3 py-3">Status</th>
+                  <th className="text-right font-medium text-surface-500 dark:text-surface-400 px-3 py-3">Throughput</th>
+                  <th className="text-right font-medium text-surface-500 dark:text-surface-400 px-3 py-3">Errors</th>
+                  <th className="text-left font-medium text-surface-500 dark:text-surface-400 px-3 py-3">Last Run</th>
+                  <th className="text-right font-medium text-surface-500 dark:text-surface-400 px-5 py-3">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-surface-100">
+              <tbody className="divide-y divide-surface-100 dark:divide-surface-700">
                 {pipelines.map((pipeline) => (
-                  <tr key={pipeline.id} className="hover:bg-surface-50 transition-colors">
+                  <tr key={pipeline.id} className="hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
                         <Database className="w-4 h-4 text-surface-400" />
-                        <span className="font-medium text-surface-900">{pipeline.name}</span>
+                        <span className="font-medium text-surface-900 dark:text-surface-100">{pipeline.name}</span>
                       </div>
                     </td>
-                    <td className="px-3 py-3 text-surface-600">{pipeline.source}</td>
-                    <td className="px-3 py-3 text-surface-600">{pipeline.destination}</td>
+                    <td className="px-3 py-3 text-surface-600 dark:text-surface-300">{pipeline.source}</td>
+                    <td className="px-3 py-3 text-surface-600 dark:text-surface-300">{pipeline.destination}</td>
                     <td className="px-3 py-3">
                       <StatusBadge status={pipeline.status} />
                     </td>
-                    <td className="px-3 py-3 text-right font-mono text-surface-700">{pipeline.throughput}</td>
+                    <td className="px-3 py-3 text-right font-mono text-surface-700 dark:text-surface-200">{pipeline.throughput}</td>
                     <td className="px-3 py-3 text-right">
                       <span
                         className={`font-mono ${
@@ -321,23 +321,23 @@ export default function DataEngineering() {
                             ? 'text-red-600 font-semibold'
                             : pipeline.errors > 0
                               ? 'text-yellow-600'
-                              : 'text-surface-500'
+                              : 'text-surface-500 dark:text-surface-400'
                         }`}
                       >
                         {pipeline.errors}
                       </span>
                     </td>
-                    <td className="px-3 py-3 text-surface-500">{pipeline.lastRun}</td>
+                    <td className="px-3 py-3 text-surface-500 dark:text-surface-400">{pipeline.lastRun}</td>
                     <td className="px-5 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button
-                          className="p-1.5 rounded-md hover:bg-surface-100 text-surface-400 hover:text-surface-600 transition-colors"
+                          className="p-1.5 rounded-md hover:bg-surface-100 dark:hover:bg-surface-700 text-surface-400 hover:text-surface-600 dark:text-surface-300 transition-colors"
                           title="Restart pipeline"
                         >
                           <RefreshCw className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          className="p-1.5 rounded-md hover:bg-surface-100 text-surface-400 hover:text-surface-600 transition-colors"
+                          className="p-1.5 rounded-md hover:bg-surface-100 dark:hover:bg-surface-700 text-surface-400 hover:text-surface-600 dark:text-surface-300 transition-colors"
                           title="View details"
                         >
                           <Activity className="w-3.5 h-3.5" />
@@ -389,7 +389,7 @@ export default function DataEngineering() {
                     stroke="#9ca3af"
                   />
                   <Tooltip
-                    formatter={(value: number) => [formatEvents(value), 'Events']}
+                    formatter={(value: number | undefined) => [formatEvents(value ?? 0), 'Events']}
                     contentStyle={{
                       borderRadius: '8px',
                       border: '1px solid #e5e7eb',
@@ -435,7 +435,7 @@ export default function DataEngineering() {
                     domain={[0, 0.04]}
                   />
                   <Tooltip
-                    formatter={(value: number) => [`${value.toFixed(3)}%`, 'Error Rate']}
+                    formatter={(value: number | undefined) => [`${(value ?? 0).toFixed(3)}%`, 'Error Rate']}
                     contentStyle={{
                       borderRadius: '8px',
                       border: '1px solid #e5e7eb',
@@ -476,8 +476,8 @@ export default function DataEngineering() {
                   key={evt.name}
                   className={`flex items-center justify-between rounded-lg border px-4 py-3 ${
                     evt.status === 'warning'
-                      ? 'border-yellow-200 bg-yellow-50/50'
-                      : 'border-surface-200 bg-surface-50/50'
+                      ? 'border-yellow-200 dark:border-yellow-500/30 bg-yellow-50 dark:bg-yellow-500/10'
+                      : 'border-surface-200 dark:border-surface-700 bg-surface-50/50 dark:bg-surface-800/50'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -487,7 +487,7 @@ export default function DataEngineering() {
                       <AlertTriangle className="w-5 h-5 text-yellow-500" />
                     )}
                     <div>
-                      <p className="font-medium text-surface-900">{evt.name}</p>
+                      <p className="font-medium text-surface-900 dark:text-surface-100">{evt.name}</p>
                       {evt.message && (
                         <p className="text-xs text-yellow-600 mt-0.5">{evt.message}</p>
                       )}
@@ -517,13 +517,13 @@ export default function DataEngineering() {
               {serverTrackingEndpoints.map((endpoint) => (
                 <div
                   key={endpoint.name}
-                  className="flex items-center justify-between rounded-lg border border-surface-200 px-4 py-3"
+                  className="flex items-center justify-between rounded-lg border border-surface-200 dark:border-surface-700 px-4 py-3"
                 >
                   <div className="flex items-center gap-3">
                     {serverStatusDot(endpoint.status)}
                     <div>
-                      <p className="font-medium text-surface-900 text-sm">{endpoint.name}</p>
-                      <p className="text-xs text-surface-500 mt-0.5">
+                      <p className="font-medium text-surface-900 dark:text-surface-100 text-sm">{endpoint.name}</p>
+                      <p className="text-xs text-surface-500 dark:text-surface-400 mt-0.5">
                         Latency: {endpoint.latency} | Uptime: {endpoint.uptime}
                       </p>
                     </div>
@@ -531,10 +531,10 @@ export default function DataEngineering() {
                   <span
                     className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${
                       endpoint.status === 'operational'
-                        ? 'bg-green-50 text-green-700'
+                        ? 'bg-green-50 dark:bg-green-500/10 text-green-700'
                         : endpoint.status === 'degraded'
-                          ? 'bg-yellow-50 text-yellow-700'
-                          : 'bg-red-50 text-red-700'
+                          ? 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700'
+                          : 'bg-red-50 dark:bg-red-500/10 text-red-700'
                     }`}
                   >
                     {endpoint.status}
@@ -563,8 +563,8 @@ export default function DataEngineering() {
             {dataQualityMetrics.map((metric) => (
               <div key={metric.label} className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-surface-700">{metric.label}</span>
-                  <span className="text-sm font-bold text-surface-900">{metric.value}</span>
+                  <span className="text-sm font-medium text-surface-700 dark:text-surface-200">{metric.label}</span>
+                  <span className="text-sm font-bold text-surface-900 dark:text-surface-100">{metric.value}</span>
                 </div>
                 <ProgressBar
                   value={
@@ -578,7 +578,7 @@ export default function DataEngineering() {
                   color={metric.color}
                   size="md"
                 />
-                <p className="text-xs text-surface-500">{metric.description}</p>
+                <p className="text-xs text-surface-500 dark:text-surface-400">{metric.description}</p>
               </div>
             ))}
           </div>
@@ -591,7 +591,7 @@ export default function DataEngineering() {
         subtitle="Recent pipeline errors"
         actions={
           !qualityLoading && errorLog.length > 0 ? (
-            <span className="flex items-center gap-1 text-xs text-red-600 font-medium bg-red-50 px-2 py-0.5 rounded-full">
+            <span className="flex items-center gap-1 text-xs text-red-600 font-medium bg-red-50 dark:bg-red-500/10 px-2 py-0.5 rounded-full">
               <AlertTriangle className="w-3 h-3" />
               {errorLog.filter((e) => e.severity === 'critical').length} critical
             </span>
@@ -625,12 +625,12 @@ export default function DataEngineering() {
                     />
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-surface-900 text-sm">
+                        <span className="font-medium text-surface-900 dark:text-surface-100 text-sm">
                           {entry.message}
                         </span>
                         <StatusBadge status={entry.severity} size="sm" />
                       </div>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-surface-500">
+                      <div className="flex items-center gap-3 mt-1 text-xs text-surface-500 dark:text-surface-400">
                         <span className="flex items-center gap-1">
                           <Database className="w-3 h-3" />
                           {entry.pipeline}
@@ -641,14 +641,14 @@ export default function DataEngineering() {
                         </span>
                       </div>
                       {expandedError === entry.id && (
-                        <div className="mt-3 p-3 bg-white/60 rounded-md border border-surface-200 text-xs text-surface-700 leading-relaxed">
+                        <div className="mt-3 p-3 bg-white/60 rounded-md border border-surface-200 dark:border-surface-700 text-xs text-surface-700 dark:text-surface-200 leading-relaxed">
                           {entry.details}
                         </div>
                       )}
                     </div>
                   </div>
                   <button
-                    className="shrink-0 p-1.5 rounded-md hover:bg-white/50 text-surface-400 hover:text-surface-600 transition-colors"
+                    className="shrink-0 p-1.5 rounded-md hover:bg-white/50 text-surface-400 hover:text-surface-600 dark:text-surface-300 transition-colors"
                     title="Retry"
                     onClick={(e) => e.stopPropagation()}
                   >

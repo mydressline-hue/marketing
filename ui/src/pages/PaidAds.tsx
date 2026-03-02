@@ -30,6 +30,7 @@ import { TableSkeleton, ChartSkeleton } from '../components/shared/LoadingSkelet
 import { ApiErrorDisplay } from '../components/shared/ErrorBoundary';
 import EmptyState from '../components/shared/EmptyState';
 import { useApiQuery, useApiMutation } from '../hooks/useApi';
+import api from '../services/api';
 import type { CampaignData } from '../types';
 
 // ---------------------------------------------------------------------------
@@ -97,20 +98,20 @@ const platformConfig: Record<
   string,
   { color: string; bg: string; label: string }
 > = {
-  google: { color: 'text-blue-600', bg: 'bg-blue-50', label: 'Google' },
-  meta: { color: 'text-indigo-600', bg: 'bg-indigo-50', label: 'Meta' },
-  tiktok: { color: 'text-pink-600', bg: 'bg-pink-50', label: 'TikTok' },
-  bing: { color: 'text-teal-600', bg: 'bg-teal-50', label: 'Bing' },
-  snapchat: { color: 'text-yellow-600', bg: 'bg-yellow-50', label: 'Snapchat' },
+  google: { color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-500/10', label: 'Google' },
+  meta: { color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-500/10', label: 'Meta' },
+  tiktok: { color: 'text-pink-600 dark:text-pink-400', bg: 'bg-pink-50 dark:bg-pink-500/10', label: 'TikTok' },
+  bing: { color: 'text-teal-600 dark:text-teal-400', bg: 'bg-teal-50 dark:bg-teal-500/10', label: 'Bing' },
+  snapchat: { color: 'text-yellow-600 dark:text-yellow-400', bg: 'bg-yellow-50 dark:bg-yellow-500/10', label: 'Snapchat' },
 };
 
 const platformTabs = ['All', 'Google', 'Meta', 'TikTok', 'Bing', 'Snapchat'] as const;
 
 // Map platform tab label -> API endpoint for platform-specific queries
 const platformEndpoints: Record<string, string> = {
-  Google: '/api/v1/integrations/ads/google/campaigns',
-  Meta: '/api/v1/integrations/ads/meta/campaigns',
-  TikTok: '/api/v1/integrations/ads/tiktok/campaigns',
+  Google: '/v1/integrations/ads/google/campaigns',
+  Meta: '/v1/integrations/ads/meta/campaigns',
+  TikTok: '/v1/integrations/ads/tiktok/campaigns',
 };
 
 // ---------------------------------------------------------------------------
@@ -132,16 +133,16 @@ const fmtNumber = (val: number) =>
       : val.toLocaleString();
 
 const urgencyStyle: Record<string, string> = {
-  high: 'border-l-red-500 bg-red-50/60',
-  medium: 'border-l-yellow-500 bg-yellow-50/60',
-  low: 'border-l-blue-500 bg-blue-50/60',
+  high: 'border-l-red-500 bg-red-50/60 dark:bg-red-500/10',
+  medium: 'border-l-yellow-500 bg-yellow-50/60 dark:bg-yellow-500/10',
+  low: 'border-l-blue-500 bg-blue-50/60 dark:bg-blue-500/10',
 };
 
 const recommendationIcon: Record<string, { icon: string; color: string }> = {
-  increase: { icon: 'Increase Budget', color: 'text-green-600 bg-green-50' },
-  pause: { icon: 'Pause Campaign', color: 'text-red-600 bg-red-50' },
-  expand: { icon: 'New Market', color: 'text-blue-600 bg-blue-50' },
-  adjust: { icon: 'Adjust Bidding', color: 'text-amber-600 bg-amber-50' },
+  increase: { icon: 'Increase Budget', color: 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10' },
+  pause: { icon: 'Pause Campaign', color: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10' },
+  expand: { icon: 'New Market', color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10' },
+  adjust: { icon: 'Adjust Bidding', color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10' },
 };
 
 // ---------------------------------------------------------------------------
@@ -174,34 +175,34 @@ function CampaignModal({ open, onClose, onSubmit, loading, initial }: CampaignMo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-surface-100">
-          <h3 className="font-semibold text-surface-900">
+      <div className="bg-white dark:bg-surface-800 rounded-xl shadow-xl w-full max-w-lg mx-4">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-surface-100 dark:border-surface-700">
+          <h3 className="font-semibold text-surface-900 dark:text-surface-100">
             {initial ? 'Edit Campaign' : 'New Campaign'}
           </h3>
-          <button onClick={onClose} className="p-1 text-surface-400 hover:text-surface-600">
+          <button onClick={onClose} className="p-1 text-surface-400 dark:text-surface-500 hover:text-surface-600 dark:hover:text-surface-300">
             <X className="w-5 h-5" />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-surface-700 mb-1">Campaign Name</label>
+            <label className="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-1">Campaign Name</label>
             <input
               type="text"
               required
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-surface-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              className="w-full px-3 py-2 text-sm border border-surface-200 dark:border-surface-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none bg-white dark:bg-surface-800 dark:text-surface-100"
               placeholder="e.g. US - Brand Awareness Search"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">Platform</label>
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-1">Platform</label>
               <select
                 value={form.platform}
                 onChange={(e) => setForm({ ...form, platform: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-surface-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                className="w-full px-3 py-2 text-sm border border-surface-200 dark:border-surface-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none bg-white dark:bg-surface-800 dark:text-surface-100"
               >
                 {Object.entries(platformConfig).map(([key, cfg]) => (
                   <option key={key} value={key}>{cfg.label}</option>
@@ -209,35 +210,35 @@ function CampaignModal({ open, onClose, onSubmit, loading, initial }: CampaignMo
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">Country</label>
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-1">Country</label>
               <input
                 type="text"
                 required
                 value={form.country}
                 onChange={(e) => setForm({ ...form, country: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-surface-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                className="w-full px-3 py-2 text-sm border border-surface-200 dark:border-surface-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none bg-white dark:bg-surface-800 dark:text-surface-100"
                 placeholder="e.g. United States"
               />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">Budget ($)</label>
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-1">Budget ($)</label>
               <input
                 type="number"
                 required
                 min={0}
                 value={form.budget}
                 onChange={(e) => setForm({ ...form, budget: Number(e.target.value) })}
-                className="w-full px-3 py-2 text-sm border border-surface-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                className="w-full px-3 py-2 text-sm border border-surface-200 dark:border-surface-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none bg-white dark:bg-surface-800 dark:text-surface-100"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1">Status</label>
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-1">Status</label>
               <select
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-surface-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                className="w-full px-3 py-2 text-sm border border-surface-200 dark:border-surface-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none bg-white dark:bg-surface-800 dark:text-surface-100"
               >
                 <option value="draft">Draft</option>
                 <option value="active">Active</option>
@@ -249,7 +250,7 @@ function CampaignModal({ open, onClose, onSubmit, loading, initial }: CampaignMo
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-surface-600 bg-white border border-surface-200 rounded-lg hover:bg-surface-50 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-surface-600 dark:text-surface-300 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
             >
               Cancel
             </button>
@@ -285,7 +286,7 @@ export default function PaidAds() {
     if (activePlatform !== 'All' && platformEndpoints[activePlatform]) {
       return platformEndpoints[activePlatform];
     }
-    return '/api/v1/campaigns';
+    return '/v1/campaigns';
   }, [activePlatform]);
 
   const {
@@ -300,33 +301,33 @@ export default function PaidAds() {
     loading: metricsLoading,
     error: metricsError,
     refetch: refetchMetrics,
-  } = useApiQuery<CampaignMetrics>('/api/v1/campaigns/metrics');
+  } = useApiQuery<CampaignMetrics>('/v1/campaigns/metrics');
 
   const {
     data: recommendationsData,
     loading: recommendationsLoading,
     error: recommendationsError,
     refetch: refetchRecommendations,
-  } = useApiQuery<RecommendationsResponse>('/api/v1/campaigns/recommendations');
+  } = useApiQuery<RecommendationsResponse>('/v1/campaigns/recommendations');
 
   const {
     data: retargetingData,
     loading: retargetingLoading,
     error: retargetingError,
     refetch: refetchRetargeting,
-  } = useApiQuery<RetargetingResponse>('/api/v1/campaigns/retargeting');
+  } = useApiQuery<RetargetingResponse>('/v1/campaigns/retargeting');
 
   // -----------------------------------------------------------------------
   // API mutations
   // -----------------------------------------------------------------------
 
   const { mutate: createCampaign, loading: createLoading } =
-    useApiMutation<CampaignData>('/api/v1/campaigns', 'POST');
+    useApiMutation<CampaignData>('/v1/campaigns', { method: 'POST' });
 
   const { mutate: updateCampaign, loading: updateLoading } =
     useApiMutation<CampaignData>(
-      editingCampaign ? `/api/v1/campaigns/${editingCampaign.id}` : '/api/v1/campaigns',
-      'PUT',
+      editingCampaign ? `/v1/campaigns/${editingCampaign.id}` : '/v1/campaigns',
+      { method: 'PUT' },
     );
 
   // -----------------------------------------------------------------------
@@ -359,11 +360,7 @@ export default function PaidAds() {
     async (campaign: CampaignData) => {
       const newStatus = campaign.status === 'active' ? 'paused' : 'active';
       try {
-        await fetch(`/api/v1/campaigns/${campaign.id}/status`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus }),
-        });
+        await api.put(`/v1/campaigns/${campaign.id}/status`, { status: newStatus });
         refetchCampaigns();
       } catch {
         // Silently fail - error will be visible if refetch shows stale data
@@ -422,7 +419,7 @@ export default function PaidAds() {
       label: 'Campaign Name',
       render: (item: CampaignData) => (
         <button
-          className="font-medium text-surface-900 hover:text-primary-600 transition-colors text-left"
+          className="font-medium text-surface-900 dark:text-surface-100 hover:text-primary-600 transition-colors text-left"
           onClick={() => openEditModal(item)}
         >
           {item.name}
@@ -434,7 +431,7 @@ export default function PaidAds() {
       label: 'Platform',
       render: (item: CampaignData) => {
         const cfg = platformConfig[item.platform];
-        if (!cfg) return <span className="text-surface-400">--</span>;
+        if (!cfg) return <span className="text-surface-400 dark:text-surface-500">--</span>;
         return (
           <span
             className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.color} ${cfg.bg}`}
@@ -449,7 +446,7 @@ export default function PaidAds() {
       key: 'country',
       label: 'Country',
       render: (item: CampaignData) => (
-        <span className="text-surface-700">{item.country}</span>
+        <span className="text-surface-700 dark:text-surface-200">{item.country}</span>
       ),
     },
     {
@@ -463,42 +460,42 @@ export default function PaidAds() {
       key: 'budget',
       label: 'Budget',
       render: (item: CampaignData) => (
-        <span className="text-surface-700">{fmtCurrency(item.budget)}</span>
+        <span className="text-surface-700 dark:text-surface-200">{fmtCurrency(item.budget)}</span>
       ),
     },
     {
       key: 'spent',
       label: 'Spend',
       render: (item: CampaignData) => (
-        <span className="font-medium text-surface-900">{fmtCurrency(item.spent)}</span>
+        <span className="font-medium text-surface-900 dark:text-surface-100">{fmtCurrency(item.spent)}</span>
       ),
     },
     {
       key: 'impressions',
       label: 'Impressions',
       render: (item: CampaignData) => (
-        <span className="text-surface-700">{fmtNumber(item.impressions)}</span>
+        <span className="text-surface-700 dark:text-surface-200">{fmtNumber(item.impressions)}</span>
       ),
     },
     {
       key: 'clicks',
       label: 'Clicks',
       render: (item: CampaignData) => (
-        <span className="text-surface-700">{fmtNumber(item.clicks)}</span>
+        <span className="text-surface-700 dark:text-surface-200">{fmtNumber(item.clicks)}</span>
       ),
     },
     {
       key: 'ctr',
       label: 'CTR',
       render: (item: CampaignData) => (
-        <span className="text-surface-700">{item.ctr.toFixed(1)}%</span>
+        <span className="text-surface-700 dark:text-surface-200">{item.ctr.toFixed(1)}%</span>
       ),
     },
     {
       key: 'conversions',
       label: 'Conversions',
       render: (item: CampaignData) => (
-        <span className="font-medium text-surface-900">{item.conversions.toLocaleString()}</span>
+        <span className="font-medium text-surface-900 dark:text-surface-100">{item.conversions.toLocaleString()}</span>
       ),
     },
     {
@@ -508,12 +505,12 @@ export default function PaidAds() {
         const roasVal = item.roas;
         const color =
           roasVal >= 4
-            ? 'text-green-600 bg-green-50'
+            ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10'
             : roasVal >= 3
-              ? 'text-blue-600 bg-blue-50'
+              ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10'
               : roasVal > 0
-                ? 'text-amber-600 bg-amber-50'
-                : 'text-surface-400 bg-surface-50';
+                ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10'
+                : 'text-surface-400 dark:text-surface-500 bg-surface-50 dark:bg-surface-800';
         return (
           <span className={`inline-flex px-2 py-0.5 rounded text-xs font-semibold ${color}`}>
             {roasVal > 0 ? `${roasVal.toFixed(2)}x` : '--'}
@@ -525,7 +522,7 @@ export default function PaidAds() {
       key: 'actions',
       label: 'Actions',
       render: (item: CampaignData) => {
-        if (item.status === 'draft') return <span className="text-surface-400 text-xs">--</span>;
+        if (item.status === 'draft') return <span className="text-surface-400 dark:text-surface-500 text-xs">--</span>;
         return (
           <button
             onClick={(e) => {
@@ -534,8 +531,8 @@ export default function PaidAds() {
             }}
             className={`p-1.5 rounded-lg transition-colors ${
               item.status === 'active'
-                ? 'text-amber-600 hover:bg-amber-50'
-                : 'text-green-600 hover:bg-green-50'
+                ? 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10'
+                : 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/10'
             }`}
             title={item.status === 'active' ? 'Pause campaign' : 'Resume campaign'}
           >
@@ -563,11 +560,11 @@ export default function PaidAds() {
         icon={<Megaphone className="w-5 h-5" />}
         actions={
           <div className="flex items-center gap-2">
-            <button className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-surface-600 bg-white border border-surface-200 rounded-lg hover:bg-surface-50 transition-colors">
+            <button className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-surface-600 dark:text-surface-300 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors">
               <Filter className="w-4 h-4" />
               Filters
             </button>
-            <button className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-surface-600 bg-white border border-surface-200 rounded-lg hover:bg-surface-50 transition-colors">
+            <button className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-surface-600 dark:text-surface-300 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors">
               <Download className="w-4 h-4" />
               Export
             </button>
@@ -586,11 +583,11 @@ export default function PaidAds() {
       {metricsLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-surface-200 p-5">
+            <div key={i} className="bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 p-5">
               <div className="animate-pulse">
-                <div className="h-4 w-24 bg-surface-200 rounded mb-2" />
-                <div className="h-8 w-20 bg-surface-200 rounded mb-2" />
-                <div className="h-5 w-16 bg-surface-200 rounded-full" />
+                <div className="h-4 w-24 bg-surface-200 dark:bg-surface-700 rounded mb-2" />
+                <div className="h-8 w-20 bg-surface-200 dark:bg-surface-700 rounded mb-2" />
+                <div className="h-5 w-16 bg-surface-200 dark:bg-surface-700 rounded-full" />
               </div>
             </div>
           ))}
@@ -629,15 +626,15 @@ export default function PaidAds() {
       )}
 
       {/* Platform Filter Tabs */}
-      <div className="flex items-center gap-1 bg-surface-100 rounded-lg p-1 w-fit">
+      <div className="flex items-center gap-1 bg-surface-100 dark:bg-surface-700 rounded-lg p-1 w-fit">
         {platformTabs.map((tab) => (
           <button
             key={tab}
             onClick={() => setActivePlatform(tab)}
             className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
               activePlatform === tab
-                ? 'bg-white text-surface-900 shadow-sm'
-                : 'text-surface-500 hover:text-surface-700'
+                ? 'bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 shadow-sm'
+                : 'text-surface-500 dark:text-surface-400 hover:text-surface-700 dark:hover:text-surface-200'
             }`}
           >
             {tab}
@@ -682,7 +679,7 @@ export default function PaidAds() {
             }
           />
         ) : (
-          <DataTable columns={columns} data={filteredCampaigns as unknown as Record<string, unknown>[]} />
+          <DataTable columns={columns as any} data={filteredCampaigns as unknown as Record<string, unknown>[]} />
         )}
       </Card>
 
@@ -692,7 +689,7 @@ export default function PaidAds() {
         <Card
           title="Performance Trend"
           subtitle="Daily spend vs conversions - last 14 days"
-          actions={<TrendingUp className="w-4 h-4 text-surface-400" />}
+          actions={<TrendingUp className="w-4 h-4 text-surface-400 dark:text-surface-500" />}
         >
           {metricsLoading ? (
             <ChartSkeleton />
@@ -730,8 +727,8 @@ export default function PaidAds() {
                         border: '1px solid #e5e7eb',
                         boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
                       }}
-                      formatter={(value: number, name: string) =>
-                        name === 'spend' ? [`$${value.toLocaleString()}`, 'Spend'] : [value, 'Conversions']
+                      formatter={(value: number | undefined, name?: string) =>
+                        name === 'spend' ? [`$${(value ?? 0).toLocaleString()}`, 'Spend'] : [value ?? 0, 'Conversions']
                       }
                     />
                     <Line
@@ -755,7 +752,7 @@ export default function PaidAds() {
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex items-center justify-center gap-6 mt-2 text-xs text-surface-500">
+              <div className="flex items-center justify-center gap-6 mt-2 text-xs text-surface-500 dark:text-surface-400">
                 <span className="flex items-center gap-1.5">
                   <span className="w-3 h-0.5 bg-indigo-500 rounded" /> Spend
                 </span>
@@ -771,7 +768,7 @@ export default function PaidAds() {
         <Card
           title="ROAS by Platform"
           subtitle="Cross-platform return comparison"
-          actions={<DollarSign className="w-4 h-4 text-surface-400" />}
+          actions={<DollarSign className="w-4 h-4 text-surface-400 dark:text-surface-500" />}
         >
           {metricsLoading ? (
             <ChartSkeleton />
@@ -795,8 +792,10 @@ export default function PaidAds() {
                       borderRadius: '8px',
                       border: '1px solid #e5e7eb',
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
+                      backgroundColor: 'var(--color-surface-50, #fff)',
+                      color: 'var(--color-surface-900, #111)',
                     }}
-                    formatter={(value: number) => [`${value.toFixed(2)}x`, 'ROAS']}
+                    formatter={(value: number | undefined) => [`${(value ?? 0).toFixed(2)}x`, 'ROAS']}
                   />
                   <Bar dataKey="roas" radius={[6, 6, 0, 0]} name="ROAS">
                     {platformRoas.map((_, index) => {
@@ -831,11 +830,11 @@ export default function PaidAds() {
           {recommendationsLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="animate-pulse rounded-lg border-l-4 border-l-surface-200 bg-surface-50 p-4">
-                  <div className="h-4 w-24 bg-surface-200 rounded mb-2" />
-                  <div className="h-4 w-48 bg-surface-200 rounded mb-2" />
-                  <div className="h-3 w-full bg-surface-200 rounded mb-1" />
-                  <div className="h-3 w-3/4 bg-surface-200 rounded" />
+                <div key={i} className="animate-pulse rounded-lg border-l-4 border-l-surface-200 dark:border-l-surface-700 bg-surface-50 dark:bg-surface-800 p-4">
+                  <div className="h-4 w-24 bg-surface-200 dark:bg-surface-700 rounded mb-2" />
+                  <div className="h-4 w-48 bg-surface-200 dark:bg-surface-700 rounded mb-2" />
+                  <div className="h-3 w-full bg-surface-200 dark:bg-surface-700 rounded mb-1" />
+                  <div className="h-3 w-3/4 bg-surface-200 dark:bg-surface-700 rounded" />
                 </div>
               ))}
             </div>
@@ -857,19 +856,19 @@ export default function PaidAds() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span
-                          className={`text-xs font-medium px-2 py-0.5 rounded-full ${recommendationIcon[rec.type]?.color ?? 'text-surface-600 bg-surface-100'}`}
+                          className={`text-xs font-medium px-2 py-0.5 rounded-full ${recommendationIcon[rec.type]?.color ?? 'text-surface-600 dark:text-surface-300 bg-surface-100 dark:bg-surface-700'}`}
                         >
                           {recommendationIcon[rec.type]?.icon ?? rec.type}
                         </span>
                         {rec.urgency === 'high' && (
-                          <span className="text-xs font-medium text-red-600">High Priority</span>
+                          <span className="text-xs font-medium text-red-600 dark:text-red-400">High Priority</span>
                         )}
                       </div>
-                      <h4 className="text-sm font-semibold text-surface-900 mb-1">{rec.title}</h4>
-                      <p className="text-xs text-surface-600 leading-relaxed">{rec.description}</p>
+                      <h4 className="text-sm font-semibold text-surface-900 dark:text-surface-100 mb-1">{rec.title}</h4>
+                      <p className="text-xs text-surface-600 dark:text-surface-300 leading-relaxed">{rec.description}</p>
                       <p className="text-xs font-medium text-green-700 mt-2">{rec.impact}</p>
                     </div>
-                    <button className="shrink-0 px-3 py-1.5 text-xs font-medium text-primary-600 bg-white border border-primary-200 rounded-lg hover:bg-primary-50 transition-colors">
+                    <button className="shrink-0 px-3 py-1.5 text-xs font-medium text-primary-600 bg-white dark:bg-surface-800 border border-primary-200 dark:border-primary-500/30 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-500/10 transition-colors">
                       Apply
                     </button>
                   </div>
@@ -887,13 +886,13 @@ export default function PaidAds() {
           {retargetingLoading ? (
             <div className="space-y-4">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="animate-pulse rounded-lg border border-surface-200 p-3">
-                  <div className="h-4 w-32 bg-surface-200 rounded mb-3" />
+                <div key={i} className="animate-pulse rounded-lg border border-surface-200 dark:border-surface-700 p-3">
+                  <div className="h-4 w-32 bg-surface-200 dark:bg-surface-700 rounded mb-3" />
                   <div className="grid grid-cols-2 gap-2 mb-2">
-                    <div className="h-3 w-16 bg-surface-200 rounded" />
-                    <div className="h-3 w-16 bg-surface-200 rounded" />
+                    <div className="h-3 w-16 bg-surface-200 dark:bg-surface-700 rounded" />
+                    <div className="h-3 w-16 bg-surface-200 dark:bg-surface-700 rounded" />
                   </div>
-                  <div className="h-1.5 w-full bg-surface-200 rounded-full" />
+                  <div className="h-1.5 w-full bg-surface-200 dark:bg-surface-700 rounded-full" />
                 </div>
               ))}
             </div>
@@ -909,34 +908,34 @@ export default function PaidAds() {
               {retargetingAudiences.map((audience) => (
                 <div
                   key={audience.name}
-                  className="rounded-lg border border-surface-200 p-3"
+                  className="rounded-lg border border-surface-200 dark:border-surface-700 p-3"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-medium text-surface-900">{audience.name}</h4>
+                    <h4 className="text-sm font-medium text-surface-900 dark:text-surface-100">{audience.name}</h4>
                     <StatusBadge status={audience.status} size="sm" />
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs mb-2">
                     <div>
-                      <span className="text-surface-500">Size</span>
-                      <p className="font-medium text-surface-800">{fmtNumber(audience.size)}</p>
+                      <span className="text-surface-500 dark:text-surface-400">Size</span>
+                      <p className="font-medium text-surface-800 dark:text-surface-200">{fmtNumber(audience.size)}</p>
                     </div>
                     <div>
-                      <span className="text-surface-500">Match Rate</span>
-                      <p className="font-medium text-surface-800">{audience.matchRate}%</p>
+                      <span className="text-surface-500 dark:text-surface-400">Match Rate</span>
+                      <p className="font-medium text-surface-800 dark:text-surface-200">{audience.matchRate}%</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 flex-wrap">
                     {audience.platforms.map((p) => (
                       <span
                         key={p}
-                        className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-surface-100 text-surface-600"
+                        className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300"
                       >
                         {p}
                       </span>
                     ))}
                   </div>
                   {/* Match rate bar */}
-                  <div className="w-full bg-surface-100 rounded-full h-1.5 mt-2">
+                  <div className="w-full bg-surface-100 dark:bg-surface-700 rounded-full h-1.5 mt-2">
                     <div
                       className="bg-indigo-500 h-1.5 rounded-full transition-all"
                       style={{ width: `${audience.matchRate}%` }}

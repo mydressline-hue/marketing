@@ -1071,6 +1071,35 @@ export class DataQualityService {
 
     return scores;
   }
+
+  // -------------------------------------------------------------------------
+  // Convenience aliases (used by the infrastructure controller)
+  // -------------------------------------------------------------------------
+
+  /** Alias for generateDataQualityReport. */
+  static async getReport() {
+    return DataQualityService.generateDataQualityReport();
+  }
+
+  /** Alias for getDataLineage. */
+  static async getLineage(tableName: string) {
+    return DataQualityService.getDataLineage(tableName);
+  }
+
+  /** Alias for detectPIIFields. */
+  static async detectPii() {
+    return DataQualityService.detectPIIFields();
+  }
+
+  /** Alias for anonymizePII. */
+  static async anonymizePii(table: string, columns: Array<{ column: string; pii_type: PIIField['pii_type'] }>) {
+    return DataQualityService.anonymizePII(table, columns);
+  }
+
+  /** Alias for getConsentStatus. */
+  static async getConsent(userId: string) {
+    return DataQualityService.getConsentStatus(userId);
+  }
 }
 
 // ---------------------------------------------------------------------------

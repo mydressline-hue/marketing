@@ -156,20 +156,21 @@ function setupFullProcessMocks() {
   // Mock callAI so it doesn't actually call the Anthropic module
   const agent = new OrganicSocialAgent();
 
-  // Replace callAI with a controlled mock
+  const inferredPattern = JSON.stringify({
+    bestDays: ['Monday', 'Wednesday', 'Friday'],
+    bestHours: [9, 12, 18],
+    topContentTypes: ['reel', 'carousel', 'image'],
+    averageEngagementRate: 0,
+  });
+
+  // Replace callAI with a controlled mock.
+  // analyzeEngagementPatterns is called multiple times (cache returns null each time),
+  // so we need to provide inferEngagementPatterns responses for each invocation.
   (agent as any).callAI = jest.fn()
-    .mockResolvedValueOnce(  // inferEngagementPatterns (called when no historical data)
-      JSON.stringify({
-        bestDays: ['Monday', 'Wednesday', 'Friday'],
-        bestHours: [9, 12, 18],
-        topContentTypes: ['reel', 'carousel', 'image'],
-        averageEngagementRate: 0,
-      }),
-    )
-    .mockResolvedValueOnce(  // inferPostingTimes
-      JSON.stringify(['09:00 Europe/Berlin', '12:00 Europe/Berlin', '18:00 Europe/Berlin']),
-    )
-    .mockResolvedValueOnce(  // generatePostSchedule -> callAI
+    .mockResolvedValueOnce(inferredPattern)   // 1st inferEngagementPatterns (from process -> analyzeEngagementPatterns)
+    .mockResolvedValueOnce(inferredPattern)   // 2nd inferEngagementPatterns (from getOptimalPostingTimes -> analyzeEngagementPatterns)
+    .mockResolvedValueOnce(inferredPattern)   // 3rd inferEngagementPatterns (from generatePostSchedule -> analyzeEngagementPatterns)
+    .mockResolvedValueOnce(                   // generatePostSchedule -> callAI for schedule generation
       JSON.stringify([
         {
           content: 'Summer fashion highlights',
@@ -205,6 +206,10 @@ describe('OrganicSocialAgent', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockQuery.mockReset();
+    mockCacheGet.mockReset();
+    mockCacheSet.mockReset();
+    mockQuery.mockResolvedValue({ rows: [] });
     mockCacheGet.mockResolvedValue(null);
     mockCacheSet.mockResolvedValue(undefined);
     agent = new OrganicSocialAgent();
@@ -269,7 +274,8 @@ describe('OrganicSocialAgent', () => {
 
   describe('process — input validation', () => {
     it('returns failure output when countryId is missing', async () => {
-      const input = buildInput({ parameters: {} });
+      const input = buildInput();
+      delete (input.parameters as Record<string, unknown>).countryId;
 
       // Stub out persistState and logDecision to avoid DB calls
       (agent as any).persistState = jest.fn().mockResolvedValue(undefined);
@@ -293,19 +299,27 @@ describe('OrganicSocialAgent', () => {
     it('generates a social plan and flags uncertainty on missing data', async () => {
       const agentFull = setupFullProcessMocks();
 
-      // Mock DB: loadScheduledPosts returns empty
-      mockQuery
-        .mockResolvedValueOnce({ rows: [] })                      // loadScheduledPosts
-        .mockResolvedValueOnce({ rows: [{ count: '0' }] })        // queryEngagementData count
-        .mockResolvedValueOnce({ rows: [COUNTRY_ROW] })           // loadCountryProfile (for inferEngagementPatterns)
-        .mockResolvedValueOnce({ rows: [COUNTRY_ROW] })           // loadCountryProfile (for getOptimalPostingTimes)
-        .mockResolvedValueOnce({ rows: [COUNTRY_ROW] })           // loadCountryProfile (for generatePostSchedule -> analyzeEngagementPatterns -> infer)
-        .mockResolvedValueOnce({ rows: [{ count: '0' }] })        // second analyzeEngagementPatterns count
-        .mockResolvedValueOnce({ rows: [COUNTRY_ROW] })           // loadCountryProfile inside infer
-        .mockResolvedValueOnce({ rows: [COUNTRY_ROW] })           // loadCountryProfile for tone guidance
-        .mockResolvedValueOnce({ rows: [COUNTRY_ROW] })           // loadCountryProfile for hashtag strategy
-        .mockResolvedValueOnce({ rows: [] })                      // persistState (INSERT)
-        .mockResolvedValueOnce({ rows: [] });                     // logDecision (INSERT)
+      // Mock DB: trace the actual call order through process()
+      // 1. loadScheduledPosts
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+      // 2. analyzeEngagementPatterns -> queryEngagementData count
+      mockQuery.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+      // 3. inferEngagementPatterns -> loadCountryProfile
+      mockQuery.mockResolvedValueOnce({ rows: [COUNTRY_ROW] });
+      // 4. getOptimalPostingTimes -> analyzeEngagementPatterns -> queryEngagementData count
+      mockQuery.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+      // 5. 2nd inferEngagementPatterns -> loadCountryProfile
+      mockQuery.mockResolvedValueOnce({ rows: [COUNTRY_ROW] });
+      // 6. getOptimalPostingTimes -> loadCountryProfile
+      mockQuery.mockResolvedValueOnce({ rows: [COUNTRY_ROW] });
+      // 7. generatePostSchedule -> analyzeEngagementPatterns -> queryEngagementData count
+      mockQuery.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+      // 8. 3rd inferEngagementPatterns -> loadCountryProfile
+      mockQuery.mockResolvedValueOnce({ rows: [COUNTRY_ROW] });
+      // 9. process -> loadCountryProfile for tone guidance
+      mockQuery.mockResolvedValueOnce({ rows: [COUNTRY_ROW] });
+      // 10. generateHashtagStrategy -> loadCountryProfile
+      mockQuery.mockResolvedValueOnce({ rows: [COUNTRY_ROW] });
 
       // Stub persistState and logDecision to simplify
       (agentFull as any).persistState = jest.fn().mockResolvedValue(undefined);
@@ -332,11 +346,16 @@ describe('OrganicSocialAgent', () => {
   describe('process — with historical engagement data', () => {
     it('uses DB engagement data and produces higher confidence', async () => {
       const agentWithData = new OrganicSocialAgent();
+
+      const cachedEngagementPattern = {
+        bestDays: ['Wednesday'],
+        bestHours: [10, 14],
+        topContentTypes: ['reel'],
+        averageEngagementRate: 3.45,
+      };
+
       (agentWithData as any).callAI = jest.fn()
-        .mockResolvedValueOnce(  // getOptimalPostingTimes (AI not called if historical data exists)
-          JSON.stringify(['09:00 Europe/Berlin']),
-        )
-        .mockResolvedValueOnce(  // generatePostSchedule
+        .mockResolvedValueOnce(  // generatePostSchedule -> callAI for schedule
           JSON.stringify([
             {
               content: 'New arrivals just dropped!',
@@ -368,42 +387,39 @@ describe('OrganicSocialAgent', () => {
       (agentWithData as any).persistState = jest.fn().mockResolvedValue(undefined);
       (agentWithData as any).logDecision = jest.fn().mockResolvedValue(undefined);
 
-      // loadScheduledPosts returns 2 posts
-      mockQuery.mockResolvedValueOnce({ rows: [SOCIAL_POST_ROW, SOCIAL_POST_ROW_2] });
+      // Set up cacheGet sequence matching the actual call order:
+      // #1: engagement_patterns -> null (miss, will query DB)
+      // #2: posting_times -> null (miss)
+      // #3: engagement_patterns -> HIT (second call from getOptimalPostingTimes)
+      // #4: country -> null (miss, loadCountryProfile in getOptimalPostingTimes)
+      // #5: engagement_patterns -> HIT (third call from generatePostSchedule)
+      // #6: country -> null (miss, loadCountryProfile for tone)
+      // #7: hashtags -> null (miss)
+      // #8: country -> null (miss, loadCountryProfile for hashtags)
+      mockCacheGet
+        .mockResolvedValueOnce(null)                  // #1 engagement_patterns miss
+        .mockResolvedValueOnce(null)                  // #2 posting_times miss
+        .mockResolvedValueOnce(cachedEngagementPattern) // #3 engagement_patterns hit
+        .mockResolvedValueOnce(null)                  // #4 country miss
+        .mockResolvedValueOnce(cachedEngagementPattern) // #5 engagement_patterns hit
+        .mockResolvedValueOnce(null)                  // #6 country miss (tone)
+        .mockResolvedValueOnce(null)                  // #7 hashtags miss
+        .mockResolvedValueOnce(null);                 // #8 country miss (hashtags)
 
-      // analyzeEngagementPatterns -> queryEngagementData chain
+      // DB query sequence matching the actual call order:
+      // 1. loadScheduledPosts
+      mockQuery.mockResolvedValueOnce({ rows: [SOCIAL_POST_ROW, SOCIAL_POST_ROW_2] });
+      // 2-6. analyzeEngagementPatterns -> queryEngagementData chain (5 queries)
       mockQuery.mockResolvedValueOnce({ rows: [{ count: '50' }] }); // totalPosts
       mockQuery.mockResolvedValueOnce({ rows: [{ day_name: 'Wednesday', avg_engagement: 45 }] }); // bestDays
       mockQuery.mockResolvedValueOnce({ rows: [{ hour: 10, avg_engagement: 55 }, { hour: 14, avg_engagement: 48 }] }); // bestHours
       mockQuery.mockResolvedValueOnce({ rows: [{ media_type: 'reel', avg_engagement: 60 }] }); // topContentTypes
       mockQuery.mockResolvedValueOnce({ rows: [{ avg_rate: '3.45' }] }); // avgEngagementRate
-
-      // loadCountryProfile for getOptimalPostingTimes
+      // 7. loadCountryProfile in getOptimalPostingTimes (cache miss #4)
       mockQuery.mockResolvedValueOnce({ rows: [COUNTRY_ROW] });
-
-      // generatePostSchedule -> analyzeEngagementPatterns (cached now)
-      // But the second analyzeEngagementPatterns call will go through the cache
-      // so we need to set up cached value
-      mockCacheGet.mockResolvedValueOnce(null)  // first cache miss for engagement patterns
-        .mockResolvedValueOnce(null)            // cache miss for country profile
-        .mockResolvedValueOnce(null)            // cache miss for posting times
-        .mockResolvedValueOnce({                // cache hit for engagement patterns on second call
-          bestDays: ['Wednesday'],
-          bestHours: [10, 14],
-          topContentTypes: ['reel'],
-          averageEngagementRate: 3.45,
-        })
-        .mockResolvedValueOnce(null)            // cache miss for country profile (tone)
-        .mockResolvedValueOnce(null)            // cache miss for hashtags
-        .mockResolvedValueOnce(null);           // cache miss for country in hashtag
-
-      // loadCountryProfile for generatePostSchedule
+      // 8. loadCountryProfile for tone (cache miss #6)
       mockQuery.mockResolvedValueOnce({ rows: [COUNTRY_ROW] });
-
-      // loadCountryProfile for tone
-      mockQuery.mockResolvedValueOnce({ rows: [COUNTRY_ROW] });
-
-      // loadCountryProfile for hashtags
+      // 9. loadCountryProfile for hashtags (cache miss #8)
       mockQuery.mockResolvedValueOnce({ rows: [COUNTRY_ROW] });
 
       const input = buildInput();
@@ -716,6 +732,7 @@ describe('OrganicSocialAgent', () => {
     it('produces low confidence when all factors are weak', async () => {
       const input = buildInput();
 
+      // All callAI calls return a generic pattern with empty/zero values
       (agent as any).callAI = jest.fn()
         .mockResolvedValue(JSON.stringify({
           bestDays: [],
@@ -724,30 +741,15 @@ describe('OrganicSocialAgent', () => {
           averageEngagementRate: 0,
         }));
 
-      // loadScheduledPosts -> empty
-      mockQuery.mockResolvedValueOnce({ rows: [] });
-      // queryEngagementData -> no posts
-      mockQuery.mockResolvedValueOnce({ rows: [{ count: '0' }] });
-      // loadCountryProfile (for inferEngagementPatterns) -> not found
-      mockQuery.mockResolvedValueOnce({ rows: [] });
-      // loadCountryProfile for getOptimalPostingTimes -> not found
-      mockQuery.mockResolvedValueOnce({ rows: [] });
-      // loadCountryProfile for tone -> not found
-      mockQuery.mockResolvedValueOnce({ rows: [] });
-
-      // generateHashtagStrategy: loadCountryProfile
-      mockQuery.mockResolvedValueOnce({ rows: [] });
-
       (agent as any).persistState = jest.fn().mockResolvedValue(undefined);
       (agent as any).logDecision = jest.fn().mockResolvedValue(undefined);
 
-      // Mock second analyze call chain
-      mockCacheGet.mockResolvedValue(null);
-
-      // For the nested calls that happen during generatePostSchedule
-      // analyzeEngagementPatterns (second call, no cache)
-      mockQuery.mockResolvedValueOnce({ rows: [{ count: '0' }] }); // count
-      mockQuery.mockResolvedValueOnce({ rows: [] }); // loadCountryProfile for infer
+      // All DB queries will use the default mockResolvedValue({ rows: [] })
+      // which returns empty rows. This means:
+      // - loadScheduledPosts returns empty (no posts)
+      // - queryEngagementData count returns 0 (triggers AI inference)
+      // - loadCountryProfile returns null (no country profile)
+      // All the above produce the "low confidence" scenario.
 
       const output = await agent.process(input);
 

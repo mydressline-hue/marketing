@@ -226,7 +226,12 @@ describe('ContentBlogAgent', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockCacheGet.mockResolvedValue(null); // Default: no cache
+    mockQuery.mockReset();
+    mockCacheGet.mockReset();
+    mockCacheSet.mockReset();
+    mockQuery.mockResolvedValue({ rows: [] });
+    mockCacheGet.mockResolvedValue(null);
+    mockCacheSet.mockResolvedValue(undefined);
     agent = new ContentBlogAgent();
   });
 
@@ -716,13 +721,15 @@ describe('ContentBlogAgent', () => {
         // Step 3: generateInternalLinks
         .mockResolvedValueOnce(JSON.stringify(SAMPLE_INTERNAL_LINKS));
 
-      // Country lookups (multiple - for keyword research, blog gen, and fetch existing)
+      // Cache lookups - all country lookups return the sample country row by default
       mockCacheGet.mockResolvedValue(SAMPLE_COUNTRY_ROW);
-      // Override the first call (keyword research cache) to miss
+      // Override specific calls in order:
+      // #1: fetchCountryData in process() -> country found (use default)
+      // #2: keyword research cache -> miss (need null)
+      // The rest use the default SAMPLE_COUNTRY_ROW
       mockCacheGet
-        .mockResolvedValueOnce(null)   // keyword cache miss
-        .mockResolvedValueOnce(SAMPLE_COUNTRY_ROW) // country lookup (keyword research)
-        .mockResolvedValueOnce(SAMPLE_COUNTRY_ROW); // country lookup (blog gen)
+        .mockResolvedValueOnce(SAMPLE_COUNTRY_ROW) // #1 fetchCountryData in process()
+        .mockResolvedValueOnce(null);               // #2 keyword cache miss in researchKeywords
 
       // Existing content query (for internal links)
       mockQuery.mockResolvedValueOnce({ rows: SAMPLE_EXISTING_CONTENT });

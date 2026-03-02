@@ -20,13 +20,13 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
       className="flex flex-col items-center justify-center py-16 px-6 text-center"
       role="alert"
     >
-      <div className="w-14 h-14 rounded-full bg-danger-50 flex items-center justify-center mb-4">
-        <AlertTriangle className="w-7 h-7 text-danger-600" />
+      <div className="w-14 h-14 rounded-full bg-danger-50 dark:bg-danger-500/10 flex items-center justify-center mb-4">
+        <AlertTriangle className="w-7 h-7 text-danger-600 dark:text-danger-400" />
       </div>
-      <h2 className="text-lg font-semibold text-surface-900 mb-1">
+      <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-1">
         Something went wrong
       </h2>
-      <p className="text-sm text-surface-500 max-w-md mb-4">
+      <p className="text-sm text-surface-500 dark:text-surface-400 max-w-md mb-4">
         {error.message || 'An unexpected error occurred. Please try again.'}
       </p>
       <button
@@ -37,7 +37,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
         Try again
       </button>
       {import.meta.env.DEV && (
-        <pre className="mt-6 max-w-xl text-left text-xs text-surface-500 bg-surface-100 rounded-lg p-4 overflow-auto">
+        <pre className="mt-6 max-w-xl text-left text-xs text-surface-500 dark:text-surface-400 bg-surface-100 dark:bg-surface-800 rounded-lg p-4 overflow-auto">
           {error.stack}
         </pre>
       )}
@@ -113,7 +113,7 @@ export class ErrorBoundary extends Component<
 // ApiErrorDisplay – inline error banner for API failures
 // ---------------------------------------------------------------------------
 
-interface ApiErrorDisplayProps {
+export interface ApiErrorDisplayProps {
   error: Error | null;
   /** Called when the user clicks the retry button. */
   onRetry?: () => void;
@@ -121,6 +121,12 @@ interface ApiErrorDisplayProps {
   onDismiss?: () => void;
   /** Additional CSS classes on the outer container. */
   className?: string;
+  /** Render in a more compact layout with less padding. */
+  compact?: boolean;
+  /** Custom title to display instead of the auto-detected one. */
+  title?: string;
+  /** Custom message to display instead of the error message. */
+  message?: string;
 }
 
 /**
@@ -138,6 +144,9 @@ export function ApiErrorDisplay({
   onRetry,
   onDismiss,
   className = '',
+  compact: _compact = false,
+  title: titleOverride,
+  message: messageOverride,
 }: ApiErrorDisplayProps) {
   if (!error) return null;
 
@@ -146,31 +155,33 @@ export function ApiErrorDisplay({
   const statusMatch = error.message.match(/API Error:\s*(\d{3})/);
   const status = statusMatch ? parseInt(statusMatch[1], 10) : null;
 
-  let title = 'Request failed';
-  if (status) {
+  let title = titleOverride ?? 'Request failed';
+  if (!titleOverride && status) {
     if (status === 401 || status === 403) title = 'Access denied';
     else if (status === 404) title = 'Not found';
     else if (status === 429) title = 'Too many requests';
     else if (status >= 500) title = 'Server error';
   }
 
+  const displayMessage = messageOverride ?? error.message;
+
   return (
     <div
-      className={`flex items-start gap-3 bg-danger-50 border border-danger-200 rounded-lg p-4 ${className}`}
+      className={`flex items-start gap-3 bg-danger-50 dark:bg-danger-500/10 border border-danger-200 dark:border-danger-500/30 rounded-lg p-4 ${className}`}
       role="alert"
     >
-      <XCircle className="w-5 h-5 text-danger-600 flex-shrink-0 mt-0.5" />
+      <XCircle className="w-5 h-5 text-danger-600 dark:text-danger-400 flex-shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-danger-800">{title}</p>
-        <p className="text-sm text-danger-700 mt-0.5 truncate">
-          {error.message}
+        <p className="text-sm font-medium text-danger-800 dark:text-danger-200">{title}</p>
+        <p className="text-sm text-danger-700 dark:text-danger-300 mt-0.5 truncate">
+          {displayMessage}
         </p>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
         {onRetry && (
           <button
             onClick={onRetry}
-            className="inline-flex items-center gap-1 text-sm font-medium text-danger-700 hover:text-danger-900 transition-colors"
+            className="inline-flex items-center gap-1 text-sm font-medium text-danger-700 dark:text-danger-300 hover:text-danger-900 dark:hover:text-danger-100 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Retry
@@ -179,7 +190,7 @@ export function ApiErrorDisplay({
         {onDismiss && (
           <button
             onClick={onDismiss}
-            className="text-danger-400 hover:text-danger-600 transition-colors"
+            className="text-danger-400 hover:text-danger-600 dark:hover:text-danger-300 transition-colors"
             aria-label="Dismiss error"
           >
             <XCircle className="w-4 h-4" />

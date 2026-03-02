@@ -27,7 +27,7 @@ import StatusBadge from '../components/shared/StatusBadge';
 import ConfidenceScore from '../components/shared/ConfidenceScore';
 import ProgressBar from '../components/shared/ProgressBar';
 import { useApiQuery, useApiMutation } from '../hooks/useApi';
-import { TableSkeleton, CardSkeleton } from '../components/shared/LoadingSkeleton';
+import { CardSkeleton } from '../components/shared/LoadingSkeleton';
 import { ApiErrorDisplay } from '../components/shared/ErrorBoundary';
 import EmptyState from '../components/shared/EmptyState';
 
@@ -110,16 +110,16 @@ const typeLabels: Record<string, string> = {
 };
 
 const typeBadgeColors: Record<string, string> = {
-  creative: 'bg-violet-100 text-violet-700',
-  landing_page: 'bg-sky-100 text-sky-700',
-  pricing: 'bg-amber-100 text-amber-700',
-  offer: 'bg-emerald-100 text-emerald-700',
+  creative: 'bg-violet-100 dark:bg-violet-500/10 text-violet-700 dark:text-violet-300',
+  landing_page: 'bg-sky-100 dark:bg-sky-500/10 text-sky-700 dark:text-sky-300',
+  pricing: 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300',
+  offer: 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
 };
 
 const priorityColors: Record<string, string> = {
-  high: 'bg-red-50 text-red-700 border-red-200',
-  medium: 'bg-amber-50 text-amber-700 border-amber-200',
-  low: 'bg-green-50 text-green-700 border-green-200',
+  high: 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/30',
+  medium: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30',
+  low: 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-300 border-green-200 dark:border-green-500/30',
 };
 
 // ---------------------------------------------------------------------------
@@ -159,7 +159,7 @@ export default function ABTesting() {
     loading: testsLoading,
     error: testsError,
     refetch: refetchTests,
-  } = useApiQuery<ABTestListResponse>('/api/v1/agents/ab-testing/tests');
+  } = useApiQuery<ABTestListResponse>('/v1/agents/ab-testing/tests');
 
   const tests = testsResponse?.tests ?? [];
   const summary = testsResponse?.summary;
@@ -179,9 +179,8 @@ export default function ABTesting() {
     error: detailError,
     refetch: refetchDetail,
   } = useApiQuery<ABTestDetailResponse>(
-    effectiveSelectedId
-      ? `/api/v1/agents/ab-testing/tests/${effectiveSelectedId}`
-      : null,
+    `/v1/agents/ab-testing/tests/${effectiveSelectedId ?? ''}`,
+    { enabled: !!effectiveSelectedId },
   );
 
   // -------------------------------------------------------------------------
@@ -192,7 +191,7 @@ export default function ABTesting() {
     loading: analysisLoading,
     error: analysisError,
     refetch: refetchAnalysis,
-  } = useApiQuery<AIAnalysisResponse>('/api/v1/agents/9/execute');
+  } = useApiQuery<AIAnalysisResponse>('/v1/agents/ab-testing/decisions');
 
   const aiRecommendations = analysisResponse?.recommendations ?? [];
 
@@ -203,7 +202,7 @@ export default function ABTesting() {
     mutate: createTest,
     loading: createLoading,
     error: createError,
-  } = useApiMutation<CreateTestResponse>('/api/v1/agents/ab-testing/tests');
+  } = useApiMutation<CreateTestResponse>('/v1/agents/ab-testing/tests', { method: 'POST' });
 
   // -------------------------------------------------------------------------
   // Filtering
@@ -240,7 +239,6 @@ export default function ABTesting() {
       .split(',')
       .map((v) => v.trim())
       .filter(Boolean);
-    const splitPerVariant = Math.round(100 / variantNames.length);
     const trafficSplit = variantNames.map((_, i) =>
       i === 0 ? newTestTrafficSplit : Math.round((100 - newTestTrafficSplit) / (variantNames.length - 1)),
     );
@@ -332,7 +330,7 @@ export default function ABTesting() {
           actions={
             <button
               onClick={() => setShowNewTestPanel(false)}
-              className="text-sm text-surface-400 hover:text-surface-600 transition-colors"
+              className="text-sm text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 transition-colors"
             >
               Cancel
             </button>
@@ -341,7 +339,7 @@ export default function ABTesting() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Test Name */}
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1.5">
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-1.5">
                 Test Name
               </label>
               <input
@@ -349,19 +347,19 @@ export default function ABTesting() {
                 value={newTestName}
                 onChange={(e) => setNewTestName(e.target.value)}
                 placeholder="e.g., Homepage Hero Redesign"
-                className="w-full px-3 py-2 border border-surface-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg text-sm bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
 
             {/* Test Type */}
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1.5">
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-1.5">
                 Test Type
               </label>
               <select
                 value={newTestType}
                 onChange={(e) => setNewTestType(e.target.value)}
-                className="w-full px-3 py-2 border border-surface-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+                className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100"
               >
                 <option value="creative">Creative</option>
                 <option value="landing_page">Landing Page</option>
@@ -372,13 +370,13 @@ export default function ABTesting() {
 
             {/* Success Metric */}
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1.5">
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-1.5">
                 Success Metric
               </label>
               <select
                 value={newTestMetric}
                 onChange={(e) => setNewTestMetric(e.target.value)}
-                className="w-full px-3 py-2 border border-surface-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+                className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100"
               >
                 <option value="conversion_rate">Conversion Rate</option>
                 <option value="click_through_rate">Click-through Rate</option>
@@ -391,7 +389,7 @@ export default function ABTesting() {
 
             {/* Variants */}
             <div>
-              <label className="block text-sm font-medium text-surface-700 mb-1.5">
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-1.5">
                 Variants (comma-separated)
               </label>
               <input
@@ -399,13 +397,13 @@ export default function ABTesting() {
                 value={newTestVariants}
                 onChange={(e) => setNewTestVariants(e.target.value)}
                 placeholder="Control, Variant A, Variant B"
-                className="w-full px-3 py-2 border border-surface-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg text-sm bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
 
             {/* Traffic Split */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-surface-700 mb-1.5">
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-1.5">
                 Traffic Split: Control {newTestTrafficSplit}% / Variants {100 - newTestTrafficSplit}%
               </label>
               <input
@@ -414,9 +412,9 @@ export default function ABTesting() {
                 max={90}
                 value={newTestTrafficSplit}
                 onChange={(e) => setNewTestTrafficSplit(Number(e.target.value))}
-                className="w-full h-2 bg-surface-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+                className="w-full h-2 bg-surface-200 dark:bg-surface-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
               />
-              <div className="flex justify-between text-xs text-surface-400 mt-1">
+              <div className="flex justify-between text-xs text-surface-400 dark:text-surface-500 mt-1">
                 <span>10% Control</span>
                 <span>Equal Split</span>
                 <span>90% Control</span>
@@ -432,8 +430,8 @@ export default function ABTesting() {
           )}
 
           {/* Launch Button */}
-          <div className="mt-6 pt-4 border-t border-surface-100 flex items-center justify-between">
-            <p className="text-xs text-surface-500">
+          <div className="mt-6 pt-4 border-t border-surface-100 dark:border-surface-700 flex items-center justify-between">
+            <p className="text-xs text-surface-500 dark:text-surface-400">
               AI will automatically determine sample size and estimated runtime based on your current traffic.
             </p>
             <button
@@ -449,15 +447,15 @@ export default function ABTesting() {
       )}
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-1 p-1 bg-surface-100 rounded-lg w-fit">
+      <div className="flex items-center gap-1 p-1 bg-surface-100 dark:bg-surface-700 rounded-lg w-fit">
         {typeFilterTabs.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveFilter(tab)}
             className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
               activeFilter === tab
-                ? 'bg-white text-surface-900 shadow-sm'
-                : 'text-surface-500 hover:text-surface-700'
+                ? 'bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 shadow-sm'
+                : 'text-surface-500 dark:text-surface-400 hover:text-surface-700 dark:hover:text-surface-200'
             }`}
           >
             {tab}
@@ -511,7 +509,7 @@ export default function ABTesting() {
                         {test.status === 'running' && <Play className="w-4 h-4 text-success-600 shrink-0" />}
                         {test.status === 'completed' && <CheckCircle2 className="w-4 h-4 text-success-600 shrink-0" />}
                         {test.status === 'paused' && <Pause className="w-4 h-4 text-warning-600 shrink-0" />}
-                        <h3 className="font-semibold text-surface-900 truncate">{test.name}</h3>
+                        <h3 className="font-semibold text-surface-900 dark:text-surface-100 truncate">{test.name}</h3>
                       </div>
                       <span className={`shrink-0 text-xs font-medium px-2.5 py-0.5 rounded-full ${typeBadgeColors[test.type]}`}>
                         {typeLabels[test.type]}
@@ -521,12 +519,12 @@ export default function ABTesting() {
 
                     <div className="flex items-center gap-4 shrink-0">
                       {test.status === 'completed' && test.variants.some((v) => v.isWinner) && (
-                        <span className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">
+                        <span className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 rounded-full">
                           <Trophy className="w-3.5 h-3.5" />
                           Winner Found
                         </span>
                       )}
-                      <div className="flex items-center gap-1.5 text-sm text-surface-500">
+                      <div className="flex items-center gap-1.5 text-sm text-surface-500 dark:text-surface-400">
                         <TrendingUp className="w-3.5 h-3.5" />
                         <span className="font-semibold text-success-600">+{test.improvement}%</span>
                       </div>
@@ -544,7 +542,7 @@ export default function ABTesting() {
                           )}
                           <span
                             className={`text-sm truncate ${
-                              variant.isWinner ? 'font-semibold text-surface-900' : 'text-surface-600'
+                              variant.isWinner ? 'font-semibold text-surface-900 dark:text-surface-100' : 'text-surface-600 dark:text-surface-300'
                             }`}
                             title={variant.name}
                           >
@@ -552,7 +550,7 @@ export default function ABTesting() {
                           </span>
                         </div>
                         <div className="flex-1">
-                          <div className="w-full bg-surface-100 rounded-full h-6 relative overflow-hidden">
+                          <div className="w-full bg-surface-100 dark:bg-surface-700 rounded-full h-6 relative overflow-hidden">
                             <div
                               className={`h-full rounded-full transition-all duration-700 ${getBarColor(
                                 variant,
@@ -563,13 +561,13 @@ export default function ABTesting() {
                                 width: `${(variant.conversionRate / (maxRate * 1.3)) * 100}%`,
                               }}
                             />
-                            <span className="absolute inset-0 flex items-center pl-3 text-xs font-semibold text-surface-800">
+                            <span className="absolute inset-0 flex items-center pl-3 text-xs font-semibold text-surface-800 dark:text-surface-200">
                               {variant.conversionRate}%
                             </span>
                           </div>
                         </div>
                         <div className="w-32 shrink-0 text-right">
-                          <span className="text-xs text-surface-500">
+                          <span className="text-xs text-surface-500 dark:text-surface-400">
                             {variant.conversions.toLocaleString()} / {variant.visitors.toLocaleString()}
                           </span>
                         </div>
@@ -578,8 +576,8 @@ export default function ABTesting() {
                   </div>
 
                   {/* Test Footer */}
-                  <div className="flex items-center justify-between pt-3 border-t border-surface-100">
-                    <div className="flex items-center gap-4 text-xs text-surface-500">
+                  <div className="flex items-center justify-between pt-3 border-t border-surface-100 dark:border-surface-700">
+                    <div className="flex items-center gap-4 text-xs text-surface-500 dark:text-surface-400">
                       <span className="flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5" />
                         Started {test.startDate}
@@ -590,11 +588,11 @@ export default function ABTesting() {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-surface-400">
+                      <span className="text-xs text-surface-400 dark:text-surface-500">
                         Metric: {test.successMetric}
                       </span>
-                      <span className="text-xs text-surface-400">|</span>
-                      <span className="text-xs text-surface-400">
+                      <span className="text-xs text-surface-400 dark:text-surface-500">|</span>
+                      <span className="text-xs text-surface-400 dark:text-surface-500">
                         Split: {test.trafficSplit.join('/')}
                       </span>
                     </div>
@@ -630,7 +628,7 @@ export default function ABTesting() {
                     tickFormatter={(val) => `+${val}%`}
                   />
                   <Tooltip
-                    formatter={(value: number) => [`+${value}%`, 'Avg Improvement']}
+                    formatter={(value: number | undefined) => [`+${value ?? 0}%`, 'Avg Improvement']}
                     contentStyle={{
                       borderRadius: '8px',
                       border: '1px solid #e5e7eb',
@@ -677,9 +675,9 @@ export default function ABTesting() {
                     tickFormatter={(val) => `${val}%`}
                   />
                   <Tooltip
-                    formatter={(value: number, name: string) => {
-                      if (name === 'conversionRate') return [`${value}%`, 'Conversion Rate'];
-                      return [value.toLocaleString(), name];
+                    formatter={(value: number | undefined, name?: string) => {
+                      if (name === 'conversionRate') return [`${value ?? 0}%`, 'Conversion Rate'];
+                      return [(value ?? 0).toLocaleString(), name ?? ''];
                     }}
                     contentStyle={{
                       borderRadius: '8px',
@@ -725,12 +723,12 @@ export default function ABTesting() {
                 className={`rounded-lg border p-4 ${priorityColors[rec.priority]} transition-shadow hover:shadow-md`}
               >
                 <div className="flex items-start justify-between gap-3 mb-2">
-                  <h4 className="font-semibold text-sm text-surface-900">{rec.title}</h4>
+                  <h4 className="font-semibold text-sm text-surface-900 dark:text-surface-100">{rec.title}</h4>
                   <span className="shrink-0 text-xs font-medium uppercase tracking-wide opacity-80">
                     {rec.priority}
                   </span>
                 </div>
-                <p className="text-sm text-surface-600 mb-3">{rec.reason}</p>
+                <p className="text-sm text-surface-600 dark:text-surface-300 mb-3">{rec.reason}</p>
                 <div className="flex items-center justify-between">
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-success-700 bg-success-50 px-2 py-0.5 rounded-full">
                     <TrendingUp className="w-3 h-3" />
@@ -768,7 +766,7 @@ export default function ABTesting() {
                   return (
                     <div key={test.id} className="flex items-center gap-4">
                       <div className="w-56 shrink-0">
-                        <span className="text-sm font-medium text-surface-700">{test.name}</span>
+                        <span className="text-sm font-medium text-surface-700 dark:text-surface-200">{test.name}</span>
                       </div>
                       <div className="flex-1">
                         <ProgressBar
@@ -778,7 +776,7 @@ export default function ABTesting() {
                           showValue
                         />
                       </div>
-                      <div className="w-36 shrink-0 text-right text-xs text-surface-500">
+                      <div className="w-36 shrink-0 text-right text-xs text-surface-500 dark:text-surface-400">
                         {totalVisitors.toLocaleString()} / {targetSample.toLocaleString()} visitors
                       </div>
                     </div>
