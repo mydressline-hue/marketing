@@ -24,27 +24,22 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: |
-            server/package-lock.json
-            ui/package-lock.json
+          cache-dependency-path: package-lock.json
 
-      - name: Install server dependencies
-        run: cd server && npm ci
-
-      - name: Install UI dependencies
-        run: cd ui && npm ci
+      - name: Install all dependencies
+        run: npm ci
 
       - name: Lint server
-        run: cd server && npm run lint
+        run: npm run lint --workspace=server
 
       - name: Lint UI
-        run: cd ui && npm run lint
+        run: npm run lint --workspace=ui
 
       - name: Typecheck server
-        run: cd server && npx tsc --noEmit
+        run: npx tsc --noEmit --project server/tsconfig.json
 
       - name: Typecheck UI
-        run: cd ui && npx tsc -b --noEmit
+        run: npx tsc -b --noEmit --project ui/tsconfig.json
 
   # ===========================================================================
   # Server tests (requires Postgres + Redis services)
@@ -93,13 +88,13 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: server/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: cd server && npm ci
+        run: npm ci
 
       - name: Run tests with coverage
-        run: cd server && npm test -- --coverage --forceExit
+        run: npm test --workspace=server -- --coverage --forceExit
 
       - name: Upload server coverage
         if: always()
@@ -124,13 +119,13 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: ui/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: cd ui && npm ci
+        run: npm ci
 
       - name: Run tests with coverage
-        run: cd ui && npm run test:coverage
+        run: npm run test:coverage --workspace=ui
 
       - name: Upload UI coverage
         if: always()
@@ -155,15 +150,16 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: |
-            server/package-lock.json
-            ui/package-lock.json
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Build server
-        run: cd server && npm ci && npm run build
+        run: npm run build --workspace=server
 
       - name: Build UI
-        run: cd ui && npm ci && npm run build
+        run: npm run build --workspace=ui
 
       - name: Verify server build output
         run: test -f server/dist/index.js
