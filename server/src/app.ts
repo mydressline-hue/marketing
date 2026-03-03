@@ -12,6 +12,7 @@ import { env } from './config/env';
 import {
   corsMiddleware,
   helmetMiddleware,
+  permissionsPolicyMiddleware,
   rateLimitMiddleware,
   hppMiddleware,
   compressionMiddleware,
@@ -65,6 +66,7 @@ const app = express();
 app.use(requestIdMiddleware);
 app.use(corsMiddleware);
 app.use(helmetMiddleware);
+app.use(permissionsPolicyMiddleware);
 app.use(compressionMiddleware);
 app.use(hppMiddleware);
 app.use(rateLimitMiddleware);

@@ -254,7 +254,7 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
 
   static async getByVideoTaskId(videoTaskId: string): Promise<TextEnhancement[]> {
     const result = await pool.query(
-      `SELECT * FROM text_enhancements WHERE video_task_id = $1 ORDER BY platform`,
+      `SELECT id, video_task_id, platform, caption, hashtags, call_to_action, tone, language, metadata, created_at, updated_at FROM text_enhancements WHERE video_task_id = $1 ORDER BY platform`,
       [videoTaskId],
     );
     return result.rows.map(mapRow);
@@ -266,7 +266,7 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
 
   static async getById(id: string): Promise<TextEnhancement | null> {
     const result = await pool.query(
-      `SELECT * FROM text_enhancements WHERE id = $1`,
+      `SELECT id, video_task_id, platform, caption, hashtags, call_to_action, tone, language, metadata, created_at, updated_at FROM text_enhancements WHERE id = $1`,
       [id],
     );
     if (result.rows.length === 0) return null;

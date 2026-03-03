@@ -539,7 +539,7 @@ export class VideoGenerationService {
 
   static async getTaskById(id: string): Promise<VideoTask> {
     const result = await pool.query(
-      `SELECT * FROM video_generation_tasks WHERE id = $1`,
+      `SELECT id, user_id, product_id, title, status, kling_task_id, model, mode, duration, aspect_ratio, prompt, negative_prompt, source_image_url, video_url, thumbnail_url, error_message, metadata, started_at, completed_at, created_at, updated_at FROM video_generation_tasks WHERE id = $1`,
       [id],
     );
     if (result.rows.length === 0) {
@@ -554,7 +554,7 @@ export class VideoGenerationService {
 
   static async getPipelineRunById(id: string): Promise<PipelineRun> {
     const result = await pool.query(
-      `SELECT * FROM video_pipeline_runs WHERE id = $1`,
+      `SELECT id, user_id, video_task_id, product_id, status, target_platforms, config, results, error_message, started_at, completed_at, created_at, updated_at FROM video_pipeline_runs WHERE id = $1`,
       [id],
     );
     if (result.rows.length === 0) {
@@ -612,7 +612,7 @@ export class VideoGenerationService {
     const total = parseInt(countResult.rows[0].count, 10);
 
     const dataResult = await pool.query(
-      `SELECT * FROM video_generation_tasks ${whereClause}
+      `SELECT id, user_id, product_id, title, status, kling_task_id, model, mode, duration, aspect_ratio, prompt, negative_prompt, source_image_url, video_url, thumbnail_url, error_message, metadata, started_at, completed_at, created_at, updated_at FROM video_generation_tasks ${whereClause}
        ORDER BY created_at DESC
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, limit, offset],
@@ -670,7 +670,7 @@ export class VideoGenerationService {
     const total = parseInt(countResult.rows[0].count, 10);
 
     const dataResult = await pool.query(
-      `SELECT * FROM video_pipeline_runs ${whereClause}
+      `SELECT id, user_id, video_task_id, product_id, status, target_platforms, config, results, error_message, started_at, completed_at, created_at, updated_at FROM video_pipeline_runs ${whereClause}
        ORDER BY created_at DESC
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, limit, offset],

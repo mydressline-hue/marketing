@@ -10,6 +10,7 @@ import { pool } from '../config/database';
 import { generateId } from '../utils/helpers';
 import { NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
+import { AuditService } from './audit.service';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -190,6 +191,14 @@ export class CreativesService {
 
     logger.info('Creative created', { creativeId: id, userId, type: data.type });
 
+    await AuditService.log({
+      userId,
+      action: 'creative.create',
+      resourceType: 'creative',
+      resourceId: id,
+      details: { name: data.name, type: data.type, campaignId: data.campaignId },
+    });
+
     return mapRow(result.rows[0]);
   }
 
@@ -242,6 +251,13 @@ export class CreativesService {
 
     logger.info('Creative updated', { creativeId: id });
 
+    await AuditService.log({
+      action: 'creative.update',
+      resourceType: 'creative',
+      resourceId: id,
+      details: { updatedFields: Object.keys(data).filter((k) => (data as Record<string, unknown>)[k] !== undefined) },
+    });
+
     return mapRow(result.rows[0]);
   }
 
@@ -259,6 +275,13 @@ export class CreativesService {
     }
 
     logger.info('Creative soft-deleted', { creativeId: id });
+
+    await AuditService.log({
+      action: 'creative.delete',
+      resourceType: 'creative',
+      resourceId: id,
+      details: { softDelete: true },
+    });
   }
 
   /**
@@ -280,6 +303,13 @@ export class CreativesService {
     );
 
     logger.info('Creative performance updated', { creativeId: id, metrics });
+
+    await AuditService.log({
+      action: 'creative.updatePerformance',
+      resourceType: 'creative',
+      resourceId: id,
+      details: { metrics },
+    });
 
     return mapRow(result.rows[0]);
   }

@@ -21,34 +21,62 @@ export async function startServer(): Promise<void> {
       logger.info(`Server running on port ${env.PORT}`);
       logger.info(`API prefix: ${env.API_PREFIX}`);
       logger.info(`Environment: ${env.NODE_ENV}`);
+      logger.info(`Shutdown timeout: ${config.server.gracefulShutdownTimeoutMs}ms`);
     });
 
     const wsServer = new MarketingWebSocketServer(server);
 
+    // ------------------------------------------------------------------
     // Graceful shutdown
+    // ------------------------------------------------------------------
     let isShuttingDown = false;
+
     const shutdown = async (signal: string) => {
       if (isShuttingDown) return;
       isShuttingDown = true;
 
-      logger.info(`Received ${signal}. Starting graceful shutdown...`);
-      wsServer.close();
-      server.close(async () => {
-        try {
-          await closeConnections();
-          logger.info('Server shut down gracefully');
-          process.exit(0);
-        } catch (err) {
-          logger.error('Error during connection cleanup:', err);
-          process.exit(1);
-        }
-      });
+      const timeoutMs = config.server.gracefulShutdownTimeoutMs;
+      logger.info(`Received ${signal}. Starting graceful shutdown (timeout: ${timeoutMs}ms)...`);
 
-      // Force shutdown after configured timeout (unref so it doesn't keep process alive)
-      setTimeout(() => {
-        logger.error('Forced shutdown after timeout');
+      // 1. Force-exit safety net (unref so it won't keep the process alive)
+      const forceTimer = setTimeout(() => {
+        logger.error(`Forced shutdown after ${timeoutMs}ms timeout`);
         process.exit(1);
-      }, config.server.gracefulShutdownTimeoutMs).unref();
+      }, timeoutMs);
+      forceTimer.unref();
+
+      try {
+        // 2. Stop accepting new HTTP connections
+        logger.info('Shutdown: closing HTTP server (stop accepting new connections)...');
+        await new Promise<void>((resolve, reject) => {
+          server.close((err) => {
+            if (err) {
+              logger.error('Shutdown: error closing HTTP server', { error: err.message });
+              reject(err);
+            } else {
+              logger.info('Shutdown: HTTP server closed');
+              resolve();
+            }
+          });
+        });
+
+        // 3. Close WebSocket server
+        logger.info('Shutdown: closing WebSocket server...');
+        wsServer.close();
+        logger.info('Shutdown: WebSocket server closed');
+
+        // 4. Close database pool, Redis connections, and EventBus
+        //    (closeConnections handles eventBus.close(), closePool(), closeRedis())
+        logger.info('Shutdown: closing database pool, Redis, and EventBus connections...');
+        await closeConnections();
+        logger.info('Shutdown: all connections closed');
+
+        logger.info('Server shut down gracefully');
+        process.exit(0);
+      } catch (err) {
+        logger.error('Error during graceful shutdown:', err);
+        process.exit(1);
+      }
     };
 
     process.on('SIGTERM', () => shutdown('SIGTERM'));

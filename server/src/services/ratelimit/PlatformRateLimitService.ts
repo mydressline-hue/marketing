@@ -202,7 +202,7 @@ export class PlatformRateLimitService {
 
     // Query DB
     const result = await pool.query(
-      'SELECT * FROM platform_rate_limits WHERE platform_type = $1',
+      'SELECT id, platform_type, requests_per_second, requests_per_minute, requests_per_hour, requests_per_day, concurrent_limit, custom_config, updated_at, created_at FROM platform_rate_limits WHERE platform_type = $1',
       [platformType],
     );
 

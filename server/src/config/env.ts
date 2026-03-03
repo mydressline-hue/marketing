@@ -43,6 +43,7 @@ export const envSchema = z
     DATABASE_URL: z.string().optional(),
     DB_POOL_MIN: coerceNumber(2),
     DB_POOL_MAX: coerceNumber(10),
+    DB_IDLE_TIMEOUT: coerceNumber(30000),
     DB_SSL: coerceBoolean(false),
     DB_SSL_ENABLED: coerceBoolean(false),
     DB_SSL_CA: z.string().optional(),
@@ -53,11 +54,13 @@ export const envSchema = z
     REDIS_URL: z.string().default('redis://localhost:6379'),
     REDIS_PASSWORD: z.string().optional(),
     REDIS_DB: coerceNumber(0),
+    REDIS_TLS_CA: z.string().optional(),
 
     // ── Auth / JWT ─────────────────────────────────────────────────────
     JWT_SECRET: z.string().optional(),
     JWT_EXPIRES_IN: z.string().default('24h'),
     JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+    SESSION_MAX_LIFETIME_HOURS: coerceNumber(24),
 
     // ── Encryption ─────────────────────────────────────────────────────
     ENCRYPTION_KEY: z.string().optional(),
@@ -88,6 +91,9 @@ export const envSchema = z
     // ── Job Queue ─────────────────────────────────────────────────────
     MAX_JOB_RETRIES: coerceNumber(3),
 
+    // ── Shutdown ─────────────────────────────────────────────────────────
+    SHUTDOWN_TIMEOUT_MS: coerceNumber(30000),
+
     // ── Clustering ──────────────────────────────────────────────────────
     CLUSTER_ENABLED: coerceBoolean(false),
     CLUSTER_WORKERS: coerceNumber(0), // 0 = use os.cpus().length at runtime
@@ -105,6 +111,9 @@ export const envSchema = z
     METRICS_ENABLED: coerceBoolean(true),
 
     // ── CORS ───────────────────────────────────────────────────────────
+    // CORS_ORIGIN is the preferred single-value env var; CORS_ORIGINS
+    // (comma-separated) is kept for backward compatibility.
+    CORS_ORIGIN: z.string().optional(),
     CORS_ORIGINS: z.string().default('http://localhost:5173'),
 
     // ── Google OAuth ──────────────────────────────────────────────────
@@ -209,7 +218,7 @@ function loadEnv(): Env {
           'postgresql://localhost:5432/ai_growth_engine_dev',
         ENCRYPTION_KEY:
           process.env.ENCRYPTION_KEY ??
-          'dev-encryption-key-do-not-use-in-prod!!',
+          'dev-encrypt-key-not-for-prod!!!!',
       });
     }
 

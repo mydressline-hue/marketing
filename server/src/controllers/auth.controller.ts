@@ -8,6 +8,7 @@
 
 import { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
+import { env } from '../config/env';
 import { AuthService } from '../services/auth.service';
 import { PasswordResetService } from '../services/password-reset.service';
 import { GoogleOAuthService } from '../services/google-oauth.service';
@@ -190,7 +191,7 @@ export const googleAuth = asyncHandler(async (req: Request, res: Response) => {
   // Store the state in a short-lived cookie for CSRF verification
   res.cookie('oauth_state', state, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: env.NODE_ENV === 'production',
     sameSite: 'lax',
     maxAge: 10 * 60 * 1000, // 10 minutes
   });

@@ -116,7 +116,7 @@ export const productionConfig: ProductionConfig = {
     },
     ssl: {
       rejectUnauthorized: true,
-      ca: process.env.DB_SSL_CA || undefined,
+      ca: env.DB_SSL_CA || undefined,
     },
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000,
@@ -130,7 +130,7 @@ export const productionConfig: ProductionConfig = {
     db: env.REDIS_DB,
     tls: {
       rejectUnauthorized: true,
-      ca: process.env.REDIS_TLS_CA || undefined,
+      ca: env.REDIS_TLS_CA || undefined,
     },
     maxRetriesPerRequest: 3,
     connectTimeout: 10_000,
@@ -191,7 +191,7 @@ export const productionConfig: ProductionConfig = {
   // ── Server ─────────────────────────────────────────────────────────────
   server: {
     port: env.PORT,
-    gracefulShutdownTimeoutMs: 30_000,
+    gracefulShutdownTimeoutMs: env.SHUTDOWN_TIMEOUT_MS,
     keepAliveTimeoutMs: 65_000,
     headersTimeoutMs: 66_000,
     requestBodyLimit: '10mb',

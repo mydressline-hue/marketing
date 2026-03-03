@@ -15,6 +15,7 @@ import {
   ExternalServiceError,
 } from '../utils/errors';
 import { logger } from '../utils/logger';
+import { env } from '../config/env';
 import { apm } from '../services/observability/apm';
 import { recordError } from '../services/observability/metrics';
 
@@ -160,7 +161,7 @@ export function errorHandler(
     stack: err.stack,
   });
 
-  const isDev = process.env.NODE_ENV === 'development';
+  const isDev = env.NODE_ENV === 'development';
 
   const responseBody: ErrorResponseBody = {
     error: {

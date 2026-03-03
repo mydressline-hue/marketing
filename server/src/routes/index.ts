@@ -69,9 +69,4 @@ router.use('/learning', learningRoutes);
 // Metrics
 router.use('/metrics', metricsRoutes);
 
-// Health check
-router.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
 export default router;

@@ -1087,7 +1087,7 @@ export class ContinuousLearningService {
     if (cached) return cached;
 
     const result = await pool.query(
-      `SELECT * FROM reinforcement_state WHERE agent_type = $1`, [agentType],
+      `SELECT agent_type, total_episodes, exploration_rate, learning_rate, discount_factor, policy_version, average_reward_last_100, best_episode_reward, convergence_status, updated_at FROM reinforcement_state WHERE agent_type = $1`, [agentType],
     );
 
     if (result.rows.length === 0) {
@@ -1185,7 +1185,7 @@ export class ContinuousLearningService {
     )).rows[0];
 
     const stratRows = (await pool.query(
-      `SELECT * FROM strategy_memory WHERE status = 'active' AND total_applications >= 5
+      `SELECT id, strategy_key, country, channel, success_count, failure_count, average_reward, best_reward, worst_reward, total_applications, last_applied, confidence, status, parameters, created_at, updated_at FROM strategy_memory WHERE status = 'active' AND total_applications >= 5
        ORDER BY (average_reward * confidence) DESC LIMIT 10`,
     )).rows;
 
@@ -1268,14 +1268,14 @@ export class ContinuousLearningService {
 
   static async suggestImprovements(strategyId: string) {
     const { rows: outcomes } = await pool.query(
-      `SELECT * FROM strategy_outcomes WHERE strategy_id = $1 ORDER BY recorded_at DESC LIMIT 20`,
+      `SELECT id, strategy_id, campaign_id, country_code, channel, strategy_type, parameters, outcome, performance_score, recorded_at FROM strategy_outcomes WHERE strategy_id = $1 ORDER BY recorded_at DESC LIMIT 20`,
       [strategyId],
     );
     const avgScore = outcomes.length > 0
       ? outcomes.reduce((s: number, r: Record<string, unknown>) => s + Number(r.performance_score || 0), 0) / outcomes.length
       : 0;
     const { rows: topStrategies } = await pool.query(
-      `SELECT * FROM strategy_memory ORDER BY success_rate DESC LIMIT 1`,
+      `SELECT id, strategy_key, country, channel, success_count, failure_count, average_reward, best_reward, worst_reward, total_applications, last_applied, confidence, status, parameters, created_at, updated_at FROM strategy_memory ORDER BY success_rate DESC LIMIT 1`,
     );
     const suggestions: string[] = [];
     if (avgScore < 0.6) suggestions.push('Consider revising strategy fundamentals');
@@ -1326,7 +1326,7 @@ export class ContinuousLearningService {
     if (filters.channel) { conditions.push(`channel = $${idx++}`); params.push(filters.channel); }
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     const { rows } = await pool.query(
-      `SELECT * FROM strategy_memory_v2 ${where} ORDER BY success_rate DESC`,
+      `SELECT id, country_code, channel, strategy_type, strategy_config, success_rate, avg_roas, times_used, created_at FROM strategy_memory_v2 ${where} ORDER BY success_rate DESC`,
       params,
     );
     return rows;
@@ -1337,7 +1337,7 @@ export class ContinuousLearningService {
     const cached = await cacheGet<Record<string, unknown>[]>(key);
     if (cached) return cached;
     const { rows } = await pool.query(
-      `SELECT * FROM strategy_memory_v2 WHERE country_code = $1 AND channel = $2
+      `SELECT id, country_code, channel, strategy_type, strategy_config, success_rate, avg_roas, times_used, created_at FROM strategy_memory_v2 WHERE country_code = $1 AND channel = $2
        ORDER BY success_rate DESC, avg_roas DESC LIMIT 10`,
       [countryCode, channel],
     );
@@ -1375,7 +1375,7 @@ export class ContinuousLearningService {
 
   static async getCountryPerformanceHistory(countryCode: string, opts?: { months?: number }) {
     const { rows } = await pool.query(
-      `SELECT * FROM country_performance WHERE country_code = $1 ORDER BY recorded_at DESC LIMIT $2`,
+      `SELECT id, country_code, channel, period, total_spend, total_conversions, avg_roas, avg_cpa, recorded_at FROM country_performance WHERE country_code = $1 ORDER BY recorded_at DESC LIMIT $2`,
       [countryCode, opts?.months || 12],
     );
     return rows;
@@ -1383,7 +1383,7 @@ export class ContinuousLearningService {
 
   static async getCountryTrends(countryCode: string) {
     const { rows } = await pool.query(
-      `SELECT * FROM country_performance WHERE country_code = $1 ORDER BY period DESC LIMIT 1`,
+      `SELECT id, country_code, channel, period, total_spend, total_conversions, avg_roas, avg_cpa, recorded_at FROM country_performance WHERE country_code = $1 ORDER BY period DESC LIMIT 1`,
       [countryCode],
     );
     if (rows.length === 0) throw new NotFoundError('No country data found');
@@ -1392,7 +1392,7 @@ export class ContinuousLearningService {
 
   static async compareCountryPerformance(countryCodes: string[], _opts?: { period?: string }) {
     const { rows } = await pool.query(
-      `SELECT * FROM country_performance WHERE country_code = ANY($1) ORDER BY avg_roas DESC`,
+      `SELECT id, country_code, channel, period, total_spend, total_conversions, avg_roas, avg_cpa, recorded_at FROM country_performance WHERE country_code = ANY($1) ORDER BY avg_roas DESC`,
       [countryCodes],
     );
     return rows;
@@ -1400,11 +1400,11 @@ export class ContinuousLearningService {
 
   static async recommendCreativeRotations(campaignId: string) {
     const { rows: fatigued } = await pool.query(
-      `SELECT * FROM creative_performance WHERE campaign_id = $1 AND fatigue_score >= 0.7 ORDER BY fatigue_score DESC`,
+      `SELECT id, creative_id, campaign_id, impressions, clicks, conversions, ctr, fatigue_score, recorded_at FROM creative_performance WHERE campaign_id = $1 AND fatigue_score >= 0.7 ORDER BY fatigue_score DESC`,
       [campaignId],
     );
     const { rows: fresh } = await pool.query(
-      `SELECT * FROM creative_performance WHERE campaign_id = $1 AND fatigue_score < 0.3 ORDER BY fatigue_score ASC`,
+      `SELECT id, creative_id, campaign_id, impressions, clicks, conversions, ctr, fatigue_score, recorded_at FROM creative_performance WHERE campaign_id = $1 AND fatigue_score < 0.3 ORDER BY fatigue_score ASC`,
       [campaignId],
     );
     const rotations = fatigued.map((f: Record<string, unknown>, i: number) => ({
@@ -1437,7 +1437,7 @@ export class ContinuousLearningService {
     if (filters?.campaignId) { conditions.push(`campaign_id = $${idx++}`); params.push(filters.campaignId); }
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     const { rows } = await pool.query(
-      `SELECT * FROM creative_fatigue_alerts ${where} ORDER BY fatigue_score DESC`,
+      `SELECT id, creative_id, creative_name, campaign_id, fatigue_score, days_running, ctr_decline_pct, conversion_decline_pct, frequency, recommended_action, replacement_suggestions, detected_at, status FROM creative_fatigue_alerts ${where} ORDER BY fatigue_score DESC`,
       params,
     );
     return rows;
@@ -1445,7 +1445,7 @@ export class ContinuousLearningService {
 
   static async detectSeasonalPatterns(countryCode: string, channel: string) {
     const { rows } = await pool.query(
-      `SELECT * FROM seasonal_patterns WHERE country_code = $1 AND channel = $2`,
+      `SELECT id, country_code, channel, month, performance_index, is_peak, is_trough, budget_multiplier, historical_roas, notes, created_at FROM seasonal_patterns WHERE country_code = $1 AND channel = $2`,
       [countryCode, channel],
     );
     return { patterns: rows };
@@ -1456,7 +1456,7 @@ export class ContinuousLearningService {
     const cached = await cacheGet<Record<string, unknown>>(key);
     if (cached) return cached;
     const { rows } = await pool.query(
-      `SELECT * FROM seasonal_adjustments WHERE country_code = $1 AND channel = $2 ORDER BY created_at DESC LIMIT 1`,
+      `SELECT id, country_code, channel, cpc_adjustment, budget_adjustment, reason, created_at FROM seasonal_adjustments WHERE country_code = $1 AND channel = $2 ORDER BY created_at DESC LIMIT 1`,
       [countryCode, channel],
     );
     if (rows.length === 0) return { cpc_adjustment: 1.0, budget_adjustment: 1.0, reason: 'no_seasonal_event' };
@@ -1482,7 +1482,7 @@ export class ContinuousLearningService {
 
   static async getUpcomingSeasonalEvents(countryCode: string) {
     const { rows } = await pool.query(
-      `SELECT * FROM seasonal_events WHERE country_code = $1 AND event_start > NOW() ORDER BY event_start ASC`,
+      `SELECT id, country_code, channel, event_name, event_start, event_end, cpc_multiplier, conversion_multiplier, created_at FROM seasonal_events WHERE country_code = $1 AND event_start > NOW() ORDER BY event_start ASC`,
       [countryCode],
     );
     return rows;
@@ -1506,7 +1506,7 @@ export class ContinuousLearningService {
   static async analyzeMarketTrends(countryCode: string, channel: string) {
     const key = ck(`trends:${countryCode}:${channel}`);
     const { rows } = await pool.query(
-      `SELECT * FROM market_trend_analysis WHERE country_code = $1 AND channel = $2 ORDER BY analyzed_at DESC LIMIT 1`,
+      `SELECT id, country_code, channel, trends, overall_outlook, analyzed_at FROM market_trend_analysis WHERE country_code = $1 AND channel = $2 ORDER BY analyzed_at DESC LIMIT 1`,
       [countryCode, channel],
     );
     if (rows.length === 0) return { country_code: countryCode, channel, trends: [], overall_outlook: 'neutral' };
@@ -1516,7 +1516,7 @@ export class ContinuousLearningService {
 
   static async getTrendRecommendations(countryCode: string, channel: string) {
     const { rows } = await pool.query(
-      `SELECT * FROM trend_recommendations WHERE country_code = $1 AND channel = $2 ORDER BY created_at DESC LIMIT 1`,
+      `SELECT id, country_code, channel, recommendations, created_at FROM trend_recommendations WHERE country_code = $1 AND channel = $2 ORDER BY created_at DESC LIMIT 1`,
       [countryCode, channel],
     );
     if (rows.length === 0) return { recommendations: [] };
@@ -1534,7 +1534,7 @@ export class ContinuousLearningService {
     if (filters.startDate) { conditions.push(`recorded_at >= $${idx++}`); params.push(filters.startDate); }
     if (filters.endDate) { conditions.push(`recorded_at <= $${idx++}`); params.push(filters.endDate); }
     const { rows } = await pool.query(
-      `SELECT * FROM market_signals_v2 WHERE ${conditions.join(' AND ')} ORDER BY recorded_at DESC`,
+      `SELECT id, signal_type, country_code, channel, signal_value, confidence, source, recorded_at FROM market_signals_v2 WHERE ${conditions.join(' AND ')} ORDER BY recorded_at DESC`,
       params,
     );
     return rows;
@@ -1545,7 +1545,7 @@ export class ContinuousLearningService {
     const cached = await cacheGet<Record<string, unknown>>(key);
     if (cached) return cached;
     const { rows } = await pool.query(
-      `SELECT * FROM learning_system_status ORDER BY updated_at DESC LIMIT 1`,
+      `SELECT is_active, health, total_records, last_learning_at, updated_at FROM learning_system_status ORDER BY updated_at DESC LIMIT 1`,
     );
     if (rows.length === 0) return { is_active: false, health: 'unknown' };
     await cacheSet(key, rows[0], CACHE_TTL);

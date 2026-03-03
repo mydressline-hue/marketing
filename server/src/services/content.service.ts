@@ -12,6 +12,7 @@ import { generateId } from '../utils/helpers';
 import { withTransaction } from '../utils/transaction';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
+import { AuditService } from './audit.service';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -194,6 +195,14 @@ export class ContentService {
 
     logger.info('Content created', { contentId: id, userId, title: data.title });
 
+    await AuditService.log({
+      userId,
+      action: 'content.create',
+      resourceType: 'content',
+      resourceId: id,
+      details: { title: data.title, language: data.language, countryId: data.countryId },
+    });
+
     return mapRow(result.rows[0]);
   }
 
@@ -251,6 +260,13 @@ export class ContentService {
 
     logger.info('Content updated', { contentId: id });
 
+    await AuditService.log({
+      action: 'content.update',
+      resourceType: 'content',
+      resourceId: id,
+      details: { updatedFields: Object.keys(data).filter((k) => (data as Record<string, unknown>)[k] !== undefined) },
+    });
+
     return mapRow(result.rows[0]);
   }
 
@@ -268,6 +284,13 @@ export class ContentService {
     }
 
     logger.info('Content deleted (archived)', { contentId: id });
+
+    await AuditService.log({
+      action: 'content.delete',
+      resourceType: 'content',
+      resourceId: id,
+      details: { status: 'archived' },
+    });
   }
 
   /**
@@ -326,6 +349,13 @@ export class ContentService {
     );
 
     logger.info('Content unpublished', { contentId: id });
+
+    await AuditService.log({
+      action: 'content.unpublish',
+      resourceType: 'content',
+      resourceId: id,
+      details: { previousStatus: 'published', newStatus: 'draft' },
+    });
 
     return mapRow(result.rows[0]);
   }

@@ -11,6 +11,12 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
+import { validateBody, validateParams } from '../middleware/validation';
+import {
+  recordBanditObservationSchema,
+  triggerDecaySchema,
+  contextTypeParamSchema,
+} from '../validators/schemas';
 import {
   recordBanditObservation,
   recommendArm,
@@ -35,6 +41,7 @@ router.use(authenticate);
 router.post(
   '/observe',
   requirePermission('write:agents'),
+  validateBody(recordBanditObservationSchema),
   recordBanditObservation,
 );
 
@@ -42,6 +49,7 @@ router.post(
 router.get(
   '/recommend/:contextType',
   requirePermission('read:agents'),
+  validateParams(contextTypeParamSchema),
   recommendArm,
 );
 
@@ -49,6 +57,7 @@ router.get(
 router.get(
   '/arms/:contextType',
   requirePermission('read:agents'),
+  validateParams(contextTypeParamSchema),
   getArmsStats,
 );
 
@@ -56,6 +65,7 @@ router.get(
 router.get(
   '/convergence/:contextType',
   requirePermission('read:agents'),
+  validateParams(contextTypeParamSchema),
   checkConvergence,
 );
 

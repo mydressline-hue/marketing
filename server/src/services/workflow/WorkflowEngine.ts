@@ -224,7 +224,7 @@ export class WorkflowEngine {
   static async executeWorkflow(workflowId: string): Promise<Workflow> {
     // Fetch workflow
     const wfResult = await pool.query(
-      `SELECT * FROM workflows WHERE id = $1`,
+      `SELECT id, name, description, status, created_by, created_at, updated_at, completed_at FROM workflows WHERE id = $1`,
       [workflowId],
     );
 
@@ -248,7 +248,7 @@ export class WorkflowEngine {
 
     // Load all steps
     const stepsResult = await pool.query(
-      `SELECT * FROM workflow_steps WHERE workflow_id = $1`,
+      `SELECT id, workflow_id, name, action_type, action_config, depends_on, status, result, error, started_at, completed_at, created_at FROM workflow_steps WHERE workflow_id = $1`,
       [workflowId],
     );
     const allSteps = stepsResult.rows.map(rowToStep);
@@ -387,7 +387,7 @@ export class WorkflowEngine {
    */
   static async getWorkflowStatus(workflowId: string): Promise<Workflow> {
     const wfResult = await pool.query(
-      `SELECT * FROM workflows WHERE id = $1`,
+      `SELECT id, name, description, status, created_by, created_at, updated_at, completed_at FROM workflows WHERE id = $1`,
       [workflowId],
     );
 
@@ -396,7 +396,7 @@ export class WorkflowEngine {
     }
 
     const stepsResult = await pool.query(
-      `SELECT * FROM workflow_steps WHERE workflow_id = $1 ORDER BY created_at ASC`,
+      `SELECT id, workflow_id, name, action_type, action_config, depends_on, status, result, error, started_at, completed_at, created_at FROM workflow_steps WHERE workflow_id = $1 ORDER BY created_at ASC`,
       [workflowId],
     );
 
@@ -415,7 +415,7 @@ export class WorkflowEngine {
    */
   static async cancelWorkflow(workflowId: string): Promise<Workflow> {
     const wfResult = await pool.query(
-      `SELECT * FROM workflows WHERE id = $1`,
+      `SELECT id, name, description, status, created_by, created_at, updated_at, completed_at FROM workflows WHERE id = $1`,
       [workflowId],
     );
 

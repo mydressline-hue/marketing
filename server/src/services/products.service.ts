@@ -11,6 +11,7 @@ import { NotFoundError, ValidationError } from '../utils/errors';
 import { generateId } from '../utils/helpers';
 import { withTransaction } from '../utils/transaction';
 import logger from '../utils/logger';
+import { AuditService } from './audit.service';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -190,6 +191,14 @@ export class ProductsService {
     );
 
     logger.info('Product created', { productId: id, title: data.title });
+
+    await AuditService.log({
+      action: 'product.create',
+      resourceType: 'product',
+      resourceId: id,
+      details: { title: data.title, shopifyId: data.shopifyId },
+    });
+
     return result.rows[0];
   }
 
@@ -262,6 +271,14 @@ export class ProductsService {
     );
 
     logger.info('Product updated', { productId: id });
+
+    await AuditService.log({
+      action: 'product.update',
+      resourceType: 'product',
+      resourceId: id,
+      details: { updatedFields: Object.keys(data).filter((k) => (data as Record<string, unknown>)[k] !== undefined) },
+    });
+
     return result.rows[0];
   }
 

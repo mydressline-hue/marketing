@@ -72,12 +72,45 @@ const pool = new Pool({
   min: env.DB_POOL_MIN,
   max: env.DB_POOL_MAX,
   ssl: sslConfig,
-  idleTimeoutMillis: 30000,
+  idleTimeoutMillis: env.DB_IDLE_TIMEOUT,
   connectionTimeoutMillis: 5000,
+});
+
+// ---------------------------------------------------------------------------
+// Pool event logging for debugging and observability
+// ---------------------------------------------------------------------------
+pool.on('connect', (_client) => {
+  logger.debug('Pool: new client connected', {
+    totalCount: pool.totalCount,
+    idleCount: pool.idleCount,
+    waitingCount: pool.waitingCount,
+  });
+});
+
+pool.on('acquire', () => {
+  logger.debug('Pool: client acquired', {
+    totalCount: pool.totalCount,
+    idleCount: pool.idleCount,
+    waitingCount: pool.waitingCount,
+  });
+});
+
+pool.on('remove', () => {
+  logger.debug('Pool: client removed', {
+    totalCount: pool.totalCount,
+    idleCount: pool.idleCount,
+    waitingCount: pool.waitingCount,
+  });
 });
 
 pool.on('error', (err: Error) => {
   logger.error('Unexpected error on idle database client:', err);
+});
+
+logger.info('Database connection pool configured', {
+  min: env.DB_POOL_MIN,
+  max: env.DB_POOL_MAX,
+  idleTimeoutMillis: env.DB_IDLE_TIMEOUT,
 });
 
 // ---------------------------------------------------------------------------

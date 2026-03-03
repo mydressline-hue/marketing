@@ -20,7 +20,35 @@ import { HealthCheckService } from '../services/healthcheck/HealthCheckService';
 
 /**
  * GET /health
- * Basic health check -- lightweight status for load balancers.
+ * Simple health check -- returns just "ok" for load balancers.
+ * Always returns HTTP 200 if the process is alive.
+ */
+export const simpleHealth = asyncHandler(async (_req: Request, res: Response) => {
+  const result = HealthCheckService.checkSimple();
+
+  res.json(result);
+});
+
+/**
+ * GET /health/details
+ * Detailed health check -- reports database, Redis, memory, and uptime.
+ * Returns HTTP 200 for healthy, HTTP 503 for unhealthy.
+ * Does NOT require authentication.
+ */
+export const detailedHealth = asyncHandler(async (_req: Request, res: Response) => {
+  const result = await HealthCheckService.checkDetailed();
+
+  const statusCode = result.status === 'healthy' ? 200 : 503;
+
+  res.status(statusCode).json({
+    success: true,
+    data: result,
+  });
+});
+
+/**
+ * GET /health/basic
+ * Basic health check -- lightweight status with version and uptime info.
  */
 export const basicHealth = asyncHandler(async (_req: Request, res: Response) => {
   const result = HealthCheckService.checkBasic();
