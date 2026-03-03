@@ -9,7 +9,6 @@ import type { AgentOutput } from '../base/types';
 import type {
   Inconsistency,
   ContradictionResolution,
-  ResolutionMethod,
   ContradictionResolutionRow,
 } from './types';
 import { pool } from '../../config/database';

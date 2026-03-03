@@ -9,11 +9,11 @@
 // ============================================================
 
 import { BaseAgent } from '../base/BaseAgent';
-import type { AgentInput, AgentOutput, AgentConfidenceScore } from '../base/types';
+import type { AgentInput, AgentOutput } from '../base/types';
 import type { AgentType, DateRange } from '../../types';
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet } from '../../config/redis';
-import { generateId, retryWithBackoff } from '../../utils/helpers';
+import { retryWithBackoff } from '../../utils/helpers';
 
 // ---- Cache Configuration ----
 
@@ -285,9 +285,8 @@ deviations from the provided guidelines.`;
     const mode = (input.context.mode as string) ?? 'full_audit';
 
     // Fetch brand guidelines
-    let guidelines: BrandGuidelineSet;
     try {
-      guidelines = await this.getBrandGuidelines();
+      await this.getBrandGuidelines();
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       warnings.push(`Failed to load brand guidelines: ${message}`);
@@ -762,7 +761,7 @@ Respond with JSON matching this exact schema:
       if (!messagingResult.aligned) {
         issues.push(...messagingResult.deviations.slice(0, 5)); // Limit to top 5
       }
-    } catch (error) {
+    } catch {
       issues.push('Could not evaluate messaging alignment');
       messagingScore = 0;
     }
@@ -1101,7 +1100,7 @@ Respond with JSON matching this exact schema:
     }
 
     // Identify affected content (those deviating most from brand tone)
-    const guidelines = await this.getBrandGuidelines();
+    await this.getBrandGuidelines();
     const affectedContent = toneScores
       .filter((s) => s.alignment < ACCEPTABLE_ALIGNMENT_THRESHOLD)
       .map((s) => s.id);
@@ -1154,7 +1153,7 @@ Respond with JSON matching this exact schema:
     }
 
     // Check for voice attribute presence (simple heuristic)
-    const contentLower = content.toLowerCase();
+    const _contentLower = content.toLowerCase();
     for (const voiceAttr of guidelines.voice) {
       // Simple presence check — not a full NLP analysis
       if (voiceAttr.toLowerCase() === 'formal' && /\b(gonna|wanna|kinda|lol|omg)\b/i.test(content)) {

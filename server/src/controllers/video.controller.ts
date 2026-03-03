@@ -272,7 +272,7 @@ export const listPublishRecords = asyncHandler(async (req: Request, res: Respons
   const { platform, status, page, limit } = req.query;
 
   const result = await SocialPublisherService.list({
-    platform: platform as any,
+    platform: platform as string | undefined,
     status: status as string | undefined,
     page: page ? parseInt(page as string, 10) : 1,
     limit: limit ? parseInt(limit as string, 10) : 20,

@@ -19,7 +19,7 @@ import { AuditService } from '../../audit.service';
 // Constants
 // ---------------------------------------------------------------------------
 
-const PLATFORM_TYPE = 'tiktok_ads';
+const _PLATFORM_TYPE = 'tiktok_ads';
 const CACHE_TTL = 120; // seconds
 
 // ---------------------------------------------------------------------------
@@ -48,8 +48,8 @@ export class TikTokAdsService {
    */
   static async createCampaign(
     userId: string,
-    data: Record<string, any>,
-  ): Promise<any> {
+    data: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
     // Verify active TikTok Ads connection
     const connectionResult = await pool.query(
       `SELECT * FROM platform_connections
@@ -112,8 +112,8 @@ export class TikTokAdsService {
   static async updateCampaign(
     userId: string,
     campaignId: string,
-    data: Record<string, any>,
-  ): Promise<any> {
+    data: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
     // Ensure the campaign exists
     const existing = await pool.query(
       `SELECT * FROM platform_campaigns WHERE id = $1 AND user_id = $2 AND platform_type = 'tiktok_ads'`,
@@ -176,7 +176,7 @@ export class TikTokAdsService {
   static async pauseCampaign(
     userId: string,
     campaignId: string,
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const existing = await pool.query(
       `SELECT * FROM platform_campaigns WHERE id = $1 AND user_id = $2 AND platform_type = 'tiktok_ads'`,
       [campaignId, userId],
@@ -225,7 +225,7 @@ export class TikTokAdsService {
    * populates the cache with a TTL. Throws when the campaign
    * does not exist.
    */
-  static async getCampaign(campaignId: string): Promise<any> {
+  static async getCampaign(campaignId: string): Promise<Record<string, unknown>> {
     // Check cache
     const cacheKey = campaignCacheKey(campaignId);
     const cached = await cacheGet(cacheKey);
@@ -353,7 +353,7 @@ export class TikTokAdsService {
   static async getReport(
     campaignId: string,
     dateRange: { start_date: string; end_date: string },
-  ): Promise<any[]> {
+  ): Promise<Record<string, unknown>[]> {
     const result = await pool.query(
       `SELECT * FROM platform_reports
        WHERE campaign_id = $1
@@ -375,7 +375,7 @@ export class TikTokAdsService {
    * Validates that the user has an active connection, retrieves the
    * advertiser_id, and upserts campaign records into the local database.
    */
-  static async syncCampaigns(userId: string): Promise<any> {
+  static async syncCampaigns(userId: string): Promise<Record<string, unknown>> {
     // Verify connection
     const connectionResult = await pool.query(
       `SELECT * FROM platform_connections
@@ -428,8 +428,8 @@ export class TikTokAdsService {
    */
   static async uploadCreative(
     userId: string,
-    data: Record<string, any>,
-  ): Promise<any> {
+    data: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
     // Verify active connection
     const connectionResult = await pool.query(
       `SELECT * FROM platform_connections
@@ -491,7 +491,7 @@ export class TikTokAdsService {
    * Returns an object indicating whether the user has an active connection
    * and the associated account details.
    */
-  static async getConnectionStatus(userId: string): Promise<any> {
+  static async getConnectionStatus(userId: string): Promise<Record<string, unknown>> {
     const result = await pool.query(
       `SELECT * FROM platform_connections
        WHERE user_id = $1 AND platform_type = 'tiktok_ads'

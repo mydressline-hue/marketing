@@ -5,7 +5,7 @@
 // ============================================================
 
 import { BaseAgent } from '../base/BaseAgent';
-import type { AgentInput, AgentOutput, AgentConfidenceScore, AgentConfig } from '../base/types';
+import type { AgentInput, AgentOutput, AgentConfig } from '../base/types';
 import type { AgentType, DateRange, FunnelStage } from '../../types';
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet } from '../../config/redis';
@@ -106,7 +106,7 @@ const FUNNEL_CACHE_TTL = 300; // 5 minutes
 const PAGE_ANALYSIS_CACHE_TTL = 600; // 10 minutes
 const SEGMENT_CACHE_TTL = 900; // 15 minutes
 
-const FUNNEL_STAGES_ORDERED: FunnelStage[] = [
+const _FUNNEL_STAGES_ORDERED: FunnelStage[] = [
   'awareness',
   'interest',
   'consideration',
@@ -1079,7 +1079,7 @@ Do not fabricate data or make unsupported claims.`;
   private generateRuleBasedCheckoutSuggestions(
     currentSteps: number,
     checkoutConversionRate: number,
-    countryInfo: Record<string, unknown>,
+    _countryInfo: Record<string, unknown>,
   ): { suggestions: CheckoutSuggestion[]; recommendedSteps: number; expectedConversionLift: number } {
     const suggestions: CheckoutSuggestion[] = [];
     let expectedLift = 0;

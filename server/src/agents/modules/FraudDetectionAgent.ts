@@ -9,8 +9,8 @@
 // ============================================================
 
 import { BaseAgent } from '../base/BaseAgent';
-import type { AgentInput, AgentOutput, AgentConfidenceScore } from '../base/types';
-import type { AgentType, FraudAlert, FraudType, AnomalyRule, DateRange } from '../../types';
+import type { AgentInput, AgentOutput } from '../base/types';
+import type { AgentType, FraudAlert, FraudType, AnomalyRule } from '../../types';
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet } from '../../config/redis';
 import { generateId, retryWithBackoff } from '../../utils/helpers';

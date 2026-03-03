@@ -9,7 +9,7 @@
 // ============================================================
 
 import { BaseAgent } from '../base/BaseAgent';
-import type { AgentInput, AgentOutput, AgentConfidenceScore } from '../base/types';
+import type { AgentInput, AgentOutput } from '../base/types';
 import type { AgentType, Country } from '../../types';
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet } from '../../config/redis';

@@ -8,7 +8,6 @@ import { BaseAgent } from '../base/BaseAgent';
 import type {
   AgentInput,
   AgentOutput,
-  AgentConfidenceScore,
   AgentConfig,
 } from '../base/types';
 import { calculateWeightedConfidence } from '../base/ConfidenceScoring';
@@ -21,8 +20,6 @@ import type {
   ROASMetric,
   RiskGuardrail,
   Campaign,
-  SpendRecord,
-  AllocationRule,
 } from '../../types';
 
 // ---- Agent-specific Types ----
@@ -1255,7 +1252,7 @@ When making recommendations:
         const now = Date.now();
 
         if (periodEnd > periodStart) {
-          const elapsed = (now - periodStart) / (periodEnd - periodStart);
+          const _elapsed = (now - periodStart) / (periodEnd - periodStart);
           const expectedSpendRate = totalBudget / ((periodEnd - periodStart) / 86400000);
           // On track if daily spend is within 20% of expected rate
           onTrack = Math.abs(daily - expectedSpendRate) / Math.max(expectedSpendRate, 0.01) < 0.20;

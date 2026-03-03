@@ -15,7 +15,6 @@ import type {
 import type { AgentType, Country, Platform } from '../../types';
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet } from '../../config/redis';
-import { generateId } from '../../utils/helpers';
 import { NotFoundError, DatabaseError } from '../../utils/errors';
 
 // ============================================================
@@ -229,7 +228,7 @@ Response format: Return a valid JSON object with the following structure:
    */
   async process(input: AgentInput): Promise<AgentOutput> {
     const countryId = input.parameters.countryId as string | undefined;
-    const uncertainties: string[] = [];
+    const _uncertainties: string[] = [];
     const warnings: string[] = [];
 
     this.log.info('Processing country strategy request', {
@@ -1305,7 +1304,7 @@ Return ONLY a JSON object with this structure:
    */
   private buildFallbackMessagingStyle(
     country: Country,
-    positioning: BrandPositioning,
+    _positioning: BrandPositioning,
   ): MessagingStyle {
     const behavior = country.cultural_behavior ?? {};
     const region = country.region.toLowerCase();

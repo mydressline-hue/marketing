@@ -8,7 +8,6 @@
 import { StrategicCommanderService } from './StrategicCommanderService';
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet } from '../../config/redis';
-import { generateId } from '../../utils/helpers';
 import { NotFoundError } from '../../utils/errors';
 import { AuditService } from '../audit.service';
 
@@ -18,7 +17,7 @@ export class CommanderService {
   // ---------------------------------------------------------------------------
 
   static async generateProjection(
-    params: { timeframes: number[]; channels?: string[]; countries?: string[]; assumptions?: any },
+    params: { timeframes: number[]; channels?: string[]; countries?: string[]; assumptions?: Record<string, unknown> },
     userId: string,
   ) {
     const results = [];
@@ -82,7 +81,7 @@ export class CommanderService {
   // ---------------------------------------------------------------------------
 
   static async generateScenarios(
-    params: { baseAssumptions: any; riskFactors?: any; numScenarios?: number; constraints?: any },
+    params: { baseAssumptions: Record<string, unknown>; riskFactors?: Record<string, unknown>; numScenarios?: number; constraints?: Record<string, unknown> },
     userId: string,
   ) {
     return StrategicCommanderService.generateScenarios(userId, params);
@@ -114,7 +113,7 @@ export class CommanderService {
   // ---------------------------------------------------------------------------
 
   static async initiateChallenge(
-    params: { targetStrategyId: string; challengeType: string; parameters?: any },
+    params: { targetStrategyId: string; challengeType: string; parameters?: Record<string, unknown> },
     userId: string,
   ) {
     return StrategicCommanderService.initiateChallenge(userId, params.targetStrategyId);
@@ -123,7 +122,7 @@ export class CommanderService {
   static async runDevilsAdvocate(params: {
     strategyId: string;
     proposal: string;
-    assumptions?: any;
+    assumptions?: Record<string, unknown>;
   }) {
     return StrategicCommanderService.runDevilsAdvocate(params.strategyId);
   }
@@ -145,10 +144,10 @@ export class CommanderService {
   // ---------------------------------------------------------------------------
 
   static async compareStrategies(params: {
-    strategies: any[];
+    strategies: Record<string, unknown>[];
     metrics?: string[];
     timeframe?: string;
-    constraints?: any;
+    constraints?: Record<string, unknown>;
   }) {
     const [strategyA, strategyB] = params.strategies || [{}, {}];
     const userId = 'system';
@@ -160,7 +159,7 @@ export class CommanderService {
   // ---------------------------------------------------------------------------
 
   static async runPreBudgetSimulation(
-    params: { totalBudget: number; allocations?: any; constraints?: any; objectives?: any },
+    params: { totalBudget: number; allocations?: Record<string, unknown>; constraints?: Record<string, unknown>; objectives?: Record<string, unknown> },
     userId: string,
   ) {
     return StrategicCommanderService.runPreBudgetSimulation(
@@ -173,8 +172,8 @@ export class CommanderService {
   static async optimizeBudget(
     params: {
       totalBudget: number;
-      objectives?: any;
-      constraints?: any;
+      objectives?: Record<string, unknown>;
+      constraints?: Record<string, unknown>;
       channels?: string[];
       countries?: string[];
     },

@@ -93,7 +93,7 @@ function verifyMigrations(): void {
   console.log('─'.repeat(70));
 
   for (const r of results) {
-    const status = r.error ? 'FAIL' : 'OK';
+    const _status = r.error ? 'FAIL' : 'OK';
     const icon = r.error ? '[FAIL]' : '[ OK ]';
     const details = r.error
       ? r.error

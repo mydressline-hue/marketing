@@ -17,8 +17,11 @@ import {
   compressionMiddleware,
   requestIdMiddleware,
 } from './middleware/security';
+import { csrfProtection } from './middleware/csrf';
 import { requestLogger } from './utils/logger';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { optionalAuth } from './middleware/auth';
+import { perUserRateLimit } from './middleware/perUserRateLimit';
 
 // Route imports
 import authRoutes from './routes/auth.routes';
@@ -66,8 +69,20 @@ app.use(hppMiddleware);
 app.use(rateLimitMiddleware);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieParser(env.JWT_SECRET, {
+  // Secure cookie defaults applied globally via cookie-parser
+}));
+
+// ── CSRF protection ──────────────────────────────────────────────────────
+app.use(csrfProtection);
+
 app.use(requestLogger);
+
+// ── Per-user rate limiting ───────────────────────────────────────────────
+// optionalAuth attempts to decode the JWT (without failing for anonymous
+// requests) so that perUserRateLimit can key on the user ID when available.
+app.use(optionalAuth);
+app.use(perUserRateLimit);
 
 // ── Health check ──────────────────────────────────────────────────────────
 app.use('/health', healthcheckRoutes);

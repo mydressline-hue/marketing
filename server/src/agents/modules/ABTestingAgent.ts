@@ -8,16 +8,13 @@ import { BaseAgent } from '../base/BaseAgent';
 import type {
   AgentInput,
   AgentOutput,
-  AgentConfidenceScore,
   AgentConfig,
 } from '../base/types';
 import type {
   AgentType,
   ABTest,
-  ABTestStatus,
   TestVariant,
   StatisticalResult,
-  ID,
 } from '../../types';
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet, cacheDel } from '../../config/redis';

@@ -279,7 +279,7 @@ function strategyConfidence(total: number, successes: number): number {
   return round(lower * Math.min(total / 100, 1));
 }
 
-function fatigueAction(ctrD: number, convD: number, freq: number, days: number): CreativeFatigueAlert['recommended_action'] {
+function fatigueAction(ctrD: number, convD: number, freq: number, _days: number): CreativeFatigueAlert['recommended_action'] {
   if (ctrD > 40 || convD > 35 || freq > 8) return 'pause';
   if (ctrD > 25 || convD > 20 || freq > 5) return 'rotate';
   if (ctrD > 20 || convD > 15) return 'refresh';
@@ -1257,7 +1257,7 @@ export class ContinuousLearningService {
       [strategyId],
     );
     if (rows.length === 0) throw new NotFoundError(`No outcomes for strategy ${strategyId}`);
-    const scores = rows.map((r: any) => Number(r.performance_score || 0));
+    const scores = rows.map((r: Record<string, unknown>) => Number(r.performance_score || 0));
     const avg = scores.reduce((a: number, b: number) => a + b, 0) / scores.length;
     const trend = scores.length >= 3
       ? (scores[0] > scores[scores.length - 1] ? 'improving' : 'declining')
@@ -1271,7 +1271,7 @@ export class ContinuousLearningService {
       [strategyId],
     );
     const avgScore = outcomes.length > 0
-      ? outcomes.reduce((s: number, r: any) => s + Number(r.performance_score || 0), 0) / outcomes.length
+      ? outcomes.reduce((s: number, r: Record<string, unknown>) => s + Number(r.performance_score || 0), 0) / outcomes.length
       : 0;
     const { rows: topStrategies } = await pool.query(
       `SELECT * FROM strategy_memory ORDER BY success_rate DESC LIMIT 1`,
@@ -1333,7 +1333,7 @@ export class ContinuousLearningService {
 
   static async getTopStrategies(countryCode: string, channel: string) {
     const key = ck(`top:${countryCode}:${channel}`);
-    const cached = await cacheGet<any[]>(key);
+    const cached = await cacheGet<Record<string, unknown>[]>(key);
     if (cached) return cached;
     const { rows } = await pool.query(
       `SELECT * FROM strategy_memory_v2 WHERE country_code = $1 AND channel = $2
@@ -1389,7 +1389,7 @@ export class ContinuousLearningService {
     return rows[0];
   }
 
-  static async compareCountryPerformance(countryCodes: string[], opts?: { period?: string }) {
+  static async compareCountryPerformance(countryCodes: string[], _opts?: { period?: string }) {
     const { rows } = await pool.query(
       `SELECT * FROM country_performance WHERE country_code = ANY($1) ORDER BY avg_roas DESC`,
       [countryCodes],

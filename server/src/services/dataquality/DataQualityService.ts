@@ -7,7 +7,6 @@
  * operations are audit-logged for regulatory compliance.
  */
 
-import crypto from 'crypto';
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet, cacheDel } from '../../config/redis';
 import { logger } from '../../utils/logger';

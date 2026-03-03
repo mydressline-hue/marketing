@@ -7,12 +7,10 @@
 import { BaseAgent } from '../base/BaseAgent';
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet } from '../../config/redis';
-import { generateId } from '../../utils/helpers';
 import type { AgentType, DateRange, Country } from '../../types';
 import type {
   AgentInput,
   AgentOutput,
-  AgentConfidenceScore,
   AgentConfig,
 } from '../base/types';
 

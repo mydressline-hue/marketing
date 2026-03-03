@@ -9,6 +9,7 @@
 
 import { pool } from '../config/database';
 import { generateId } from '../utils/helpers';
+import { withTransaction } from '../utils/transaction';
 import { logger } from '../utils/logger';
 import { NotFoundError } from '../utils/errors';
 

@@ -10,9 +10,10 @@
 
 import crypto from 'crypto';
 import { pool } from '../config/database';
-import { generateId, encrypt, decrypt } from '../utils/helpers';
+import { generateId, encrypt } from '../utils/helpers';
 import { env } from '../config/env';
 import { logger } from '../utils/logger';
+import { NotFoundError } from '../utils/errors';
 
 // ---------------------------------------------------------------------------
 // Types

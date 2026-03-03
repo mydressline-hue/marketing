@@ -22,7 +22,7 @@
  */
 
 import { pool } from '../../config/database';
-import { cacheGet, cacheSet, cacheDel } from '../../config/redis';
+import { cacheGet, cacheSet } from '../../config/redis';
 import { logger } from '../../utils/logger';
 import { generateId } from '../../utils/helpers';
 import { NotFoundError, ValidationError } from '../../utils/errors';

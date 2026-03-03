@@ -12,6 +12,7 @@ import { cacheGet, cacheSet, cacheFlush } from '../config/redis';
 import { logger } from '../utils/logger';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { generateId } from '../utils/helpers';
+import { withTransaction } from '../utils/transaction';
 import type { CreateCampaignInput, UpdateCampaignInput } from '../validators/schemas';
 
 // ---------------------------------------------------------------------------
@@ -378,17 +379,21 @@ export class CampaignsService {
       );
     }
 
-    const result = await pool.query<Campaign>(
-      `UPDATE campaigns SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
-      [status, id],
-    );
+    const result = await withTransaction(async (client) => {
+      const updateResult = await client.query<Campaign>(
+        `UPDATE campaigns SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+        [status, id],
+      );
 
-    // Log status change in audit table
-    await pool.query(
-      `INSERT INTO campaign_status_audit (id, campaign_id, previous_status, new_status, changed_by, changed_at)
-       VALUES ($1, $2, $3, $4, $5, NOW())`,
-      [generateId(), id, currentStatus, status, userId],
-    );
+      // Log status change in audit table
+      await client.query(
+        `INSERT INTO campaign_status_audit (id, campaign_id, previous_status, new_status, changed_by, changed_at)
+         VALUES ($1, $2, $3, $4, $5, NOW())`,
+        [generateId(), id, currentStatus, status, userId],
+      );
+
+      return updateResult.rows[0];
+    });
 
     // Invalidate caches
     await cacheFlush(`${CACHE_PREFIX}:*`);
@@ -399,7 +404,7 @@ export class CampaignsService {
       userId,
     });
 
-    return result.rows[0];
+    return result;
   }
 
   /**

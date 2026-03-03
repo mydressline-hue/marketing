@@ -10,7 +10,7 @@
 // ============================================================
 
 import { BaseAgent } from '../base/BaseAgent';
-import type { AgentInput, AgentOutput, AgentConfidenceScore } from '../base/types';
+import type { AgentInput, AgentOutput } from '../base/types';
 import type { AgentType, DateRange } from '../../types';
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet } from '../../config/redis';
@@ -251,7 +251,7 @@ export interface ThreatAssessment {
 /**
  * SOC2 Trust Services Criteria controls to evaluate.
  */
-const SOC2_CONTROLS = [
+const _SOC2_CONTROLS = [
   { name: 'CC1.1 - Control Environment', category: 'security' },
   { name: 'CC2.1 - Information Communication', category: 'security' },
   { name: 'CC3.1 - Risk Assessment', category: 'security' },

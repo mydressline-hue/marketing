@@ -5,7 +5,7 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { env } from '../../config/env';
-import { logger, createChildLogger } from '../../utils/logger';
+import { createChildLogger } from '../../utils/logger';
 import { ExternalServiceError } from '../../utils/errors';
 import { generateId } from '../../utils/helpers';
 import { retryWithBackoff } from '../../utils/helpers';

@@ -7,6 +7,7 @@
  * from the utils layer handle password hashing and ID generation.
  */
 
+import crypto from 'crypto';
 import { pool } from '../config/database';
 import {
   generateId,
@@ -25,6 +26,15 @@ import {
 import logger from '../utils/logger';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
+import { AccountLockoutService } from './account-lockout.service';
+
+/**
+ * Produces a hex-encoded SHA-256 hash of the given token.
+ * Used to store and look up session tokens without keeping the plaintext.
+ */
+function hashToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -37,11 +47,6 @@ interface User {
   role: string;
   created_at: string;
   updated_at: string;
-}
-
-interface AuthTokens {
-  token: string;
-  refreshToken: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -104,10 +109,15 @@ export class AuthService {
   /**
    * Validates credentials, updates the last login timestamp, creates a
    * session record, logs an audit event, and returns tokens.
+   *
+   * Performs account-lockout checks before credential validation and
+   * records failed attempts (or resets on success) for brute-force
+   * protection.
    */
   static async login(
     email: string,
     password: string,
+    ipAddress: string = 'unknown',
   ): Promise<{ user: User; token: string; refreshToken: string }> {
     const result = await pool.query(
       `SELECT id, email, password_hash, name, role, created_at, updated_at
@@ -120,12 +130,33 @@ export class AuthService {
     }
 
     const row = result.rows[0];
+
+    // --- Lockout check: reject early if account is locked ----------------
+    const locked = await AccountLockoutService.isLocked(row.id);
+    if (locked) {
+      const status = await AccountLockoutService.getLockoutStatus(row.id);
+      const minutesRemaining = Math.ceil(status.timeRemainingMs / 60000);
+      logger.warn('Login attempt on locked account', {
+        userId: row.id,
+        email: row.email,
+        ipAddress,
+        minutesRemaining,
+      });
+      throw new AuthenticationError(
+        `Account is temporarily locked. Please try again in ${minutesRemaining} minute${minutesRemaining === 1 ? '' : 's'}.`,
+      );
+    }
+
+    // --- Credential validation -------------------------------------------
     const passwordValid = await comparePassword(password, row.password_hash);
 
     if (!passwordValid) {
+      // Record the failed attempt (may trigger a lockout)
+      await AccountLockoutService.recordFailedAttempt(row.id, ipAddress);
       throw new AuthenticationError('Invalid email or password');
     }
 
+    // --- Successful login: reset any prior failed attempts ---------------
     const token = generateToken({
       id: row.id,
       email: row.email,
@@ -141,15 +172,16 @@ export class AuthService {
         [row.id],
       ),
       pool.query(
-        `INSERT INTO sessions (id, user_id, token, created_at, expires_at)
+        `INSERT INTO sessions (id, user_id, token_hash, created_at, expires_at)
          VALUES ($1, $2, $3, NOW(), NOW() + INTERVAL '24 hours')`,
-        [sessionId, row.id, token],
+        [sessionId, row.id, hashToken(token)],
       ),
       pool.query(
         `INSERT INTO audit_logs (id, user_id, action, details, created_at)
          VALUES ($1, $2, $3, $4, NOW())`,
         [generateId(), row.id, 'LOGIN', JSON.stringify({ email: row.email })],
       ),
+      AccountLockoutService.resetAttempts(row.id),
     ]);
 
     const user: User = {
@@ -176,8 +208,8 @@ export class AuthService {
   static async logout(userId: string, token: string): Promise<void> {
     await Promise.all([
       pool.query(
-        'DELETE FROM sessions WHERE user_id = $1 AND token = $2',
-        [userId, token],
+        'DELETE FROM sessions WHERE user_id = $1 AND token_hash = $2',
+        [userId, hashToken(token)],
       ),
       pool.query(
         `INSERT INTO audit_logs (id, user_id, action, details, created_at)

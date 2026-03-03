@@ -8,10 +8,9 @@ import { BaseAgent } from '../base/BaseAgent';
 import type {
   AgentInput,
   AgentOutput,
-  AgentConfidenceScore,
   AgentConfig,
 } from '../base/types';
-import type { AgentType, Language, Country, Content, Translation } from '../../types';
+import type { AgentType, Language, Country } from '../../types';
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet } from '../../config/redis';
 import { generateId } from '../../utils/helpers';

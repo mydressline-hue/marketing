@@ -53,7 +53,7 @@ export const updateCountrySchema = createCountrySchema.partial();
 // Campaign schemas
 // ---------------------------------------------------------------------------
 
-export const createCampaignSchema = z.object({
+const campaignBaseSchema = z.object({
   name: z.string().min(1, 'Campaign name is required'),
   countryId: uuidString,
   platform: z.enum(['google', 'bing', 'meta', 'tiktok', 'snapchat'], {
@@ -67,9 +67,23 @@ export const createCampaignSchema = z.object({
   endDate: isoDateString,
 });
 
-export const updateCampaignSchema = createCampaignSchema.partial().extend({
+export const createCampaignSchema = campaignBaseSchema.refine(
+  (data) => new Date(data.endDate) > new Date(data.startDate),
+  {
+    message: 'endDate must be after startDate',
+    path: ['endDate'],
+  },
+);
+
+export const updateCampaignSchema = campaignBaseSchema.partial().extend({
   status: z.string().optional(),
-});
+}).refine(
+  (data) => !data.endDate || !data.startDate || new Date(data.endDate) > new Date(data.startDate),
+  {
+    message: 'endDate must be after startDate',
+    path: ['endDate'],
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Creative schemas
@@ -318,7 +332,13 @@ export const paginationSchema = z.object({
 export const dateRangeSchema = z.object({
   startDate: isoDateString,
   endDate: isoDateString,
-});
+}).refine(
+  (data) => new Date(data.endDate) > new Date(data.startDate),
+  {
+    message: 'endDate must be after startDate',
+    path: ['endDate'],
+  },
+);
 
 export const idParamSchema = z.object({
   id: uuidString,

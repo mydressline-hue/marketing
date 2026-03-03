@@ -108,7 +108,6 @@ export class MarketingModelsService {
     const totalSpend = Object.values(channelData).reduce((sum, d) => sum + d.spent, 0) || 1;
 
     // Compute channel contributions based on actual spend proportions
-    const n = params.channels.length;
     for (const ch of params.channels) {
       const data = channelData[ch];
       const spent = data ? data.spent : 0;

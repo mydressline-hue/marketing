@@ -552,7 +552,8 @@ export class KlaviyoService {
       }
 
       // 3. Parse response
-      const data = await response.json();
+      const data = await response.json() as Record<string, unknown>;
+      const records = data.data as unknown[] | undefined;
 
       // 4. Log the sync operation
       const syncId = generateId();
@@ -560,7 +561,7 @@ export class KlaviyoService {
         await pool.query(
           `INSERT INTO crm_sync_logs (id, connection_id, platform_type, sync_type, status, records_synced, records_failed, started_at, completed_at)
            VALUES ($1, $2, $3, 'profiles', 'completed', $4, 0, NOW(), NOW())`,
-          [syncId, integrationId, PLATFORM_TYPE, data.data?.length || 0],
+          [syncId, integrationId, PLATFORM_TYPE, records?.length || 0],
         );
       } catch (logErr) {
         logger.warn('Failed to insert Klaviyo sync log', {
@@ -578,12 +579,12 @@ export class KlaviyoService {
         action: 'klaviyo.api_sync',
         resourceType: 'crm_sync',
         resourceId: integrationId,
-        details: { recordCount: data.data?.length },
+        details: { recordCount: records?.length },
       });
 
       logger.info('Klaviyo API sync completed', {
         integrationId,
-        recordCount: data.data?.length,
+        recordCount: records?.length,
       });
 
       // 5. Return the data

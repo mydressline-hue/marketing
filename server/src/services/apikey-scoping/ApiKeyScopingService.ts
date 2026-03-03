@@ -15,8 +15,6 @@ import { logger } from '../../utils/logger';
 import {
   NotFoundError,
   ValidationError,
-  AuthorizationError,
-  RateLimitError,
 } from '../../utils/errors';
 import { ApiKeyService } from '../apikey.service';
 

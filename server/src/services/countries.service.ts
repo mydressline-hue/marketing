@@ -8,7 +8,7 @@
  */
 
 import { pool } from '../config/database';
-import { cacheGet, cacheSet, cacheDel, cacheFlush } from '../config/redis';
+import { cacheGet, cacheSet, cacheFlush } from '../config/redis';
 import { logger } from '../utils/logger';
 import { NotFoundError } from '../utils/errors';
 import type { CreateCountryInput } from '../validators/schemas';

@@ -1,17 +1,77 @@
+import fs from 'fs';
 import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
 import { env } from './env';
 import { logger } from '../utils/logger';
+
+// ---------------------------------------------------------------------------
+// SSL / TLS configuration for PostgreSQL connections
+// ---------------------------------------------------------------------------
+const isProduction = env.NODE_ENV === 'production';
+const sslEnabled = env.DB_SSL_ENABLED || env.DB_SSL || isProduction;
+
+function buildSslConfig(): false | Record<string, unknown> {
+  if (!sslEnabled) {
+    return false;
+  }
+
+  const sslConfig: Record<string, unknown> = {
+    rejectUnauthorized: isProduction,
+  };
+
+  const certPaths = {
+    ca: env.DB_SSL_CA,
+    key: env.DB_SSL_KEY,
+    cert: env.DB_SSL_CERT,
+  };
+
+  const hasCertPaths =
+    certPaths.ca !== undefined ||
+    certPaths.key !== undefined ||
+    certPaths.cert !== undefined;
+
+  if (hasCertPaths) {
+    for (const [name, filePath] of Object.entries(certPaths)) {
+      if (filePath === undefined) {
+        continue;
+      }
+
+      const fileExists = fs.existsSync(filePath);
+
+      if (!fileExists) {
+        if (isProduction) {
+          // In production, fail fast when configured cert files are missing.
+          const message = `Database SSL certificate file not found: DB_SSL_${name.toUpperCase()}="${filePath}"`;
+          logger.error(message);
+          throw new Error(message);
+        }
+
+        // In development / test, warn but continue without the cert.
+        logger.warn(
+          `Database SSL certificate file not found (non-production, skipping): DB_SSL_${name.toUpperCase()}="${filePath}"`,
+        );
+        continue;
+      }
+
+      sslConfig[name] = fs.readFileSync(filePath);
+    }
+  }
+
+  return sslConfig;
+}
+
+const sslConfig = buildSslConfig();
+
+if (isProduction && sslConfig !== false) {
+  logger.info('Database SSL/TLS is enabled for production.');
+} else if (sslConfig !== false) {
+  logger.info('Database SSL/TLS is enabled (non-production).');
+}
 
 const pool = new Pool({
   connectionString: env.DATABASE_URL,
   min: env.DB_POOL_MIN,
   max: env.DB_POOL_MAX,
-  ssl: env.DB_SSL
-    ? {
-        rejectUnauthorized: env.NODE_ENV === 'production',
-        ca: process.env.DB_SSL_CA || undefined,
-      }
-    : false,
+  ssl: sslConfig,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
 });

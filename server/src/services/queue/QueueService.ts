@@ -11,7 +11,7 @@
  */
 
 import { pool } from '../../config/database';
-import { redis, cacheGet, cacheSet, cacheDel } from '../../config/redis';
+import { redis, cacheDel } from '../../config/redis';
 import { generateId } from '../../utils/helpers';
 import { logger } from '../../utils/logger';
 import { NotFoundError, ValidationError } from '../../utils/errors';

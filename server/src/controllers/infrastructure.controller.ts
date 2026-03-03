@@ -23,7 +23,7 @@ import { FailoverService } from '../services/failover/FailoverService';
  * Get spend monitoring data with optional date range filters.
  */
 export const getSpendMonitoring = asyncHandler(async (req: Request, res: Response) => {
-  const { startDate, endDate, country, channel } = req.query;
+  const { startDate: _startDate, endDate: _endDate, country: _country, channel: _channel } = req.query;
 
   const result = await MonitoringService.getSpendMonitoring();
 
@@ -132,7 +132,7 @@ export const getAlertHistory = asyncHandler(async (req: Request, res: Response) 
  * Update alert configuration (thresholds, recipients, etc.).
  */
 export const updateAlertConfig = asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.user!.id;
+  const _userId = req.user!.id;
   const configUpdate = req.body;
 
   const result = await MonitoringService.updateAlertConfig(configUpdate);
