@@ -306,7 +306,7 @@ export class NotificationService {
     const totalPages = Math.ceil(total / limit);
 
     const dataResult = await pool.query(
-      `SELECT * FROM notifications ${whereClause}
+      `SELECT id, user_id, title, message, channels, priority, category, metadata, is_read, read_at, is_deleted, created_at FROM notifications ${whereClause}
        ORDER BY created_at DESC
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, limit, offset],
@@ -437,7 +437,7 @@ export class NotificationService {
    */
   static async getPreferences(userId: string): Promise<NotificationPreferences> {
     const result = await pool.query(
-      `SELECT * FROM notification_preferences WHERE user_id = $1`,
+      `SELECT id, user_id, email_enabled, slack_enabled, in_app_enabled, sms_enabled, alert_channels, system_channels, campaign_channels, integration_channels, security_channels, quiet_hours_start, quiet_hours_end, updated_at, created_at FROM notification_preferences WHERE user_id = $1`,
       [userId],
     );
 

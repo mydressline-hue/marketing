@@ -121,10 +121,7 @@ export const updateContent = asyncHandler(async (req: Request, res: Response) =>
 export const deleteContent = asyncHandler(async (req: Request, res: Response) => {
   await ContentService.delete(req.params.id);
 
-  res.json({
-    success: true,
-    data: { message: 'Content deleted successfully' },
-  });
+  res.status(204).send();
 });
 
 /**

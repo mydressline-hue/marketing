@@ -7,8 +7,9 @@
 
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
-import { requireRole } from '../middleware/rbac';
+import { requireRole, requirePermission } from '../middleware/rbac';
 import { validateBody } from '../middleware/validation';
+import { staticCacheHeaders } from '../middleware/cacheHeaders';
 import {
   updateSettingsSchema,
   updateNotificationsSettingsSchema,
@@ -28,17 +29,17 @@ const router = Router();
 // Routes
 // ---------------------------------------------------------------------------
 
-// PUT /settings/notifications – update notification preferences (any authenticated user)
-router.put('/notifications', authenticate, validateBody(updateNotificationsSettingsSchema), updateNotifications);
+// PUT /settings/notifications – update notification preferences (requires write:campaigns)
+router.put('/notifications', authenticate, requirePermission('write:campaigns'), validateBody(updateNotificationsSettingsSchema), updateNotifications);
 
-// PUT /settings/appearance – update appearance preferences (any authenticated user)
-router.put('/appearance', authenticate, validateBody(updateAppearanceSettingsSchema), updateAppearance);
+// PUT /settings/appearance – update appearance preferences (requires write:campaigns)
+router.put('/appearance', authenticate, requirePermission('write:campaigns'), validateBody(updateAppearanceSettingsSchema), updateAppearance);
 
 // GET /settings – retrieve all settings (admin only)
-router.get('/', authenticate, requireRole('admin'), getAllSettings);
+router.get('/', authenticate, requireRole('admin'), staticCacheHeaders, getAllSettings);
 
 // GET /settings/api-keys – check API key configuration (admin only)
-router.get('/api-keys', authenticate, requireRole('admin'), getApiKeyConfig);
+router.get('/api-keys', authenticate, requireRole('admin'), staticCacheHeaders, getApiKeyConfig);
 
 // PUT /settings/:key – set a single setting (admin only)
 router.put('/:key', authenticate, requireRole('admin'), validateBody(updateSettingsSchema), setSetting);

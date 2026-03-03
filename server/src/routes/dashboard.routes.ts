@@ -10,6 +10,7 @@ import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
 import { validateQuery } from '../middleware/validation';
+import { dynamicCacheHeaders } from '../middleware/cacheHeaders';
 import { z } from 'zod';
 import {
   getOverview,
@@ -59,6 +60,7 @@ router.get(
   '/overview',
   authenticate,
   requirePermission('read:campaigns'),
+  dynamicCacheHeaders,
   getOverview,
 );
 
@@ -67,6 +69,7 @@ router.get(
   '/spend',
   authenticate,
   requirePermission('read:campaigns'),
+  dynamicCacheHeaders,
   validateQuery(spendBreakdownQuerySchema),
   getSpendBreakdown,
 );
@@ -76,6 +79,7 @@ router.get(
   '/campaigns',
   authenticate,
   requirePermission('read:campaigns'),
+  dynamicCacheHeaders,
   validateQuery(campaignPerformanceQuerySchema),
   getCampaignPerformance,
 );
@@ -85,6 +89,7 @@ router.get(
   '/integrations',
   authenticate,
   requirePermission('read:integrations'),
+  dynamicCacheHeaders,
   getIntegrationHealth,
 );
 
@@ -93,6 +98,7 @@ router.get(
   '/activity',
   authenticate,
   requirePermission('read:campaigns'),
+  dynamicCacheHeaders,
   validateQuery(recentActivityQuerySchema),
   getRecentActivity,
 );

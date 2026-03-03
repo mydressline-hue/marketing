@@ -38,7 +38,14 @@ export default function ProgressBar({
           {showValue && <span className="text-sm font-medium text-surface-700 dark:text-surface-200">{Math.round(pct)}%</span>}
         </div>
       )}
-      <div className={`w-full bg-surface-200 dark:bg-surface-700 rounded-full overflow-hidden ${sizeMap[size]}`}>
+      <div
+        className={`w-full bg-surface-200 dark:bg-surface-700 rounded-full overflow-hidden ${sizeMap[size]}`}
+        role="progressbar"
+        aria-valuenow={Math.round(pct)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={label || 'Progress'}
+      >
         <div
           className={`${colorMap[color]} rounded-full transition-all duration-500 h-full`}
           style={{ width: `${pct}%` }}

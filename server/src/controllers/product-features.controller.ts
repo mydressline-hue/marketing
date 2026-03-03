@@ -250,10 +250,7 @@ export const updateCollection = asyncHandler(async (req: Request, res: Response)
 export const deleteCollection = asyncHandler(async (req: Request, res: Response) => {
   await ShopifyCollectionsService.delete(req.params.id);
 
-  res.json({
-    success: true,
-    data: { message: 'Collection deleted successfully' },
-  });
+  res.status(204).send();
 });
 
 /**
@@ -280,10 +277,7 @@ export const removeCollectionProducts = asyncHandler(async (req: Request, res: R
 
   await ShopifyCollectionsService.removeProducts(req.params.id, productIds);
 
-  res.json({
-    success: true,
-    data: { message: 'Products removed from collection successfully' },
-  });
+  res.status(204).send();
 });
 
 /**

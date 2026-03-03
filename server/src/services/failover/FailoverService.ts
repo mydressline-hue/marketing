@@ -410,7 +410,7 @@ export class FailoverService {
   static async restoreFromBackup(backupId: string): Promise<RestoreResult> {
     // Validate backup exists
     const backupResult = await pool.query(
-      `SELECT * FROM failover_backups WHERE id = $1`,
+      `SELECT id, type, status, started_at, completed_at, size_mb, tables_backed_up, error FROM failover_backups WHERE id = $1`,
       [backupId],
     );
 

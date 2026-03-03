@@ -15,7 +15,7 @@
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet, cacheDel, cacheFlush } from '../../config/redis';
 import { logger } from '../../utils/logger';
-import { generateId, encrypt, decrypt } from '../../utils/helpers';
+import { generateId, encrypt } from '../../utils/helpers';
 import { withTransaction } from '../../utils/transaction';
 import { NotFoundError, ValidationError } from '../../utils/errors';
 import { AuditService } from '../audit.service';
@@ -24,11 +24,6 @@ import { env } from '../../config/env';
 /** Encrypt a credentials object for storage in the database. */
 function encryptCredentials(credentials: Record<string, unknown>): string {
   return encrypt(JSON.stringify(credentials), env.ENCRYPTION_KEY as string);
-}
-
-/** Decrypt a credentials string read from the database back to an object. */
-function decryptCredentials(encrypted: string): Record<string, unknown> {
-  return JSON.parse(decrypt(encrypted, env.ENCRYPTION_KEY as string));
 }
 
 import { GoogleAdsService } from './ads/GoogleAdsService';
@@ -110,11 +105,6 @@ function getConnectionTable(pt: string): string {
 
 function getAdService(pt: AdPlatform) {
   const map = { google_ads: GoogleAdsService, meta_ads: MetaAdsService, tiktok_ads: TikTokAdsService, bing_ads: BingAdsService, snapchat_ads: SnapchatAdsService };
-  return map[pt];
-}
-
-function _getCrmService(pt: CrmPlatform) {
-  const map = { salesforce: SalesforceService, hubspot: HubSpotService, klaviyo: KlaviyoService, mailchimp: MailchimpService, iterable: IterableService };
   return map[pt];
 }
 
@@ -342,8 +332,6 @@ export class IntegrationsService {
     if (conn.rows.length === 0) throw new NotFoundError(`Platform ${platformType} is not connected`);
 
     const connectionId = conn.rows[0].id;
-    // Decrypt credentials for use by platform-specific services
-    const _credentials = conn.rows[0].credentials ? decryptCredentials(conn.rows[0].credentials) : null;
     const syncId = generateId();
     const startedAt = new Date().toISOString();
 
@@ -508,9 +496,6 @@ export class IntegrationsService {
     );
     if (conn.rows.length === 0) throw new NotFoundError(`CRM platform ${platformType} is not connected`);
 
-    const _connectionId = conn.rows[0].id;
-    // Decrypt credentials for use by platform-specific services
-    const _credentials = conn.rows[0].credentials ? decryptCredentials(conn.rows[0].credentials) : null;
     const syncId = generateId();
     const startedAt = new Date();
 
@@ -590,9 +575,6 @@ export class IntegrationsService {
     );
     if (conn.rows.length === 0) throw new NotFoundError(`Analytics platform ${platformType} is not connected`);
 
-    const _connectionId = conn.rows[0].id;
-    // Decrypt credentials for use by platform-specific services
-    const _credentials = conn.rows[0].credentials ? decryptCredentials(conn.rows[0].credentials) : null;
     const exportId = generateId();
     const requestedAt = new Date().toISOString();
 

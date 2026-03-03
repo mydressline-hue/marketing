@@ -11,6 +11,7 @@ import { pool } from '../config/database';
 import { cacheGet, cacheSet, cacheFlush } from '../config/redis';
 import { logger } from '../utils/logger';
 import { NotFoundError } from '../utils/errors';
+import { AuditService } from './audit.service';
 import type { CreateCountryInput } from '../validators/schemas';
 
 // ---------------------------------------------------------------------------
@@ -154,7 +155,7 @@ export class CountriesService {
 
     // Fetch the page
     const dataResult = await pool.query<Country>(
-      `SELECT * FROM countries ${whereClause}
+      `SELECT id, name, code, region, language, currency, timezone, gdp, internet_penetration, ecommerce_adoption, social_platforms, ad_costs, cultural_behavior, opportunity_score, entry_strategy, is_active, created_at, updated_at FROM countries ${whereClause}
        ORDER BY ${sortColumn} ${sortOrder}
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, limit, offset],
@@ -188,7 +189,7 @@ export class CountriesService {
     }
 
     const result = await pool.query<Country>(
-      'SELECT * FROM countries WHERE id = $1',
+      'SELECT id, name, code, region, language, currency, timezone, gdp, internet_penetration, ecommerce_adoption, social_platforms, ad_costs, cultural_behavior, opportunity_score, entry_strategy, is_active, created_at, updated_at FROM countries WHERE id = $1',
       [id],
     );
 
@@ -216,7 +217,7 @@ export class CountriesService {
     }
 
     const result = await pool.query<Country>(
-      'SELECT * FROM countries WHERE code = $1',
+      'SELECT id, name, code, region, language, currency, timezone, gdp, internet_penetration, ecommerce_adoption, social_platforms, ad_costs, cultural_behavior, opportunity_score, entry_strategy, is_active, created_at, updated_at FROM countries WHERE code = $1',
       [normalizedCode],
     );
 
@@ -246,6 +247,13 @@ export class CountriesService {
     // Invalidate caches
     await cacheFlush(`${CACHE_PREFIX}:*`);
     logger.info('Country created', { id: country.id, code: country.code });
+
+    await AuditService.log({
+      action: 'country.create',
+      resourceType: 'country',
+      resourceId: country.id,
+      details: { name: data.name, code: data.code, region: data.region },
+    });
 
     return country;
   }
@@ -306,6 +314,13 @@ export class CountriesService {
     await cacheFlush(`${CACHE_PREFIX}:*`);
     logger.info('Country updated', { id: country.id, code: country.code });
 
+    await AuditService.log({
+      action: 'country.update',
+      resourceType: 'country',
+      resourceId: country.id,
+      details: { updatedFields: Object.keys(data).filter((k) => (data as Record<string, unknown>)[k] !== undefined) },
+    });
+
     return country;
   }
 
@@ -325,6 +340,13 @@ export class CountriesService {
     // Invalidate caches
     await cacheFlush(`${CACHE_PREFIX}:*`);
     logger.info('Country soft-deleted', { id });
+
+    await AuditService.log({
+      action: 'country.delete',
+      resourceType: 'country',
+      resourceId: id,
+      details: { softDelete: true },
+    });
   }
 
   /**
@@ -387,6 +409,13 @@ export class CountriesService {
     await cacheFlush(`${CACHE_PREFIX}:*`);
     logger.info('Opportunity score calculated', { id, score });
 
+    await AuditService.log({
+      action: 'country.calculateScore',
+      resourceType: 'country',
+      resourceId: id,
+      details: { score, factors },
+    });
+
     return { score, factors };
   }
 
@@ -403,7 +432,7 @@ export class CountriesService {
     }
 
     const result = await pool.query<Country>(
-      `SELECT * FROM countries
+      `SELECT id, name, code, region, language, currency, timezone, gdp, internet_penetration, ecommerce_adoption, social_platforms, ad_costs, cultural_behavior, opportunity_score, entry_strategy, is_active, created_at, updated_at FROM countries
        WHERE is_active = true AND opportunity_score IS NOT NULL
        ORDER BY opportunity_score DESC
        LIMIT $1`,

@@ -67,7 +67,7 @@ export const getChannelPerformanceHistory = asyncHandler(
       success: true,
       data: history,
       meta: {
-        count: history.length,
+        total: history.length,
       },
     });
   },

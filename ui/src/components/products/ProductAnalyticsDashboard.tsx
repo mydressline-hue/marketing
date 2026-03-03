@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { BarChart3, AlertTriangle, Eye, ShoppingCart } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import Card from '../shared/Card';
@@ -40,7 +40,7 @@ export default function ProductAnalyticsDashboard() {
   const collectionPerf = colData?.data ?? [];
   const attention = summary?.productsNeedingAttention;
 
-  const topColumns = [
+  const topColumns = useMemo(() => [
     { key: 'title', label: 'Product', render: (p: TopProduct) => <span className="font-medium text-surface-900 dark:text-surface-100">{p.title}</span> },
     { key: 'views', label: 'Views', render: (p: TopProduct) => <span>{p.views.toLocaleString()}</span> },
     { key: 'sales', label: 'Sales', render: (p: TopProduct) => <span>{p.sales.toLocaleString()}</span> },
@@ -49,7 +49,7 @@ export default function ProductAnalyticsDashboard() {
     { key: 'score', label: 'Score', render: (p: TopProduct) => (
       <div className="flex items-center gap-2"><div className="w-12 h-1.5 bg-surface-100 dark:bg-surface-700 rounded-full overflow-hidden"><div className="h-full bg-primary-500 rounded-full" style={{ width: `${p.score}%` }} /></div><span className="text-xs">{Math.round(p.score)}</span></div>
     )},
-  ];
+  ], []);
 
   return (
     <div className="space-y-6">

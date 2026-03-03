@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
@@ -38,6 +38,21 @@ function LoadingSpinner() {
   );
 }
 
+/**
+ * Wraps a lazy-loaded page component with its own ErrorBoundary so that a
+ * render crash in one page is isolated and doesn't take down the entire app.
+ * The user can still navigate to other pages after encountering an error.
+ */
+function PageRoute({ element }: { element: ReactNode }) {
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<LoadingSpinner />}>
+        {element}
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
+
 export default function App() {
   useTheme();
 
@@ -48,36 +63,32 @@ export default function App() {
       <div className="lg:ml-[260px]">
         <Header />
         <main id="main-content" role="main" className="p-6">
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingSpinner />}>
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/market-intelligence" element={<MarketIntelligence />} />
-                <Route path="/country-strategy" element={<CountryStrategy />} />
-                <Route path="/paid-ads" element={<PaidAds />} />
-                <Route path="/organic-social" element={<OrganicSocial />} />
-                <Route path="/content-blog" element={<ContentBlog />} />
-                <Route path="/creative-studio" element={<CreativeStudio />} />
-                <Route path="/analytics" element={<Analytics />} />
-                <Route path="/budget-optimizer" element={<BudgetOptimizer />} />
-                <Route path="/ab-testing" element={<ABTesting />} />
-                <Route path="/conversion" element={<Conversion />} />
-                <Route path="/shopify" element={<Shopify />} />
-                <Route path="/localization" element={<Localization />} />
-                <Route path="/compliance" element={<Compliance />} />
-                <Route path="/competitive-intel" element={<CompetitiveIntel />} />
-                <Route path="/fraud-detection" element={<FraudDetection />} />
-                <Route path="/brand-consistency" element={<BrandConsistency />} />
-                <Route path="/data-engineering" element={<DataEngineering />} />
-                <Route path="/security" element={<Security />} />
-                <Route path="/revenue-forecast" element={<RevenueForecast />} />
-                <Route path="/orchestrator" element={<Orchestrator />} />
-                <Route path="/kill-switch" element={<KillSwitch />} />
-                <Route path="/video-generation" element={<VideoGeneration />} />
-                <Route path="/settings" element={<SettingsPage />} />
-              </Routes>
-            </Suspense>
-          </ErrorBoundary>
+          <Routes>
+            <Route path="/" element={<PageRoute element={<Dashboard />} />} />
+            <Route path="/market-intelligence" element={<PageRoute element={<MarketIntelligence />} />} />
+            <Route path="/country-strategy" element={<PageRoute element={<CountryStrategy />} />} />
+            <Route path="/paid-ads" element={<PageRoute element={<PaidAds />} />} />
+            <Route path="/organic-social" element={<PageRoute element={<OrganicSocial />} />} />
+            <Route path="/content-blog" element={<PageRoute element={<ContentBlog />} />} />
+            <Route path="/creative-studio" element={<PageRoute element={<CreativeStudio />} />} />
+            <Route path="/analytics" element={<PageRoute element={<Analytics />} />} />
+            <Route path="/budget-optimizer" element={<PageRoute element={<BudgetOptimizer />} />} />
+            <Route path="/ab-testing" element={<PageRoute element={<ABTesting />} />} />
+            <Route path="/conversion" element={<PageRoute element={<Conversion />} />} />
+            <Route path="/shopify" element={<PageRoute element={<Shopify />} />} />
+            <Route path="/localization" element={<PageRoute element={<Localization />} />} />
+            <Route path="/compliance" element={<PageRoute element={<Compliance />} />} />
+            <Route path="/competitive-intel" element={<PageRoute element={<CompetitiveIntel />} />} />
+            <Route path="/fraud-detection" element={<PageRoute element={<FraudDetection />} />} />
+            <Route path="/brand-consistency" element={<PageRoute element={<BrandConsistency />} />} />
+            <Route path="/data-engineering" element={<PageRoute element={<DataEngineering />} />} />
+            <Route path="/security" element={<PageRoute element={<Security />} />} />
+            <Route path="/revenue-forecast" element={<PageRoute element={<RevenueForecast />} />} />
+            <Route path="/orchestrator" element={<PageRoute element={<Orchestrator />} />} />
+            <Route path="/kill-switch" element={<PageRoute element={<KillSwitch />} />} />
+            <Route path="/video-generation" element={<PageRoute element={<VideoGeneration />} />} />
+            <Route path="/settings" element={<PageRoute element={<SettingsPage />} />} />
+          </Routes>
         </main>
       </div>
     </div>

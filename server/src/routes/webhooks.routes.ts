@@ -10,7 +10,7 @@
 
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
-import { requireRole } from '../middleware/rbac';
+import { requireRole, requirePermission } from '../middleware/rbac';
 import { validateBody, validateQuery } from '../middleware/validation';
 import {
   registerWebhookSchema,
@@ -40,10 +40,10 @@ router.post('/:platform/inbound', receiveWebhook);
 // POST /webhooks/register -- register a new webhook endpoint (admin only)
 router.post('/register', authenticate, requireRole('admin'), validateBody(registerWebhookSchema), registerWebhook);
 
-// GET /webhooks/registrations -- list active webhook registrations
-router.get('/registrations', authenticate, validateQuery(listWebhookRegistrationsQuerySchema), listRegistrations);
+// GET /webhooks/registrations -- list active webhook registrations (requires read:infrastructure)
+router.get('/registrations', authenticate, requirePermission('read:infrastructure'), validateQuery(listWebhookRegistrationsQuerySchema), listRegistrations);
 
-// GET /webhooks/events -- list webhook events with pagination and filtering
-router.get('/events', authenticate, validateQuery(listWebhookEventsQuerySchema), listEvents);
+// GET /webhooks/events -- list webhook events with pagination and filtering (requires read:infrastructure)
+router.get('/events', authenticate, requirePermission('read:infrastructure'), validateQuery(listWebhookEventsQuerySchema), listEvents);
 
 export default router;

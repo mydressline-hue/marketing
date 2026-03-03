@@ -2,9 +2,9 @@
  * Health Check routes.
  *
  * Mounts health check endpoints with a mix of public and authenticated
- * access. Public endpoints (basic, readiness, liveness) are designed for
- * load balancers and Kubernetes probes. Authenticated endpoints (deep
- * health, historical data) require admin privileges
+ * access. Public endpoints (simple, detailed, basic, readiness, liveness)
+ * are designed for load balancers and Kubernetes probes. Authenticated
+ * endpoints (deep health, historical data) require admin privileges
  * (write:infrastructure).
  *
  * This router is mounted at the `/health` prefix in app.ts, replacing the
@@ -15,6 +15,8 @@ import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
 import {
+  simpleHealth,
+  detailedHealth,
   basicHealth,
   deepHealth,
   readiness,
@@ -28,8 +30,15 @@ const router = Router();
 // Public routes (no authentication required)
 // ---------------------------------------------------------------------------
 
-// GET /health -- basic health check (public)
-router.get('/', basicHealth);
+// GET /health -- simple health check for load balancers (returns just "ok")
+router.get('/', simpleHealth);
+
+// GET /health/details -- detailed health check (DB, Redis, memory, uptime)
+// Returns HTTP 200 for healthy, HTTP 503 for unhealthy. No auth required.
+router.get('/details', detailedHealth);
+
+// GET /health/basic -- basic health check with version and uptime info
+router.get('/basic', basicHealth);
 
 // GET /health/ready -- readiness probe (public, for k8s)
 router.get('/ready', readiness);

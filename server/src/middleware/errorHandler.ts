@@ -3,7 +3,8 @@
  *
  * Provides centralised error logging, structured JSON error responses, and
  * lightweight error-count metrics that can be wired into any monitoring
- * backend.
+ * backend. Integrates with the APM client (Sentry-ready) to forward
+ * exceptions and with Prometheus-compatible counters for error tracking.
  */
 
 import { Request, Response, NextFunction, RequestHandler } from 'express';
@@ -14,6 +15,9 @@ import {
   ExternalServiceError,
 } from '../utils/errors';
 import { logger } from '../utils/logger';
+import { env } from '../config/env';
+import { apm } from '../services/observability/apm';
+import { recordError } from '../services/observability/metrics';
 
 // ---------------------------------------------------------------------------
 // Error metrics – simple in-memory counters keyed by error code
@@ -22,10 +26,12 @@ import { logger } from '../utils/logger';
 const errorMetrics: Record<string, number> = {};
 
 /**
- * Increment the counter for a given error code.
+ * Increment the counter for a given error code. Also records the error in
+ * the Prometheus-compatible metrics service.
  */
 function trackErrorMetric(code: string): void {
   errorMetrics[code] = (errorMetrics[code] ?? 0) + 1;
+  recordError(code);
 }
 
 /**
@@ -98,6 +104,7 @@ export function errorHandler(
     delete sanitizedBody.refreshToken;
   }
   const logContext: Record<string, unknown> = {
+    requestId: req.requestId,
     method: req.method,
     url: req.originalUrl,
     body: sanitizedBody,
@@ -105,6 +112,14 @@ export function errorHandler(
     // Express may attach a user object via auth middleware
     user: (req as unknown as Record<string, unknown>).user ?? undefined,
   };
+
+  // Set APM user context if available
+  const user = (req as unknown as Record<string, unknown>).user as
+    | { id?: string }
+    | undefined;
+  if (user?.id) {
+    apm.setUser(user.id);
+  }
 
   if (err instanceof AppError) {
     // ------- Known / operational errors -------
@@ -116,6 +131,13 @@ export function errorHandler(
       logger.warn(err.message, { ...logContext, code: err.code, stack: err.stack });
     } else {
       logger.error(err.message, { ...logContext, code: err.code, stack: err.stack });
+      // Forward non-operational AppErrors to APM for alerting
+      apm.captureException(err, {
+        requestId: req.requestId,
+        code: err.code,
+        url: req.originalUrl,
+        method: req.method,
+      });
     }
 
     const responseBody = buildErrorResponse(err);
@@ -126,13 +148,20 @@ export function errorHandler(
   // ------- Unknown / unexpected errors -------
   trackErrorMetric('UNKNOWN_ERROR');
 
+  // Forward all unknown errors to APM -- these are the most important to catch
+  apm.captureException(err, {
+    requestId: req.requestId,
+    url: req.originalUrl,
+    method: req.method,
+  });
+
   logger.error('Unhandled error', {
     ...logContext,
     error: err.message,
     stack: err.stack,
   });
 
-  const isDev = process.env.NODE_ENV === 'development';
+  const isDev = env.NODE_ENV === 'development';
 
   const responseBody: ErrorResponseBody = {
     error: {

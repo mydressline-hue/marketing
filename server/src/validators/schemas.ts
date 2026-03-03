@@ -908,8 +908,24 @@ export const changePasswordSchema = z.object({
     .regex(/[0-9]/, 'New password must contain at least one number'),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('Must be a valid email address'),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Reset token is required'),
+  newPassword: z
+    .string()
+    .min(8, 'New password must be at least 8 characters')
+    .regex(/[A-Z]/, 'New password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'New password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'New password must contain at least one number'),
+});
+
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
 // ---------------------------------------------------------------------------
 // List/filter query schemas for routes missing them
@@ -1088,3 +1104,106 @@ export const reorderCollectionProductsBodySchema = z.object({
 });
 
 export type ReorderCollectionProductsInput = z.infer<typeof reorderCollectionProductsBodySchema>;
+
+// ---------------------------------------------------------------------------
+// Learning (Bandit) schemas
+// ---------------------------------------------------------------------------
+
+export const recordBanditObservationSchema = z.object({
+  contextType: z.string().min(1, 'Context type is required'),
+  armName: z.string().min(1, 'Arm name is required'),
+  reward: z.number({ required_error: 'Reward is required' }),
+  rewardType: z.string().optional(),
+  contextVector: z.record(z.unknown()).optional(),
+});
+
+export const triggerDecaySchema = z.object({
+  contextType: z.string().min(1, 'Context type is required').optional(),
+  decayFactor: z.number().min(0).max(1).optional(),
+});
+
+export type RecordBanditObservationInput = z.infer<typeof recordBanditObservationSchema>;
+export type TriggerDecayInput = z.infer<typeof triggerDecaySchema>;
+
+// ---------------------------------------------------------------------------
+// Context type param schema (for learning routes)
+// ---------------------------------------------------------------------------
+
+export const contextTypeParamSchema = z.object({
+  contextType: z.string().min(1, 'Context type is required'),
+});
+
+// ---------------------------------------------------------------------------
+// Workflow schemas
+// ---------------------------------------------------------------------------
+
+const workflowStepSchema = z.object({
+  name: z.string().min(1, 'Step name is required'),
+  type: z.string().min(1, 'Step type is required'),
+  config: z.record(z.unknown()).optional(),
+});
+
+export const createWorkflowSchema = z.object({
+  name: z.string().min(1, 'Workflow name is required'),
+  description: z.string().optional(),
+  steps: z.array(workflowStepSchema).min(1, 'At least one step is required'),
+});
+
+export type CreateWorkflowInput = z.infer<typeof createWorkflowSchema>;
+
+// ---------------------------------------------------------------------------
+// Feature Flag schemas
+// ---------------------------------------------------------------------------
+
+export const createFeatureFlagSchema = z.object({
+  name: z.string().min(1, 'Flag name is required'),
+  description: z.string().optional(),
+  is_enabled: z.boolean().optional(),
+  rollout_percentage: z.number().int().min(0).max(100).optional(),
+});
+
+export const updateFeatureFlagSchema = z.object({
+  description: z.string().optional(),
+  is_enabled: z.boolean().optional(),
+  rollout_percentage: z.number().int().min(0).max(100).optional(),
+});
+
+export const flagNameParamSchema = z.object({
+  name: z.string().min(1, 'Flag name is required'),
+});
+
+export type CreateFeatureFlagInput = z.infer<typeof createFeatureFlagSchema>;
+export type UpdateFeatureFlagInput = z.infer<typeof updateFeatureFlagSchema>;
+
+// ---------------------------------------------------------------------------
+// Queue param schemas
+// ---------------------------------------------------------------------------
+
+export const jobIdParamSchema = z.object({
+  jobId: z.string().min(1, 'Job ID is required'),
+});
+
+export const cleanupJobsSchema = z.object({
+  older_than_days: z.coerce.number().int().positive().optional(),
+});
+
+export type CleanupJobsInput = z.infer<typeof cleanupJobsSchema>;
+
+// ---------------------------------------------------------------------------
+// MFA schemas
+// ---------------------------------------------------------------------------
+
+export const verifyMfaSchema = z.object({
+  token: z.string().min(1, 'MFA token is required'),
+});
+
+export const validateMfaSchema = z.object({
+  token: z.string().optional(),
+  recoveryCode: z.string().optional(),
+}).refine(
+  (data) => data.token || data.recoveryCode,
+  { message: 'Either token or recoveryCode is required' },
+);
+
+export type VerifyMfaInput = z.infer<typeof verifyMfaSchema>;
+export type ValidateMfaInput = z.infer<typeof validateMfaSchema>;

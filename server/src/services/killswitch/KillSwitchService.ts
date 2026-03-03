@@ -191,7 +191,7 @@ export class KillSwitchService {
     }
 
     const result = await pool.query(
-      `SELECT * FROM kill_switch_state
+      `SELECT id, level, is_active, activated_by, trigger_type, trigger_details, affected_countries, affected_campaigns, activated_at, deactivated_at, created_at FROM kill_switch_state
        WHERE is_active = TRUE
        ORDER BY level DESC, activated_at DESC`,
     );
@@ -596,7 +596,7 @@ export class KillSwitchService {
     const totalPages = Math.ceil(total / limit);
 
     const dataResult = await pool.query(
-      `SELECT * FROM kill_switch_state
+      `SELECT id, level, is_active, activated_by, trigger_type, trigger_details, affected_countries, affected_campaigns, activated_at, deactivated_at, created_at FROM kill_switch_state
        ${whereClause}
        ORDER BY created_at DESC
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,

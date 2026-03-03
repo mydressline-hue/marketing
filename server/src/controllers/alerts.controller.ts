@@ -54,7 +54,9 @@ export const getActiveAlerts = asyncHandler(async (_req: Request, res: Response)
   res.json({
     success: true,
     data: alerts,
-    total: alerts.length,
+    meta: {
+      total: alerts.length,
+    },
   });
 });
 

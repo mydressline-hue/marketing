@@ -137,3 +137,46 @@ export const cleanupJobs = asyncHandler(async (req: Request, res: Response) => {
     },
   });
 });
+
+// ---------------------------------------------------------------------------
+// Dead Letter Queue Handlers
+// ---------------------------------------------------------------------------
+
+/**
+ * GET /queue/dead-letter
+ * List dead letter jobs with pagination.
+ */
+export const listDeadLetterJobs = asyncHandler(async (req: Request, res: Response) => {
+  const { page, limit } = req.query;
+
+  const pagination = {
+    page: page ? parseInt(page as string, 10) : undefined,
+    limit: limit ? parseInt(limit as string, 10) : undefined,
+  };
+
+  const result = await QueueService.listDeadLetterJobs(pagination);
+
+  res.json({
+    success: true,
+    data: result.data,
+    meta: {
+      total: result.total,
+      page: result.page,
+      totalPages: result.totalPages,
+    },
+  });
+});
+
+/**
+ * POST /queue/dead-letter/:id/retry
+ * Retry a dead letter job by re-enqueuing it.
+ */
+export const retryDeadLetterJob = asyncHandler(async (req: Request, res: Response) => {
+  const newJobId = await QueueService.retryDeadLetterJob(req.params.id);
+  const job = await QueueService.getJobStatus(newJobId);
+
+  res.json({
+    success: true,
+    data: job,
+  });
+});

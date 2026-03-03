@@ -12,6 +12,7 @@
 
 import { pool } from '../../config/database';
 import { redis, cacheDel } from '../../config/redis';
+import { env } from '../../config/env';
 import { generateId } from '../../utils/helpers';
 import { logger } from '../../utils/logger';
 import { NotFoundError, ValidationError } from '../../utils/errors';
@@ -81,6 +82,24 @@ export interface QueueStats {
   };
 }
 
+export interface DeadLetterJob {
+  id: string;
+  originalJobId: string;
+  type: string;
+  payload: Record<string, unknown>;
+  error: string | null;
+  attempts: number;
+  failedAt: string;
+  createdAt: string;
+}
+
+export interface PaginatedDeadLetterJobs {
+  data: DeadLetterJob[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -102,6 +121,19 @@ function rowToJob(row: Record<string, unknown>): Job {
     completedAt: (row.completed_at as string) ?? null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
+  };
+}
+
+function rowToDeadLetterJob(row: Record<string, unknown>): DeadLetterJob {
+  return {
+    id: row.id as string,
+    originalJobId: row.original_job_id as string,
+    type: row.type as string,
+    payload: (row.payload as Record<string, unknown>) ?? {},
+    error: (row.error as string) ?? null,
+    attempts: Number(row.attempts),
+    failedAt: row.failed_at as string,
+    createdAt: row.created_at as string,
   };
 }
 
@@ -216,7 +248,7 @@ export class QueueService {
 
     // Fetch the full job from PostgreSQL
     const result = await pool.query(
-      `SELECT * FROM job_queue WHERE id = $1`,
+      `SELECT id, queue_name, job_type, payload, status, priority, attempts, max_retries, result, error_message, scheduled_at, started_at, completed_at, created_at, updated_at FROM job_queue WHERE id = $1`,
       [jobId],
     );
 
@@ -303,6 +335,8 @@ export class QueueService {
 
       await redis.hset(redisJobKey(jobId), 'status', 'failed');
 
+      const failedJob = rowToJob(failedResult.rows[0]);
+
       logger.error('Job failed', {
         jobId,
         queueName: job.queueName,
@@ -311,7 +345,13 @@ export class QueueService {
         error: errorMessage,
       });
 
-      return rowToJob(failedResult.rows[0]);
+      // If the job has exhausted all retries, move it to the dead letter queue.
+      const maxRetries = job.maxRetries || env.MAX_JOB_RETRIES;
+      if (failedJob.attempts >= maxRetries) {
+        await QueueService.moveToDeadLetter(failedJob, errorMessage);
+      }
+
+      return failedJob;
     }
   }
 
@@ -322,7 +362,7 @@ export class QueueService {
    */
   static async getJobStatus(jobId: string): Promise<Job> {
     const result = await pool.query(
-      `SELECT * FROM job_queue WHERE id = $1`,
+      `SELECT id, queue_name, job_type, payload, status, priority, attempts, max_retries, result, error_message, scheduled_at, started_at, completed_at, created_at, updated_at FROM job_queue WHERE id = $1`,
       [jobId],
     );
 
@@ -377,7 +417,7 @@ export class QueueService {
     const totalPages = Math.ceil(total / limit);
 
     const dataResult = await pool.query(
-      `SELECT * FROM job_queue ${whereClause}
+      `SELECT id, queue_name, job_type, payload, status, priority, attempts, max_retries, result, error_message, scheduled_at, started_at, completed_at, created_at, updated_at FROM job_queue ${whereClause}
        ORDER BY priority ASC, created_at DESC
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, limit, offset],
@@ -400,7 +440,7 @@ export class QueueService {
    */
   static async retryJob(jobId: string): Promise<Job> {
     const result = await pool.query(
-      `SELECT * FROM job_queue WHERE id = $1`,
+      `SELECT id, queue_name, job_type, payload, status, priority, attempts, max_retries, result, error_message, scheduled_at, started_at, completed_at, created_at, updated_at FROM job_queue WHERE id = $1`,
       [jobId],
     );
 
@@ -521,5 +561,134 @@ export class QueueService {
     logger.info('Old jobs cleaned up', { olderThanDays, deletedCount });
 
     return deletedCount;
+  }
+
+  // -------------------------------------------------------------------------
+  // Dead Letter Queue
+  // -------------------------------------------------------------------------
+
+  /**
+   * Move a failed job to the dead_letter_jobs table.
+   *
+   * Preserves the original job ID, type, full payload, and the final error
+   * message so operators can inspect and optionally re-enqueue it.
+   */
+  static async moveToDeadLetter(
+    job: Job,
+    errorMessage: string,
+  ): Promise<DeadLetterJob> {
+    const id = generateId();
+
+    const result = await pool.query(
+      `INSERT INTO dead_letter_jobs
+         (id, original_job_id, type, payload, error, attempts, failed_at, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+       RETURNING *`,
+      [
+        id,
+        job.id,
+        job.jobType,
+        JSON.stringify(job.payload),
+        errorMessage,
+        job.attempts,
+      ],
+    );
+
+    logger.warn('Job moved to dead letter queue', {
+      deadLetterId: id,
+      originalJobId: job.id,
+      queueName: job.queueName,
+      jobType: job.jobType,
+      attempts: job.attempts,
+    });
+
+    return rowToDeadLetterJob(result.rows[0]);
+  }
+
+  /**
+   * List dead letter jobs with pagination.
+   */
+  static async listDeadLetterJobs(
+    pagination?: JobPagination,
+  ): Promise<PaginatedDeadLetterJobs> {
+    // Count total rows
+    const countResult = await pool.query(
+      `SELECT COUNT(*) AS total FROM dead_letter_jobs`,
+    );
+    const total = parseInt(countResult.rows[0].total, 10);
+
+    // Pagination defaults
+    const page = Math.max(1, pagination?.page ?? 1);
+    const limit = Math.max(1, Math.min(100, pagination?.limit ?? 20));
+    const offset = (page - 1) * limit;
+    const totalPages = Math.ceil(total / limit);
+
+    const dataResult = await pool.query(
+      `SELECT id, original_job_id, type, payload, error, attempts, failed_at, created_at FROM dead_letter_jobs
+       ORDER BY failed_at DESC
+       LIMIT $1 OFFSET $2`,
+      [limit, offset],
+    );
+
+    return {
+      data: dataResult.rows.map(rowToDeadLetterJob),
+      total,
+      page,
+      totalPages,
+    };
+  }
+
+  /**
+   * Retry a dead letter job by re-enqueuing it into the original queue.
+   *
+   * The dead letter record is deleted upon successful re-enqueue so it does
+   * not appear in the dead letter list anymore.
+   *
+   * @throws NotFoundError if the dead letter job does not exist.
+   */
+  static async retryDeadLetterJob(deadLetterId: string): Promise<string> {
+    const result = await pool.query(
+      `SELECT id, original_job_id, type, payload, error, attempts, failed_at, created_at FROM dead_letter_jobs WHERE id = $1`,
+      [deadLetterId],
+    );
+
+    if (result.rows.length === 0) {
+      throw new NotFoundError(`Dead letter job with id '${deadLetterId}' not found`);
+    }
+
+    const dlJob = rowToDeadLetterJob(result.rows[0]);
+
+    // Look up the original job to get the queue name; fall back to 'default'.
+    const originalResult = await pool.query(
+      `SELECT queue_name FROM job_queue WHERE id = $1`,
+      [dlJob.originalJobId],
+    );
+    const queueName =
+      originalResult.rows.length > 0
+        ? (originalResult.rows[0].queue_name as string)
+        : 'default';
+
+    // Re-enqueue a fresh job with the original payload.
+    const newJobId = await QueueService.enqueue(
+      queueName,
+      dlJob.type,
+      dlJob.payload,
+      { max_retries: env.MAX_JOB_RETRIES },
+    );
+
+    // Remove the dead letter entry
+    await pool.query(
+      `DELETE FROM dead_letter_jobs WHERE id = $1`,
+      [deadLetterId],
+    );
+
+    logger.info('Dead letter job re-enqueued', {
+      deadLetterId,
+      originalJobId: dlJob.originalJobId,
+      newJobId,
+      queueName,
+    });
+
+    return newJobId;
   }
 }

@@ -15,6 +15,7 @@ import { NotFoundError, ValidationError } from '../utils/errors';
 import { generateId } from '../utils/helpers';
 import { AgentRegistry } from '../agents/base/AgentRegistry';
 import { AgentLifecycle } from '../agents/base/AgentLifecycle';
+import { eventBus } from '../websocket/EventBus';
 import type { AgentInput, AgentOutput } from '../agents/base/types';
 import type {
   AgentType,
@@ -246,6 +247,14 @@ export class AgentsService {
         confidence: output.confidence.score,
       });
 
+      eventBus.broadcast('agents', {
+        action: 'run_completed',
+        agentType: validType,
+        requestId,
+        decision: output.decision,
+        confidence: output.confidence.score,
+      });
+
       return output;
     } catch (error) {
       // Transition to error state
@@ -256,6 +265,13 @@ export class AgentsService {
 
       // Invalidate caches
       await cacheFlush(`${CACHE_PREFIX}:*`);
+
+      eventBus.broadcast('agents', {
+        action: 'run_failed',
+        agentType: validType,
+        requestId,
+        error: error instanceof Error ? error.message : String(error),
+      });
 
       throw error;
     }
@@ -440,6 +456,13 @@ export class AgentsService {
       requestId,
       agentsRun: agentsRun.length,
       completedAt,
+    });
+
+    eventBus.broadcast('agents', {
+      action: 'orchestration_completed',
+      requestId,
+      agentsRun,
+      agentCount: agentsRun.length,
     });
 
     return {

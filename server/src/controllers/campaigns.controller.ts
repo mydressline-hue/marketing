@@ -9,6 +9,7 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
 import { CampaignsService } from '../services/campaigns.service';
 import { KillSwitchService } from '../services/killswitch/KillSwitchService';
+import { AuthorizationError } from '../utils/errors';
 
 // ---------------------------------------------------------------------------
 // Handlers
@@ -45,6 +46,56 @@ export const listCampaigns = asyncHandler(async (req: Request, res: Response) =>
       total: result.total,
       page: result.page,
       totalPages: result.totalPages,
+    },
+  });
+});
+
+/**
+ * GET /campaigns/cursor
+ * List campaigns with cursor-based pagination.
+ *
+ * Query parameters:
+ *   cursor   – opaque cursor from a previous response (omit for first page)
+ *   limit    – max items per page (default 20, max 100)
+ *   sortBy   – column to sort by (default "created_at")
+ *   sortOrder – "asc" or "desc" (default "asc")
+ *   countryId, platform, status, createdBy – optional filters
+ */
+export const listCampaignsWithCursor = asyncHandler(async (req: Request, res: Response) => {
+  const {
+    countryId,
+    platform,
+    status,
+    createdBy,
+    cursor,
+    limit,
+    sortBy,
+    sortOrder,
+  } = req.query;
+
+  const filters = {
+    countryId: countryId as string | undefined,
+    platform: platform as string | undefined,
+    status: status as string | undefined,
+    createdBy: createdBy as string | undefined,
+  };
+
+  const options = {
+    cursor: cursor as string | undefined,
+    limit: limit ? parseInt(limit as string, 10) : undefined,
+    sortBy: sortBy as string | undefined,
+    sortOrder: sortOrder as 'asc' | 'desc' | undefined,
+  };
+
+  const result = await CampaignsService.listWithCursor(filters, options);
+
+  res.json({
+    success: true,
+    data: result.data,
+    meta: {
+      nextCursor: result.nextCursor,
+      previousCursor: result.previousCursor,
+      hasMore: result.hasMore,
     },
   });
 });
@@ -120,12 +171,9 @@ export const createCampaign = asyncHandler(async (req: Request, res: Response) =
     countryId: req.body.countryId,
   });
   if (!operationCheck.allowed) {
-    res.status(403).json({
-      success: false,
-      error: operationCheck.reason || 'Campaign creation is blocked by an active kill switch.',
-      killSwitchLevel: operationCheck.activeLevel,
-    });
-    return;
+    throw new AuthorizationError(
+      operationCheck.reason || 'Campaign creation is blocked by an active kill switch.',
+    );
   }
 
   const campaign = await CampaignsService.create(req.body, userId);
@@ -163,12 +211,9 @@ export const updateCampaignStatus = asyncHandler(async (req: Request, res: Respo
       campaignId: req.params.id,
     });
     if (!operationCheck.allowed) {
-      res.status(403).json({
-        success: false,
-        error: operationCheck.reason || 'Campaign activation is blocked by an active kill switch.',
-        killSwitchLevel: operationCheck.activeLevel,
-      });
-      return;
+      throw new AuthorizationError(
+        operationCheck.reason || 'Campaign activation is blocked by an active kill switch.',
+      );
     }
   }
 
@@ -187,8 +232,5 @@ export const updateCampaignStatus = asyncHandler(async (req: Request, res: Respo
 export const deleteCampaign = asyncHandler(async (req: Request, res: Response) => {
   await CampaignsService.delete(req.params.id);
 
-  res.json({
-    success: true,
-    data: { message: 'Campaign deleted successfully' },
-  });
+  res.status(204).send();
 });

@@ -35,27 +35,27 @@ const router = Router();
 // ---------------------------------------------------------------------------
 
 // GET /alerts – list alerts with optional filters and pagination
-router.get('/', authenticate, validateQuery(listAlertsQuerySchema), listAlerts);
+router.get('/', authenticate, requirePermission('read:campaigns'), validateQuery(listAlertsQuerySchema), listAlerts);
 
 // GET /alerts/active – retrieve all non-resolved alerts ordered by severity
-router.get('/active', authenticate, getActiveAlerts);
+router.get('/active', authenticate, requirePermission('read:campaigns'), getActiveAlerts);
 
 // GET /alerts/stats – aggregate alert statistics
-router.get('/stats', authenticate, getAlertStats);
+router.get('/stats', authenticate, requirePermission('read:campaigns'), getAlertStats);
 
 // GET /alerts/:id – retrieve a single alert by ID
-router.get('/:id', authenticate, validateParams(idParamSchema), getAlertById);
+router.get('/:id', authenticate, requirePermission('read:campaigns'), validateParams(idParamSchema), getAlertById);
 
 // POST /alerts – create a new fraud alert (requires write:campaigns)
 router.post('/', authenticate, requirePermission('write:campaigns'), validateBody(createAlertSchema), createAlert);
 
-// PATCH /alerts/:id/acknowledge – acknowledge an alert
-router.patch('/:id/acknowledge', authenticate, validateParams(idParamSchema), validateBody(acknowledgeAlertSchema), acknowledgeAlert);
+// PATCH /alerts/:id/acknowledge – acknowledge an alert (requires write:campaigns)
+router.patch('/:id/acknowledge', authenticate, requirePermission('write:campaigns'), validateParams(idParamSchema), validateBody(acknowledgeAlertSchema), acknowledgeAlert);
 
-// PATCH /alerts/:id/resolve – resolve an alert
-router.patch('/:id/resolve', authenticate, validateParams(idParamSchema), validateBody(resolveAlertSchema), resolveAlert);
+// PATCH /alerts/:id/resolve – resolve an alert (requires write:campaigns)
+router.patch('/:id/resolve', authenticate, requirePermission('write:campaigns'), validateParams(idParamSchema), validateBody(resolveAlertSchema), resolveAlert);
 
-// PATCH /alerts/:id/dismiss – dismiss an alert
-router.patch('/:id/dismiss', authenticate, validateParams(idParamSchema), validateBody(dismissAlertSchema), dismissAlert);
+// PATCH /alerts/:id/dismiss – dismiss an alert (requires write:campaigns)
+router.patch('/:id/dismiss', authenticate, requirePermission('write:campaigns'), validateParams(idParamSchema), validateBody(dismissAlertSchema), dismissAlert);
 
 export default router;

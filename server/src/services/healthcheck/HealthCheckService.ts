@@ -25,12 +25,28 @@ const APP_VERSION = '1.0.0';
 // Interfaces
 // ---------------------------------------------------------------------------
 
+export interface SimpleHealthResult {
+  status: 'ok';
+}
+
 export interface BasicHealthResult {
   status: 'ok';
   timestamp: string;
   uptime: number;
   version: string;
   environment: string;
+}
+
+export interface DetailedHealthResult {
+  status: 'healthy' | 'unhealthy';
+  timestamp: string;
+  uptime: number;
+  version: string;
+  checks: {
+    database: { status: 'up' | 'down'; latency_ms: number; error?: string };
+    redis: { status: 'up' | 'down'; latency_ms: number; error?: string };
+    memory: MemoryCheck;
+  };
 }
 
 export interface PostgresCheck {
@@ -158,11 +174,22 @@ function parseRedisInfoValue(info: string, key: string): string {
 
 export class HealthCheckService {
   // -----------------------------------------------------------------------
+  // Simple Health (for load balancers -- just returns "ok")
+  // -----------------------------------------------------------------------
+
+  /**
+   * Return the simplest possible health response for load-balancer pings.
+   */
+  static checkSimple(): SimpleHealthResult {
+    return { status: 'ok' };
+  }
+
+  // -----------------------------------------------------------------------
   // Basic Health
   // -----------------------------------------------------------------------
 
   /**
-   * Return a lightweight health status suitable for load-balancer pings.
+   * Return a lightweight health status with uptime and version info.
    */
   static checkBasic(): BasicHealthResult {
     return {
@@ -171,6 +198,38 @@ export class HealthCheckService {
       uptime: process.uptime(),
       version: APP_VERSION,
       environment: env.NODE_ENV,
+    };
+  }
+
+  // -----------------------------------------------------------------------
+  // Detailed Health (public -- no authentication required)
+  // -----------------------------------------------------------------------
+
+  /**
+   * Run focused health checks against database, Redis, and memory. Returns
+   * HTTP-friendly result: healthy (200) or unhealthy (503). This is the
+   * public `/health/details` endpoint -- no auth required, but scoped to
+   * essential infrastructure checks only.
+   */
+  static async checkDetailed(): Promise<DetailedHealthResult> {
+    const [dbCheck, redisCheck, memCheck] = await Promise.all([
+      HealthCheckService.checkPostgresSimple(),
+      HealthCheckService.checkRedisSimple(),
+      HealthCheckService.checkMemory(),
+    ]);
+
+    const isHealthy = dbCheck.status === 'up' && redisCheck.status === 'up';
+
+    return {
+      status: isHealthy ? 'healthy' : 'unhealthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      version: APP_VERSION,
+      checks: {
+        database: dbCheck,
+        redis: redisCheck,
+        memory: memCheck,
+      },
     };
   }
 
@@ -386,6 +445,53 @@ export class HealthCheckService {
   // -----------------------------------------------------------------------
   // Private: Individual Check Methods
   // -----------------------------------------------------------------------
+
+  /**
+   * Lightweight PostgreSQL check -- SELECT 1 with latency measurement.
+   * Used by the public /health/details endpoint.
+   */
+  private static async checkPostgresSimple(): Promise<{
+    status: 'up' | 'down';
+    latency_ms: number;
+    error?: string;
+  }> {
+    try {
+      const start = Date.now();
+      await pool.query('SELECT 1');
+      return { status: 'up', latency_ms: Date.now() - start };
+    } catch (err) {
+      return {
+        status: 'down',
+        latency_ms: -1,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+
+  /**
+   * Lightweight Redis check -- PING with latency measurement.
+   * Used by the public /health/details endpoint.
+   */
+  private static async checkRedisSimple(): Promise<{
+    status: 'up' | 'down';
+    latency_ms: number;
+    error?: string;
+  }> {
+    try {
+      const start = Date.now();
+      const pong = await redis.ping();
+      if (pong !== 'PONG') {
+        return { status: 'down', latency_ms: Date.now() - start, error: 'Unexpected PING response' };
+      }
+      return { status: 'up', latency_ms: Date.now() - start };
+    } catch (err) {
+      return {
+        status: 'down',
+        latency_ms: -1,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
 
   /**
    * Check PostgreSQL connectivity and pool statistics.

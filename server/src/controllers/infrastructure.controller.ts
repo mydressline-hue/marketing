@@ -132,7 +132,6 @@ export const getAlertHistory = asyncHandler(async (req: Request, res: Response) 
  * Update alert configuration (thresholds, recipients, etc.).
  */
 export const updateAlertConfig = asyncHandler(async (req: Request, res: Response) => {
-  const _userId = req.user!.id;
   const configUpdate = req.body;
 
   const result = await MonitoringService.updateAlertConfig(configUpdate);
@@ -331,12 +330,9 @@ export const removeFromIpWhitelist = asyncHandler(async (req: Request, res: Resp
   const { id } = req.params;
   const userId = req.user!.id;
 
-  const result = await SecurityHardeningService.removeFromWhitelist(id, userId);
+  await SecurityHardeningService.removeFromWhitelist(id, userId);
 
-  res.json({
-    success: true,
-    data: result,
-  });
+  res.status(204).send();
 });
 
 /**

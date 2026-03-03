@@ -12,6 +12,7 @@ import { generateId } from '../utils/helpers';
 import { withTransaction } from '../utils/transaction';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
+import { AuditService } from './audit.service';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -132,7 +133,7 @@ export class ContentService {
 
     // Data query
     const dataResult = await pool.query(
-      `SELECT * FROM content ${whereClause}
+      `SELECT id, title, body, status, seo_keywords, country_id, language, published_at, created_by, created_at, updated_at FROM content ${whereClause}
        ORDER BY ${sortBy} ${sortOrder}
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, pagination.limit, offset],
@@ -151,7 +152,7 @@ export class ContentService {
    */
   static async getById(id: string): Promise<Content> {
     const result = await pool.query(
-      'SELECT * FROM content WHERE id = $1',
+      'SELECT id, title, body, status, seo_keywords, country_id, language, published_at, created_by, created_at, updated_at FROM content WHERE id = $1',
       [id],
     );
 
@@ -193,6 +194,14 @@ export class ContentService {
     );
 
     logger.info('Content created', { contentId: id, userId, title: data.title });
+
+    await AuditService.log({
+      userId,
+      action: 'content.create',
+      resourceType: 'content',
+      resourceId: id,
+      details: { title: data.title, language: data.language, countryId: data.countryId },
+    });
 
     return mapRow(result.rows[0]);
   }
@@ -251,6 +260,13 @@ export class ContentService {
 
     logger.info('Content updated', { contentId: id });
 
+    await AuditService.log({
+      action: 'content.update',
+      resourceType: 'content',
+      resourceId: id,
+      details: { updatedFields: Object.keys(data).filter((k) => (data as Record<string, unknown>)[k] !== undefined) },
+    });
+
     return mapRow(result.rows[0]);
   }
 
@@ -268,6 +284,13 @@ export class ContentService {
     }
 
     logger.info('Content deleted (archived)', { contentId: id });
+
+    await AuditService.log({
+      action: 'content.delete',
+      resourceType: 'content',
+      resourceId: id,
+      details: { status: 'archived' },
+    });
   }
 
   /**
@@ -327,6 +350,13 @@ export class ContentService {
 
     logger.info('Content unpublished', { contentId: id });
 
+    await AuditService.log({
+      action: 'content.unpublish',
+      resourceType: 'content',
+      resourceId: id,
+      details: { previousStatus: 'published', newStatus: 'draft' },
+    });
+
     return mapRow(result.rows[0]);
   }
 
@@ -335,7 +365,7 @@ export class ContentService {
    */
   static async getByStatus(status: string): Promise<Content[]> {
     const result = await pool.query(
-      'SELECT * FROM content WHERE status = $1 ORDER BY updated_at DESC',
+      'SELECT id, title, body, status, seo_keywords, country_id, language, published_at, created_by, created_at, updated_at FROM content WHERE status = $1 ORDER BY updated_at DESC',
       [status],
     );
 
@@ -364,7 +394,7 @@ export class ContentService {
 
     // Data query with relevance ordering
     const dataResult = await pool.query(
-      `SELECT *,
+      `SELECT id, title, body, status, seo_keywords, country_id, language, published_at, created_by, created_at, updated_at,
          ts_rank(
            to_tsvector('english', coalesce(title, '') || ' ' || coalesce(body, '')),
            plainto_tsquery('english', $1)

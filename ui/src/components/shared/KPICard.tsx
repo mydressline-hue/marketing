@@ -1,7 +1,8 @@
+import React from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import type { KPIData } from '../../types';
 
-export default function KPICard({ label, value, change, trend, prefix = '', suffix = '' }: KPIData) {
+const KPICard = React.memo(function KPICard({ label, value, change, trend, prefix = '', suffix = '' }: KPIData) {
   const trendColor = trend === 'up' ? 'text-success-600' : trend === 'down' ? 'text-danger-600' : 'text-surface-500 dark:text-surface-400';
   const trendBg = trend === 'up' ? 'bg-success-50 dark:bg-success-500/10' : trend === 'down' ? 'bg-danger-50 dark:bg-danger-500/10' : 'bg-surface-100 dark:bg-surface-700';
   const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
@@ -18,4 +19,6 @@ export default function KPICard({ label, value, change, trend, prefix = '', suff
       </div>
     </div>
   );
-}
+});
+
+export default KPICard;

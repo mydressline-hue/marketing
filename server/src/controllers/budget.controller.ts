@@ -93,10 +93,7 @@ export const updateAllocation = asyncHandler(async (req: Request, res: Response)
 export const deleteAllocation = asyncHandler(async (req: Request, res: Response) => {
   await BudgetService.delete(req.params.id);
 
-  res.json({
-    success: true,
-    data: { message: 'Budget allocation deleted successfully' },
-  });
+  res.status(204).send();
 });
 
 /**
@@ -128,9 +125,7 @@ export const getSpendByCountry = asyncHandler(async (req: Request, res: Response
     success: true,
     data: result,
     meta: {
-      startDate,
-      endDate,
-      count: result.length,
+      total: result.length,
     },
   });
 });
@@ -150,9 +145,7 @@ export const getSpendByChannel = asyncHandler(async (req: Request, res: Response
     success: true,
     data: result,
     meta: {
-      startDate,
-      endDate,
-      count: result.length,
+      total: result.length,
     },
   });
 });

@@ -35,13 +35,13 @@ const router = Router();
 router.use(authenticate);
 
 // ---- Summary endpoints (must be registered before /:id to avoid conflicts) ----
-router.get('/summary/country', getSpendByCountry);
-router.get('/summary/channel', getSpendByChannel);
+router.get('/summary/country', requirePermission('read:campaigns'), getSpendByCountry);
+router.get('/summary/channel', requirePermission('read:campaigns'), getSpendByChannel);
 
 // ---- Read operations ----
-router.get('/', validateQuery(listBudgetAllocationsQuerySchema), listAllocations);
-router.get('/:id', validateParams(idParamSchema), getAllocation);
-router.get('/:id/guardrails', checkGuardrails);
+router.get('/', requirePermission('read:campaigns'), validateQuery(listBudgetAllocationsQuerySchema), listAllocations);
+router.get('/:id', requirePermission('read:campaigns'), validateParams(idParamSchema), getAllocation);
+router.get('/:id/guardrails', requirePermission('read:campaigns'), validateParams(idParamSchema), checkGuardrails);
 
 // ---- Write operations (require write:budget permission) ----
 router.post('/', requirePermission('write:budget'), validateBody(createBudgetAllocationSchema), createAllocation);

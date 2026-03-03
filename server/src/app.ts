@@ -7,11 +7,13 @@
  */
 
 import express from 'express';
+import path from 'path';
 import cookieParser from 'cookie-parser';
 import { env } from './config/env';
 import {
   corsMiddleware,
   helmetMiddleware,
+  permissionsPolicyMiddleware,
   rateLimitMiddleware,
   hppMiddleware,
   compressionMiddleware,
@@ -53,6 +55,7 @@ import finalOutputsChannelsRoutes from './routes/final-outputs-channels.routes';
 import finalOutputsRoadmapRoutes from './routes/final-outputs-roadmap.routes';
 import finalOutputsValidationRoutes from './routes/final-outputs-validation.routes';
 import videoRoutes from './routes/video.routes';
+import metricsRoutes from './routes/metrics.routes';
 
 // ---------------------------------------------------------------------------
 // App
@@ -64,6 +67,7 @@ const app = express();
 app.use(requestIdMiddleware);
 app.use(corsMiddleware);
 app.use(helmetMiddleware);
+app.use(permissionsPolicyMiddleware);
 app.use(compressionMiddleware);
 app.use(hppMiddleware);
 app.use(rateLimitMiddleware);
@@ -86,6 +90,9 @@ app.use(perUserRateLimit);
 
 // ── Health check ──────────────────────────────────────────────────────────
 app.use('/health', healthcheckRoutes);
+
+// ── Prometheus metrics ───────────────────────────────────────────────────
+app.use('/metrics', metricsRoutes);
 
 // ── API routes ────────────────────────────────────────────────────────────
 const prefix = env.API_PREFIX;
@@ -118,6 +125,11 @@ app.use(`${prefix}/final-outputs/channel-allocation`, finalOutputsChannelsRoutes
 app.use(`${prefix}/final-outputs`, finalOutputsRoadmapRoutes);
 app.use(`${prefix}/final-outputs`, finalOutputsValidationRoutes);
 app.use(`${prefix}/video`, videoRoutes);
+
+// ── OpenAPI documentation ────────────────────────────────────────────────
+app.get('/api/docs/openapi.yaml', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'openapi.yaml'));
+});
 
 // ── Error handling ────────────────────────────────────────────────────────
 app.use(notFoundHandler);

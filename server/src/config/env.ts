@@ -43,6 +43,7 @@ export const envSchema = z
     DATABASE_URL: z.string().optional(),
     DB_POOL_MIN: coerceNumber(2),
     DB_POOL_MAX: coerceNumber(10),
+    DB_IDLE_TIMEOUT: coerceNumber(30000),
     DB_SSL: coerceBoolean(false),
     DB_SSL_ENABLED: coerceBoolean(false),
     DB_SSL_CA: z.string().optional(),
@@ -53,11 +54,13 @@ export const envSchema = z
     REDIS_URL: z.string().default('redis://localhost:6379'),
     REDIS_PASSWORD: z.string().optional(),
     REDIS_DB: coerceNumber(0),
+    REDIS_TLS_CA: z.string().optional(),
 
     // ── Auth / JWT ─────────────────────────────────────────────────────
     JWT_SECRET: z.string().optional(),
     JWT_EXPIRES_IN: z.string().default('24h'),
     JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+    SESSION_MAX_LIFETIME_HOURS: coerceNumber(24),
 
     // ── Encryption ─────────────────────────────────────────────────────
     ENCRYPTION_KEY: z.string().optional(),
@@ -69,6 +72,9 @@ export const envSchema = z
 
     // ── Kling AI Video ──────────────────────────────────────────────────
     KLING_API_KEY: z.string().optional(),
+
+    // ── Password Reset ──────────────────────────────────────────────────
+    PASSWORD_RESET_EXPIRY_MINUTES: coerceNumber(60),
 
     // ── Account Lockout ────────────────────────────────────────────────
     LOCKOUT_THRESHOLD: coerceNumber(5),
@@ -82,15 +88,45 @@ export const envSchema = z
     USER_RATE_LIMIT_MAX: coerceNumber(100),
     USER_RATE_LIMIT_WINDOW_SECONDS: coerceNumber(60),
 
+    // ── Job Queue ─────────────────────────────────────────────────────
+    MAX_JOB_RETRIES: coerceNumber(3),
+
+    // ── Shutdown ─────────────────────────────────────────────────────────
+    SHUTDOWN_TIMEOUT_MS: coerceNumber(30000),
+
+    // ── Clustering ──────────────────────────────────────────────────────
+    CLUSTER_ENABLED: coerceBoolean(false),
+    CLUSTER_WORKERS: coerceNumber(0), // 0 = use os.cpus().length at runtime
+
     // ── Logging ────────────────────────────────────────────────────────
     LOG_LEVEL: z.string().default('info'),
     LOG_FORMAT: z.string().default('json'),
 
+    // ── Database Query Logging ──────────────────────────────────────────
+    SLOW_QUERY_THRESHOLD_MS: coerceNumber(100),
+
+    // ── APM / Observability ─────────────────────────────────────────────
+    SENTRY_DSN: z.string().optional(),
+    APM_ENABLED: coerceBoolean(false),
+    METRICS_ENABLED: coerceBoolean(true),
+
     // ── CORS ───────────────────────────────────────────────────────────
+    // CORS_ORIGIN is the preferred single-value env var; CORS_ORIGINS
+    // (comma-separated) is kept for backward compatibility.
+    CORS_ORIGIN: z.string().optional(),
     CORS_ORIGINS: z.string().default('http://localhost:5173'),
+
+    // ── Google OAuth ──────────────────────────────────────────────────
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
+    GOOGLE_CALLBACK_URL: z.string().default('/api/auth/google/callback'),
 
     // ── MFA ────────────────────────────────────────────────────────────
     MFA_ISSUER: z.string().default('AIGrowthEngine'),
+
+    // ── Bandit / Contextual Bandits ─────────────────────────────────────
+    BANDIT_DECAY_HALF_LIFE_DAYS: coerceNumber(30),
+    BANDIT_EXPLORATION_BONUS: coerceNumber(0.1),
 
     // ── Derived ─────────────────────────────────────────────────────────
     AI_ENABLED: coerceBoolean(false), // Will be overridden after parse
@@ -182,7 +218,7 @@ function loadEnv(): Env {
           'postgresql://localhost:5432/ai_growth_engine_dev',
         ENCRYPTION_KEY:
           process.env.ENCRYPTION_KEY ??
-          'dev-encryption-key-do-not-use-in-prod!!',
+          'dev-encrypt-key-not-for-prod!!!!',
       });
     }
 

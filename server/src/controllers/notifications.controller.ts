@@ -120,10 +120,7 @@ export const markAllAsRead = asyncHandler(async (req: Request, res: Response) =>
 export const deleteNotification = asyncHandler(async (req: Request, res: Response) => {
   await NotificationService.deleteNotification(req.params.id, req.user!.id);
 
-  res.json({
-    success: true,
-    data: { deleted: true },
-  });
+  res.status(204).send();
 });
 
 /**

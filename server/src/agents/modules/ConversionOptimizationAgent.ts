@@ -6,7 +6,8 @@
 
 import { BaseAgent } from '../base/BaseAgent';
 import type { AgentInput, AgentOutput, AgentConfig } from '../base/types';
-import type { AgentType, DateRange, FunnelStage } from '../../types';
+import type { AgentType, DateRange as _DateRange } from '../../types';
+type DateRange = _DateRange;
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet } from '../../config/redis';
 import { generateId } from '../../utils/helpers';
@@ -105,15 +106,6 @@ const CACHE_PREFIX = 'conversion_optimization';
 const FUNNEL_CACHE_TTL = 300; // 5 minutes
 const PAGE_ANALYSIS_CACHE_TTL = 600; // 10 minutes
 const SEGMENT_CACHE_TTL = 900; // 15 minutes
-
-const _FUNNEL_STAGES_ORDERED: FunnelStage[] = [
-  'awareness',
-  'interest',
-  'consideration',
-  'intent',
-  'purchase',
-  'loyalty',
-];
 
 const SEVERITY_THRESHOLDS = {
   critical: 0.5,

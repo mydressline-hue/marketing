@@ -45,16 +45,16 @@ router.get('/unread-count', authenticate, requirePermission('read:campaigns'), g
 // GET /notifications/preferences – get notification preferences
 router.get('/preferences', authenticate, requirePermission('read:campaigns'), getPreferences);
 
-// PUT /notifications/preferences – update notification preferences
-router.put('/preferences', authenticate, requirePermission('read:campaigns'), validateBody(updateNotificationPreferencesSchema), updatePreferences);
+// PUT /notifications/preferences – update notification preferences (write operation)
+router.put('/preferences', authenticate, requirePermission('write:campaigns'), validateBody(updateNotificationPreferencesSchema), updatePreferences);
 
-// POST /notifications/read-all – mark all notifications as read
-router.post('/read-all', authenticate, requirePermission('read:campaigns'), markAllAsRead);
+// POST /notifications/read-all – mark all notifications as read (write operation)
+router.post('/read-all', authenticate, requirePermission('write:campaigns'), markAllAsRead);
 
-// POST /notifications/:id/read – mark a single notification as read
-router.post('/:id/read', authenticate, requirePermission('read:campaigns'), validateParams(idParamSchema), markAsRead);
+// POST /notifications/:id/read – mark a single notification as read (write operation)
+router.post('/:id/read', authenticate, requirePermission('write:campaigns'), validateParams(idParamSchema), markAsRead);
 
-// DELETE /notifications/:id – soft-delete a notification
-router.delete('/:id', authenticate, requirePermission('read:campaigns'), validateParams(idParamSchema), deleteNotification);
+// DELETE /notifications/:id – soft-delete a notification (write operation)
+router.delete('/:id', authenticate, requirePermission('write:campaigns'), validateParams(idParamSchema), deleteNotification);
 
 export default router;

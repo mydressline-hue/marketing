@@ -228,7 +228,6 @@ Response format: Return a valid JSON object with the following structure:
    */
   async process(input: AgentInput): Promise<AgentOutput> {
     const countryId = input.parameters.countryId as string | undefined;
-    const _uncertainties: string[] = [];
     const warnings: string[] = [];
 
     this.log.info('Processing country strategy request', {

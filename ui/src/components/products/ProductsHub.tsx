@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Package, Sparkles, FolderOpen, BarChart3, Grid3X3, List, Plus, Trash2 } from 'lucide-react';
 import Card from '../shared/Card';
 import EmptyState from '../shared/EmptyState';
@@ -96,12 +96,12 @@ function ProductsTab() {
 
   const handleFilterChange = useCallback((f: ProductFilters) => { setFilters(f); setPage(1); }, []);
 
-  const columns = [
+  const columns = useMemo(() => [
     { key: 'title', label: 'Product', render: (p: Product) => <span className="font-medium text-surface-900 dark:text-surface-100">{p.title}</span> },
     { key: 'inventory_level', label: 'Stock', render: (p: Product) => <span className={p.inventory_level < 10 ? 'text-red-600 font-semibold' : p.inventory_level < 50 ? 'text-yellow-600' : 'text-surface-700 dark:text-surface-200'}>{p.inventory_level}</span> },
     { key: 'is_active', label: 'Status', render: (p: Product) => <StatusBadge status={p.is_active ? 'active' : 'inactive'} /> },
     { key: 'synced_at', label: 'Synced', render: (p: Product) => <span className="text-xs text-surface-500 dark:text-surface-400">{p.synced_at ? 'Yes' : 'No'}</span> },
-  ];
+  ], []);
 
   return (
     <div className="flex gap-4">
@@ -113,12 +113,12 @@ function ProductsTab() {
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <button onClick={() => setShowFilters(!showFilters)} className="lg:hidden text-xs text-primary-600 font-medium">Filters</button>
+            <button onClick={() => setShowFilters(!showFilters)} className="lg:hidden text-xs text-primary-600 font-medium" aria-expanded={showFilters} aria-label="Toggle filters panel">Filters</button>
             <span className="text-sm text-surface-500 dark:text-surface-400">{meta.total} products</span>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-primary-100 dark:bg-primary-500/20 text-primary-600' : 'text-surface-400'}`}><Grid3X3 className="w-4 h-4" /></button>
-            <button onClick={() => setViewMode('list')} className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-primary-100 dark:bg-primary-500/20 text-primary-600' : 'text-surface-400'}`}><List className="w-4 h-4" /></button>
+            <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-primary-100 dark:bg-primary-500/20 text-primary-600' : 'text-surface-400'}`} aria-label="Grid view" aria-pressed={viewMode === 'grid'}><Grid3X3 className="w-4 h-4" /></button>
+            <button onClick={() => setViewMode('list')} className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-primary-100 dark:bg-primary-500/20 text-primary-600' : 'text-surface-400'}`} aria-label="List view" aria-pressed={viewMode === 'list'}><List className="w-4 h-4" /></button>
           </div>
         </div>
 
@@ -216,7 +216,7 @@ function CollectionsTab() {
                   <FolderOpen className="w-5 h-5 text-primary-500" />
                   <h4 className="text-sm font-semibold text-surface-900 dark:text-surface-100">{c.title}</h4>
                 </div>
-                <button onClick={() => handleDelete(c.id)} className="text-surface-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                <button onClick={() => handleDelete(c.id)} className="text-surface-400 hover:text-red-500" aria-label={`Delete collection ${c.title}`}><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
               <div className="flex items-center gap-2 mt-2">
                 <StatusBadge status={c.collection_type === 'automated' ? 'active' : 'draft'} />

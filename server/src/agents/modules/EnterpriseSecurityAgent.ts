@@ -248,26 +248,6 @@ export interface ThreatAssessment {
 
 // ---- SOC2 Control Definitions ----
 
-/**
- * SOC2 Trust Services Criteria controls to evaluate.
- */
-const _SOC2_CONTROLS = [
-  { name: 'CC1.1 - Control Environment', category: 'security' },
-  { name: 'CC2.1 - Information Communication', category: 'security' },
-  { name: 'CC3.1 - Risk Assessment', category: 'security' },
-  { name: 'CC4.1 - Monitoring Activities', category: 'security' },
-  { name: 'CC5.1 - Control Activities', category: 'security' },
-  { name: 'CC6.1 - Logical Access', category: 'security' },
-  { name: 'CC6.2 - System Access Restrictions', category: 'security' },
-  { name: 'CC6.3 - Role-Based Access', category: 'security' },
-  { name: 'CC7.1 - System Monitoring', category: 'availability' },
-  { name: 'CC7.2 - Incident Response', category: 'availability' },
-  { name: 'CC8.1 - Change Management', category: 'processing_integrity' },
-  { name: 'CC9.1 - Risk Mitigation', category: 'security' },
-  { name: 'P1.1 - Privacy Notice', category: 'privacy' },
-  { name: 'A1.1 - System Availability', category: 'availability' },
-] as const;
-
 // ---- Agent Implementation ----
 
 /**

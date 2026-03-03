@@ -142,7 +142,7 @@ export class LookerService {
     const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
 
     const dataResult = await pool.query(
-      `SELECT * FROM analytics_dashboards ${where}
+      `SELECT id, user_id, platform_type, name, description, config, is_active, created_at, updated_at FROM analytics_dashboards ${where}
        ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx}`,
       [...params, limit, offset],
     );
@@ -158,7 +158,7 @@ export class LookerService {
     if (cached) return cached as Record<string, unknown>;
 
     const result = await pool.query(
-      `SELECT * FROM analytics_dashboards WHERE id = $1 AND platform_type = $2`,
+      `SELECT id, user_id, platform_type, name, description, config, is_active, created_at, updated_at FROM analytics_dashboards WHERE id = $1 AND platform_type = $2`,
       [dashboardId, PLATFORM],
     );
     if (result.rows.length === 0) throw new NotFoundError(`Looker dashboard not found: ${dashboardId}`);
@@ -227,7 +227,7 @@ export class LookerService {
     if (cached) return cached as Record<string, unknown>;
 
     const result = await pool.query(
-      `SELECT * FROM analytics_connections
+      `SELECT id, user_id, platform_type, status, credentials, created_at, updated_at FROM analytics_connections
        WHERE user_id = $1 AND platform_type = $2 ORDER BY created_at DESC LIMIT 1`,
       [userId, PLATFORM],
     );
@@ -249,7 +249,7 @@ export class LookerService {
     if (cached) return cached as Record<string, unknown>;
 
     const result = await pool.query(
-      `SELECT * FROM analytics_sync_status WHERE platform_type = $1`,
+      `SELECT id, platform_type, total_syncs, last_sync_at, status, created_at FROM analytics_sync_status WHERE platform_type = $1`,
       [PLATFORM],
     );
 

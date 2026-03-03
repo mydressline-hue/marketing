@@ -1,3 +1,5 @@
+import React from 'react';
+
 interface StatusBadgeProps {
   status: string;
   size?: 'sm' | 'md';
@@ -29,7 +31,7 @@ const statusStyles: Record<string, string> = {
   research: 'bg-primary-50 dark:bg-primary-500/10 text-primary-700 dark:text-primary-300 border-primary-500/20',
 };
 
-export default function StatusBadge({ status, size = 'sm' }: StatusBadgeProps) {
+const StatusBadge = React.memo(function StatusBadge({ status, size = 'sm' }: StatusBadgeProps) {
   const style = statusStyles[status] || 'bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300 border-surface-300/30';
   const sizeClasses = size === 'sm' ? 'text-xs px-2 py-0.5' : 'text-sm px-3 py-1';
 
@@ -38,4 +40,6 @@ export default function StatusBadge({ status, size = 'sm' }: StatusBadgeProps) {
       {status.replace(/_/g, ' ')}
     </span>
   );
-}
+});
+
+export default StatusBadge;

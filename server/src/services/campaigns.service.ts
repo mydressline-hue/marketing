@@ -13,6 +13,9 @@ import { logger } from '../utils/logger';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { generateId } from '../utils/helpers';
 import { withTransaction } from '../utils/transaction';
+import { encodeCursor, buildCursorQuery } from '../utils/cursor-pagination';
+import { eventBus } from '../websocket/EventBus';
+import { AuditService } from './audit.service';
 import type { CreateCampaignInput, UpdateCampaignInput } from '../validators/schemas';
 
 // ---------------------------------------------------------------------------
@@ -59,6 +62,20 @@ export interface PaginatedResult {
   total: number;
   page: number;
   totalPages: number;
+}
+
+export interface CursorPaginationOptions {
+  cursor?: string;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface CursorPaginatedResult {
+  data: Campaign[];
+  nextCursor: string | null;
+  previousCursor: string | null;
+  hasMore: boolean;
 }
 
 export interface CampaignMetrics {
@@ -214,6 +231,141 @@ export class CampaignsService {
   }
 
   /**
+   * List campaigns using cursor-based (keyset) pagination.
+   *
+   * Returns a page of campaigns along with opaque `nextCursor` and
+   * `previousCursor` tokens and a `hasMore` flag. The existing offset-based
+   * `list()` method is left unchanged; this is an opt-in alternative
+   * activated by passing a `paginationMode=cursor` query parameter.
+   *
+   * Supports the same filter set as the offset-based `list()` method.
+   */
+  static async listWithCursor(
+    filters?: CampaignFilters,
+    options?: CursorPaginationOptions,
+  ): Promise<CursorPaginatedResult> {
+    const sortBy = options?.sortBy ?? 'created_at';
+    const sortOrder = options?.sortOrder ?? 'asc';
+    const requestedLimit = options?.limit ?? 20;
+
+    // Attempt cache hit
+    const cacheKey = listCacheKey(
+      (filters ?? {}) as Record<string, unknown>,
+      { cursor: options?.cursor ?? 'first', sortBy, sortOrder, limit: requestedLimit },
+    );
+    const cached = await cacheGet<CursorPaginatedResult>(cacheKey);
+
+    if (cached) {
+      logger.debug('Campaigns cursor list cache hit', { cacheKey });
+      return cached;
+    }
+
+    // Build dynamic WHERE conditions from filters
+    const conditions: string[] = [];
+    const filterParams: unknown[] = [];
+    let paramIndex = 1;
+
+    if (filters?.countryId) {
+      conditions.push(`c.country_id = $${paramIndex++}`);
+      filterParams.push(filters.countryId);
+    }
+
+    if (filters?.platform) {
+      conditions.push(`c.platform = $${paramIndex++}`);
+      filterParams.push(filters.platform);
+    }
+
+    if (filters?.status) {
+      conditions.push(`c.status = $${paramIndex++}`);
+      filterParams.push(filters.status);
+    }
+
+    if (filters?.createdBy) {
+      conditions.push(`c.created_by = $${paramIndex++}`);
+      filterParams.push(filters.createdBy);
+    }
+
+    // Build cursor clause (WHERE + ORDER BY + LIMIT)
+    const cursorQuery = buildCursorQuery(
+      sortBy,
+      options?.cursor,
+      requestedLimit,
+      sortOrder,
+      paramIndex,
+    );
+
+    // Merge cursor conditions into the existing WHERE conditions
+    // cursorQuery.sql might start with a keyset condition followed by ORDER BY + LIMIT
+    const cursorParts = cursorQuery.sql.split(/\s+ORDER BY\s+/i);
+    const cursorCondition = cursorParts[0].trim();
+    const orderAndLimit = `ORDER BY ${cursorParts[1]}`;
+
+    if (cursorCondition) {
+      conditions.push(cursorCondition);
+    }
+
+    const whereClause =
+      conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    const allParams = [...filterParams, ...cursorQuery.params];
+
+    const dataResult = await pool.query<Campaign>(
+      `SELECT c.*, co.name AS country_name
+       FROM campaigns c
+       LEFT JOIN countries co ON co.id = c.country_id
+       ${whereClause}
+       ${orderAndLimit}`,
+      allParams,
+    );
+
+    // We fetched limit + 1 rows. If we got more than `requestedLimit`, there
+    // are additional pages.
+    const hasMore = dataResult.rows.length > requestedLimit;
+    const rows = hasMore
+      ? dataResult.rows.slice(0, requestedLimit)
+      : dataResult.rows;
+
+    // Resolve the sort column name used for cursor values
+    const sortColumnKey = sortBy as keyof Campaign;
+
+    // Build cursors
+    let nextCursor: string | null = null;
+    let previousCursor: string | null = null;
+
+    if (rows.length > 0) {
+      // Previous cursor: the first item in the returned page
+      if (options?.cursor) {
+        // Only provide a previousCursor when we are past the first page
+        const firstRow = rows[0];
+        previousCursor = encodeCursor(
+          firstRow.id,
+          String(firstRow[sortColumnKey] ?? firstRow.created_at),
+        );
+      }
+
+      if (hasMore) {
+        const lastRow = rows[rows.length - 1];
+        nextCursor = encodeCursor(
+          lastRow.id,
+          String(lastRow[sortColumnKey] ?? lastRow.created_at),
+        );
+      }
+    }
+
+    const result: CursorPaginatedResult = {
+      data: rows,
+      nextCursor,
+      previousCursor,
+      hasMore,
+    };
+
+    await cacheSet(cacheKey, result, CACHE_TTL);
+    logger.debug('Campaigns cursor list cached', { cacheKey });
+
+    return result;
+  }
+
+  /**
    * Retrieve a single campaign by its UUID, including computed metrics.
    */
   static async getById(id: string): Promise<Campaign> {
@@ -273,7 +425,25 @@ export class CampaignsService {
     await cacheFlush(`${CACHE_PREFIX}:*`);
     logger.info('Campaign created', { campaignId: id, userId, name: data.name });
 
-    return result.rows[0];
+    const campaign = result.rows[0];
+
+    await AuditService.log({
+      userId,
+      action: 'campaign.create',
+      resourceType: 'campaign',
+      resourceId: id,
+      details: { name: data.name, platform: data.platform, countryId: data.countryId, budget: data.budget },
+    });
+
+    eventBus.broadcast('campaigns', {
+      action: 'created',
+      campaignId: id,
+      name: data.name,
+      platform: data.platform,
+      userId,
+    });
+
+    return campaign;
   }
 
   /**
@@ -343,7 +513,24 @@ export class CampaignsService {
     await cacheFlush(`${CACHE_PREFIX}:*`);
     logger.info('Campaign updated', { campaignId: id });
 
-    return result.rows[0];
+    const campaign = result.rows[0];
+
+    await AuditService.log({
+      action: 'campaign.update',
+      resourceType: 'campaign',
+      resourceId: id,
+      details: { updatedFields: Object.keys(data).filter((k) => (data as Record<string, unknown>)[k] !== undefined) },
+    });
+
+    eventBus.broadcast('campaigns', {
+      action: 'updated',
+      campaignId: id,
+      updatedFields: Object.keys(data).filter(
+        (k) => (data as Record<string, unknown>)[k] !== undefined,
+      ),
+    });
+
+    return campaign;
   }
 
   /**
@@ -404,6 +591,22 @@ export class CampaignsService {
       userId,
     });
 
+    await AuditService.log({
+      userId,
+      action: 'campaign.updateStatus',
+      resourceType: 'campaign',
+      resourceId: id,
+      details: { previousStatus: currentStatus, newStatus: status },
+    });
+
+    eventBus.broadcast('campaigns', {
+      action: 'status_changed',
+      campaignId: id,
+      previousStatus: currentStatus,
+      newStatus: status,
+      userId,
+    });
+
     return result;
   }
 
@@ -423,6 +626,18 @@ export class CampaignsService {
     // Invalidate caches
     await cacheFlush(`${CACHE_PREFIX}:*`);
     logger.info('Campaign soft-deleted (archived)', { campaignId: id });
+
+    await AuditService.log({
+      action: 'campaign.delete',
+      resourceType: 'campaign',
+      resourceId: id,
+      details: { status: 'archived' },
+    });
+
+    eventBus.broadcast('campaigns', {
+      action: 'deleted',
+      campaignId: id,
+    });
   }
 
   /**

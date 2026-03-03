@@ -19,7 +19,6 @@ import { AuditService } from '../../audit.service';
 // Constants
 // ---------------------------------------------------------------------------
 
-const _PLATFORM_TYPE = 'snapchat_ads';
 const CACHE_TTL = 120; // seconds
 
 // ---------------------------------------------------------------------------
@@ -52,7 +51,7 @@ export class SnapchatAdsService {
   ): Promise<Record<string, unknown>> {
     // Verify active Snapchat Ads connection
     const connectionResult = await pool.query(
-      `SELECT * FROM platform_connections
+      `SELECT id, user_id, platform_type, status, credentials, access_token, refresh_token, expires_at, created_at, updated_at FROM platform_connections
        WHERE user_id = $1 AND platform_type = 'snapchat_ads' AND status = 'active'
        LIMIT 1`,
       [userId],
@@ -115,7 +114,7 @@ export class SnapchatAdsService {
   ): Promise<Record<string, unknown>> {
     // Ensure the campaign exists
     const existing = await pool.query(
-      `SELECT * FROM platform_campaigns WHERE id = $1 AND user_id = $2 AND platform_type = 'snapchat_ads'`,
+      `SELECT id, user_id, platform_type, external_id, name, status, budget, spend, impressions, clicks, conversions, config, created_at, updated_at FROM platform_campaigns WHERE id = $1 AND user_id = $2 AND platform_type = 'snapchat_ads'`,
       [campaignId, userId],
     );
 
@@ -177,7 +176,7 @@ export class SnapchatAdsService {
     campaignId: string,
   ): Promise<Record<string, unknown>> {
     const existing = await pool.query(
-      `SELECT * FROM platform_campaigns WHERE id = $1 AND user_id = $2 AND platform_type = 'snapchat_ads'`,
+      `SELECT id, user_id, platform_type, external_id, name, status, budget, spend, impressions, clicks, conversions, config, created_at, updated_at FROM platform_campaigns WHERE id = $1 AND user_id = $2 AND platform_type = 'snapchat_ads'`,
       [campaignId, userId],
     );
 
@@ -236,7 +235,7 @@ export class SnapchatAdsService {
 
     // Fetch from database
     const result = await pool.query(
-      `SELECT * FROM platform_campaigns WHERE id = $1 AND platform_type = 'snapchat_ads'`,
+      `SELECT id, user_id, platform_type, external_id, name, status, budget, spend, impressions, clicks, conversions, config, created_at, updated_at FROM platform_campaigns WHERE id = $1 AND platform_type = 'snapchat_ads'`,
       [campaignId],
     );
 
@@ -286,7 +285,7 @@ export class SnapchatAdsService {
 
     // Data
     const dataResult = await pool.query(
-      `SELECT * FROM platform_campaigns ${whereClause}
+      `SELECT id, user_id, platform_type, external_id, name, status, budget, spend, impressions, clicks, conversions, config, created_at, updated_at FROM platform_campaigns ${whereClause}
        ORDER BY created_at DESC
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, limit, offset],
@@ -311,7 +310,7 @@ export class SnapchatAdsService {
   ): Promise<void> {
     // Verify campaign exists
     const existing = await pool.query(
-      `SELECT * FROM platform_campaigns WHERE id = $1 AND user_id = $2 AND platform_type = 'snapchat_ads'`,
+      `SELECT id, user_id, platform_type, external_id, name, status, budget, spend, impressions, clicks, conversions, config, created_at, updated_at FROM platform_campaigns WHERE id = $1 AND user_id = $2 AND platform_type = 'snapchat_ads'`,
       [campaignId, userId],
     );
 
@@ -354,7 +353,7 @@ export class SnapchatAdsService {
     dateRange: { start_date: string; end_date: string },
   ): Promise<Record<string, unknown>[]> {
     const result = await pool.query(
-      `SELECT * FROM platform_reports
+      `SELECT id, user_id, platform_type, campaign_id, report_type, metrics, period_start, period_end, created_at FROM platform_reports
        WHERE campaign_id = $1
          AND date >= $2 AND date <= $3
        ORDER BY date ASC`,
@@ -377,7 +376,7 @@ export class SnapchatAdsService {
   static async syncCampaigns(userId: string): Promise<Record<string, unknown>> {
     // Verify connection
     const connectionResult = await pool.query(
-      `SELECT * FROM platform_connections
+      `SELECT id, user_id, platform_type, status, credentials, access_token, refresh_token, expires_at, created_at, updated_at FROM platform_connections
        WHERE user_id = $1 AND platform_type = 'snapchat_ads' AND status = 'active'
        LIMIT 1`,
       [userId],
@@ -428,7 +427,7 @@ export class SnapchatAdsService {
    */
   static async getConnectionStatus(userId: string): Promise<Record<string, unknown>> {
     const result = await pool.query(
-      `SELECT * FROM platform_connections
+      `SELECT id, user_id, platform_type, status, credentials, access_token, refresh_token, expires_at, created_at, updated_at FROM platform_connections
        WHERE user_id = $1 AND platform_type = 'snapchat_ads'
        ORDER BY created_at DESC
        LIMIT 1`,

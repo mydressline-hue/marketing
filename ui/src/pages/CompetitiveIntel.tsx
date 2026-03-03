@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Eye,
   TrendingUp,
@@ -220,8 +220,11 @@ export default function CompetitiveIntel() {
   const kpis = competitorData?.kpis;
   const trendAlerts = trendsData?.trendAlerts ?? [];
 
-  const filteredCompetitors = competitors.filter((c) =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  const filteredCompetitors = useMemo(
+    () => competitors.filter((c) =>
+      c.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    ),
+    [competitors, searchQuery],
   );
 
   // ------ Handlers ------

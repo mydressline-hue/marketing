@@ -154,7 +154,7 @@ export class SimulationEngineService {
 
     // -- Lookup campaign -----------------------------------------------------
     const campaignResult = await pool.query(
-      `SELECT * FROM campaigns WHERE id = $1`,
+      `SELECT id, name, country_id, platform, type, status, budget, spent, start_date, end_date, targeting, metrics, daily_budget, roas, avg_cpc, avg_ctr, created_by, created_at, updated_at FROM campaigns WHERE id = $1`,
       [campaignId],
     );
     const campaign = campaignResult.rows[0];
@@ -272,7 +272,7 @@ export class SimulationEngineService {
 
     // -- Lookup campaign -----------------------------------------------------
     const campaignResult = await pool.query(
-      `SELECT * FROM campaigns WHERE id = $1`,
+      `SELECT id, name, country_id, platform, type, status, budget, spent, start_date, end_date, targeting, metrics, daily_budget, roas, avg_cpc, avg_ctr, created_by, created_at, updated_at FROM campaigns WHERE id = $1`,
       [campaignId],
     );
     const campaign = campaignResult.rows[0];
@@ -284,8 +284,6 @@ export class SimulationEngineService {
     const currentBudget = Number(campaign.daily_budget) || 100;
     const totalConversions = Number(campaign.total_conversions) || 0;
     const totalSpend = Number(campaign.total_spend) || 1;
-    const _conversionRate = totalConversions / Math.max(totalSpend, 1);
-
     const drFactor = diminishingReturnsFactor(currentBudget, targetBudget);
     const scaleFactor = targetBudget / Math.max(currentBudget, 1);
     const projectedConversions = Math.round(
@@ -347,7 +345,7 @@ export class SimulationEngineService {
 
     // -- Lookup campaign -----------------------------------------------------
     const campaignResult = await pool.query(
-      `SELECT * FROM campaigns WHERE id = $1`,
+      `SELECT id, name, country_id, platform, type, status, budget, spent, start_date, end_date, targeting, metrics, daily_budget, roas, avg_cpc, avg_ctr, created_by, created_at, updated_at FROM campaigns WHERE id = $1`,
       [campaignId],
     );
     const campaign = campaignResult.rows[0];
@@ -440,7 +438,7 @@ export class SimulationEngineService {
 
     // -- Lookup campaign -----------------------------------------------------
     const campaignResult = await pool.query(
-      `SELECT * FROM campaigns WHERE id = $1`,
+      `SELECT id, name, country_id, platform, type, status, budget, spent, start_date, end_date, targeting, metrics, daily_budget, roas, avg_cpc, avg_ctr, created_by, created_at, updated_at FROM campaigns WHERE id = $1`,
       [campaignId],
     );
     const campaign = campaignResult.rows[0];
@@ -562,7 +560,7 @@ export class SimulationEngineService {
   ): Promise<Record<string, unknown>> {
     // -- Lookup campaign -----------------------------------------------------
     const campaignResult = await pool.query(
-      `SELECT * FROM campaigns WHERE id = $1`,
+      `SELECT id, name, country_id, platform, type, status, budget, spent, start_date, end_date, targeting, metrics, daily_budget, roas, avg_cpc, avg_ctr, created_by, created_at, updated_at FROM campaigns WHERE id = $1`,
       [campaignId],
     );
     const campaign = campaignResult.rows[0];
@@ -712,13 +710,6 @@ export class SimulationEngineService {
 
     // Compute simulated metrics based on strategy parameters
     const budgetParam = Number(strategy.budget) || 10000;
-    const _periodDays = Math.max(
-      1,
-      Math.round(
-        (endDate.getTime() - new Date(historicalPeriod.start).getTime()) /
-          (1000 * 60 * 60 * 24),
-      ),
-    );
 
     const simulatedSpend = round(budgetParam * 0.95, 2);
     const simulatedConversions = Math.round(budgetParam * 0.032);

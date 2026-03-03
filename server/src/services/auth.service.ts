@@ -176,8 +176,8 @@ export class AuthService {
       );
       await client.query(
         `INSERT INTO sessions (id, user_id, token_hash, created_at, expires_at)
-         VALUES ($1, $2, $3, NOW(), NOW() + INTERVAL '24 hours')`,
-        [sessionId, row.id, hashToken(token)],
+         VALUES ($1, $2, $3, NOW(), NOW() + INTERVAL '1 hour' * $4)`,
+        [sessionId, row.id, hashToken(token), env.SESSION_MAX_LIFETIME_HOURS],
       );
       await client.query(
         `INSERT INTO audit_logs (id, user_id, action, details, created_at)
@@ -353,6 +353,8 @@ export class AuthService {
 
   /**
    * Validates the current password, then updates to the new one.
+   * All existing sessions for the user are invalidated to force
+   * re-authentication with the new credentials.
    */
   static async changePassword(
     userId: string,
@@ -379,11 +381,61 @@ export class AuthService {
 
     const newHash = await hashPassword(newPassword);
 
-    await pool.query(
-      'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
-      [newHash, userId],
+    await withTransaction(async (client) => {
+      await client.query(
+        'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+        [newHash, userId],
+      );
+
+      // Invalidate all existing sessions so the user must log in again
+      const deleteResult = await client.query(
+        'DELETE FROM sessions WHERE user_id = $1',
+        [userId],
+      );
+
+      await client.query(
+        `INSERT INTO audit_logs (id, user_id, action, details, created_at)
+         VALUES ($1, $2, $3, $4, NOW())`,
+        [
+          generateId(),
+          userId,
+          'PASSWORD_CHANGE',
+          JSON.stringify({
+            sessionsInvalidated: deleteResult.rowCount,
+          }),
+        ],
+      );
+    });
+
+    logger.info('User password changed, all sessions invalidated', {
+      userId,
+    });
+  }
+
+  // -----------------------------------------------------------------------
+  // Cleanup Expired Sessions
+  // -----------------------------------------------------------------------
+
+  /**
+   * Deletes all sessions whose `expires_at` timestamp is in the past.
+   * Intended to be called periodically (e.g. via cron or setInterval) to
+   * prevent the sessions table from growing unboundedly.
+   *
+   * @returns The number of expired sessions that were removed.
+   */
+  static async cleanupExpiredSessions(): Promise<number> {
+    const result = await pool.query(
+      'DELETE FROM sessions WHERE expires_at <= NOW()',
     );
 
-    logger.info('User password changed', { userId });
+    const count = result.rowCount ?? 0;
+
+    if (count > 0) {
+      logger.info('Expired sessions cleaned up', {
+        removedCount: count,
+      });
+    }
+
+    return count;
   }
 }

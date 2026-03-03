@@ -19,6 +19,7 @@ import {
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
 import { validateBody, validateQuery, validateParams } from '../middleware/validation';
+import { staticCacheHeaders } from '../middleware/cacheHeaders';
 import {
   createCountrySchema,
   updateCountrySchema,
@@ -36,6 +37,8 @@ const router = Router();
 router.get(
   '/',
   authenticate,
+  requirePermission('read:campaigns'),
+  staticCacheHeaders,
   validateQuery(paginationSchema),
   list,
 );
@@ -44,6 +47,8 @@ router.get(
 router.get(
   '/top',
   authenticate,
+  requirePermission('read:campaigns'),
+  staticCacheHeaders,
   getTopCountries,
 );
 
@@ -51,6 +56,8 @@ router.get(
 router.get(
   '/:id',
   authenticate,
+  requirePermission('read:campaigns'),
+  staticCacheHeaders,
   validateParams(idParamSchema),
   getById,
 );
@@ -83,10 +90,11 @@ router.delete(
   remove,
 );
 
-// POST /countries/:id/score - calculate opportunity score
+// POST /countries/:id/score - calculate opportunity score (requires write:campaigns)
 router.post(
   '/:id/score',
   authenticate,
+  requirePermission('write:campaigns'),
   validateParams(idParamSchema),
   calculateScore,
 );

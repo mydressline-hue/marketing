@@ -25,6 +25,7 @@ import { testRedisConnection } from './redis';
 import { closePool } from './database';
 import { closeRedis } from './redis';
 import { logger } from '../utils/logger';
+import { eventBus } from '../websocket/EventBus';
 
 /**
  * Initialise all external connections (Postgres + Redis).
@@ -47,6 +48,10 @@ export async function initializeConnections(): Promise<void> {
         'Redis is unavailable. The server will continue without caching.',
       );
     }
+
+    // Initialise EventBus Redis pub/sub connections (separate from the
+    // main Redis client used for caching). Non-fatal on failure.
+    await eventBus.init();
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     logger.warn(
@@ -62,6 +67,7 @@ export async function initializeConnections(): Promise<void> {
  */
 export async function closeConnections(): Promise<void> {
   logger.info('Shutting down connections...');
+  await eventBus.close();
   await closePool();
   await closeRedis();
   logger.info('All connections shut down.');

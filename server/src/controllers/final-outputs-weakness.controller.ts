@@ -42,7 +42,7 @@ export const getImprovementPriorities = asyncHandler(
       success: true,
       data: priorities,
       meta: {
-        count: priorities.length,
+        total: priorities.length,
       },
     });
   },
@@ -62,8 +62,7 @@ export const getWeaknessByCategory = asyncHandler(
       success: true,
       data: weaknesses,
       meta: {
-        category,
-        count: weaknesses.length,
+        total: weaknesses.length,
       },
     });
   },

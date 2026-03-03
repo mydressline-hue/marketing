@@ -17,6 +17,7 @@ import { cacheGet, cacheSet, cacheDel } from '../../config/redis';
 import { generateId } from '../../utils/helpers';
 import { logger } from '../../utils/logger';
 import { ValidationError, NotFoundError } from '../../utils/errors';
+import { AuditService } from '../audit.service';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -174,6 +175,14 @@ export class WebhookService {
       registrationId: id,
       platformType,
       userId,
+    });
+
+    await AuditService.log({
+      userId,
+      action: 'webhook.register',
+      resourceType: 'webhook_registration',
+      resourceId: id,
+      details: { platformType, events: config.events },
     });
 
     return rowToRegistration(result.rows[0]);
@@ -366,7 +375,7 @@ export class WebhookService {
     const totalPages = Math.ceil(total / limit);
 
     const dataResult = await pool.query(
-      `SELECT * FROM webhook_events ${whereClause}
+      `SELECT id, platform_type, event_type, payload, status, user_id, registration_id, processed_at, error_message, created_at FROM webhook_events ${whereClause}
        ORDER BY created_at DESC
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, limit, offset],
@@ -398,7 +407,7 @@ export class WebhookService {
     }
 
     const result = await pool.query(
-      `SELECT * FROM webhook_registrations
+      `SELECT id, user_id, platform_type, webhook_url, secret, events, is_active, created_at, updated_at FROM webhook_registrations
        WHERE user_id = $1 AND is_active = true
        ORDER BY created_at DESC`,
       [userId],
@@ -423,7 +432,7 @@ export class WebhookService {
     platformType: string,
   ): Promise<WebhookRegistration | null> {
     const result = await pool.query(
-      `SELECT * FROM webhook_registrations
+      `SELECT id, user_id, platform_type, webhook_url, secret, events, is_active, created_at, updated_at FROM webhook_registrations
        WHERE platform_type = $1 AND is_active = true
        ORDER BY created_at DESC
        LIMIT 1`,
@@ -501,6 +510,13 @@ export class WebhookService {
     logger.info('Webhook registration deactivated', {
       registrationId,
       userId,
+    });
+
+    await AuditService.log({
+      userId,
+      action: 'webhook.deactivate',
+      resourceType: 'webhook_registration',
+      resourceId: registrationId,
     });
   }
 }

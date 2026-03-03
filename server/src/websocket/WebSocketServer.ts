@@ -7,6 +7,16 @@ import { logger } from '../utils/logger';
 import { eventBus } from './EventBus';
 import type { AuthenticatedClient, IncomingMessage, OutgoingMessage } from './types';
 
+/** WebSocket close codes (RFC 6455 and custom range 4000-4999) */
+export const WS_CLOSE_CODES = {
+  /** No token was provided on the connection URL */
+  MISSING_TOKEN: 4001,
+  /** The token signature is invalid or the token is malformed */
+  INVALID_TOKEN: 4002,
+  /** The token has expired */
+  TOKEN_EXPIRED: 4003,
+} as const;
+
 interface AuthenticatedRequest extends HttpIncomingMessage {
   user?: { id: string; email: string; role: string };
 }
@@ -24,14 +34,33 @@ export class MarketingWebSocketServer {
         try {
           const url = new URL(info.req.url!, `http://${info.req.headers.host}`);
           const token = url.searchParams.get('token');
-          if (!token) { cb(false, 401, 'Missing token'); return; }
-          const decoded = jwt.verify(token, env.JWT_SECRET!) as { id: string; email: string; role: string };
+
+          if (!token) {
+            logger.warn('WebSocket connection rejected: missing token');
+            cb(false, 401, 'Missing authentication token');
+            return;
+          }
+
+          const decoded = jwt.verify(token, env.JWT_SECRET!) as {
+            id: string;
+            email: string;
+            role: string;
+          };
           (info.req as AuthenticatedRequest).user = decoded;
           cb(true);
-        } catch {
-          cb(false, 401, 'Invalid token');
+        } catch (error) {
+          if (error instanceof jwt.TokenExpiredError) {
+            logger.warn('WebSocket connection rejected: token expired');
+            cb(false, 401, 'Token expired');
+          } else if (error instanceof jwt.JsonWebTokenError) {
+            logger.warn('WebSocket connection rejected: invalid token');
+            cb(false, 401, 'Invalid token');
+          } else {
+            logger.error('WebSocket connection rejected: authentication error', error as Error);
+            cb(false, 401, 'Authentication failed');
+          }
         }
-      }
+      },
     });
 
     this.wss.on('connection', (ws, req) => {
@@ -68,8 +97,9 @@ export class MarketingWebSocketServer {
     });
 
     // Subscribe to EventBus broadcasts
-    eventBus.on('broadcast', (msg: OutgoingMessage) => {
-      this.broadcastToChannel(msg.channel, msg.data);
+    eventBus.on('broadcast', (msg: unknown) => {
+      const outgoing = msg as OutgoingMessage;
+      this.broadcastToChannel(outgoing.channel, outgoing.data);
     });
 
     this.startHeartbeat();
@@ -94,6 +124,21 @@ export class MarketingWebSocketServer {
         ws.ping();
       }
     }, 30000);
+  }
+
+  /**
+   * Forcefully disconnects all WebSocket connections belonging to a specific
+   * user. Sends a custom close code so the client can distinguish a
+   * server-initiated session invalidation from a normal disconnect.
+   */
+  disconnectUser(userId: string, code: number = WS_CLOSE_CODES.TOKEN_EXPIRED, reason: string = 'Session invalidated'): void {
+    for (const [ws, client] of this.clients) {
+      if (client.userId === userId) {
+        logger.info(`Disconnecting WebSocket for user ${client.email}: ${reason}`);
+        ws.close(code, reason);
+        this.clients.delete(ws);
+      }
+    }
   }
 
   close(): void {

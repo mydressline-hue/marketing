@@ -11,6 +11,7 @@ import { NotFoundError, ValidationError } from '../utils/errors';
 import { generateId } from '../utils/helpers';
 import { withTransaction } from '../utils/transaction';
 import logger from '../utils/logger';
+import { AuditService } from './audit.service';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -114,7 +115,7 @@ export class ProductsService {
 
     // Data page
     const dataResult = await query<Product>(
-      `SELECT * FROM products ${whereClause}
+      `SELECT id, title, description, shopify_id, images, variants, inventory_level, is_active, synced_at, created_at, updated_at FROM products ${whereClause}
        ORDER BY ${sortColumn} ${sortDirection}
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, pagination.limit, offset],
@@ -133,7 +134,7 @@ export class ProductsService {
    */
   static async getById(id: string): Promise<Product> {
     const result = await query<Product>(
-      'SELECT * FROM products WHERE id = $1',
+      'SELECT id, title, description, shopify_id, images, variants, inventory_level, is_active, synced_at, created_at, updated_at FROM products WHERE id = $1',
       [id],
     );
 
@@ -149,7 +150,7 @@ export class ProductsService {
    */
   static async getByShopifyId(shopifyId: string): Promise<Product> {
     const result = await query<Product>(
-      'SELECT * FROM products WHERE shopify_id = $1',
+      'SELECT id, title, description, shopify_id, images, variants, inventory_level, is_active, synced_at, created_at, updated_at FROM products WHERE shopify_id = $1',
       [shopifyId],
     );
 
@@ -190,6 +191,14 @@ export class ProductsService {
     );
 
     logger.info('Product created', { productId: id, title: data.title });
+
+    await AuditService.log({
+      action: 'product.create',
+      resourceType: 'product',
+      resourceId: id,
+      details: { title: data.title, shopifyId: data.shopifyId },
+    });
+
     return result.rows[0];
   }
 
@@ -262,6 +271,14 @@ export class ProductsService {
     );
 
     logger.info('Product updated', { productId: id });
+
+    await AuditService.log({
+      action: 'product.update',
+      resourceType: 'product',
+      resourceId: id,
+      details: { updatedFields: Object.keys(data).filter((k) => (data as Record<string, unknown>)[k] !== undefined) },
+    });
+
     return result.rows[0];
   }
 
@@ -279,6 +296,13 @@ export class ProductsService {
     }
 
     logger.info('Product soft-deleted', { productId: id });
+
+    await AuditService.log({
+      action: 'product.delete',
+      resourceType: 'product',
+      resourceId: id,
+      details: { softDelete: true },
+    });
   }
 
   /**
@@ -298,6 +322,14 @@ export class ProductsService {
     }
 
     logger.info('Product inventory synced', { productId: id, inventoryLevel: level });
+
+    await AuditService.log({
+      action: 'product.syncInventory',
+      resourceType: 'product',
+      resourceId: id,
+      details: { inventoryLevel: level },
+    });
+
     return result.rows[0];
   }
 
@@ -364,6 +396,13 @@ export class ProductsService {
     });
 
     logger.info('Bulk product sync completed', { created: result.created, updated: result.updated });
+
+    await AuditService.log({
+      action: 'product.bulkSync',
+      resourceType: 'product',
+      details: { created: result.created, updated: result.updated, totalItems: products.length },
+    });
+
     return result;
   }
 }

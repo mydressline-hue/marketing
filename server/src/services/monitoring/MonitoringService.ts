@@ -626,7 +626,7 @@ export class MonitoringService {
     const total = parseInt(countResult.rows[0].total, 10);
 
     const dataResult = await pool.query(
-      `SELECT * FROM monitoring_alerts ${whereClause}
+      `SELECT id, config_id, metric, current_value, threshold, severity, message, channels_notified, acknowledged, acknowledged_by, acknowledged_at, created_at FROM monitoring_alerts ${whereClause}
        ORDER BY created_at DESC
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, limit, offset],
@@ -677,7 +677,7 @@ export class MonitoringService {
     const total = parseInt(countResult.rows[0].total, 10);
 
     const dataResult = await pool.query(
-      `SELECT * FROM monitoring_alerts ${whereClause}
+      `SELECT id, config_id, metric, current_value, threshold, severity, message, channels_notified, acknowledged, acknowledged_by, acknowledged_at, created_at FROM monitoring_alerts ${whereClause}
        ORDER BY created_at DESC
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, limit, offset],
@@ -776,7 +776,7 @@ export class MonitoringService {
    */
   static async evaluateEscalationRules(): Promise<Alert[]> {
     const rulesResult = await pool.query(
-      `SELECT * FROM escalation_rules WHERE is_enabled = true`
+      `SELECT id, name, condition, alert_count, time_window_minutes, escalation_action, is_enabled FROM escalation_rules WHERE is_enabled = true`
     );
 
     const escalatedAlerts: Alert[] = [];

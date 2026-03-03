@@ -272,7 +272,7 @@ export class CampaignHealthMonitorService {
     );
 
     const aRes = await pool.query(
-      `SELECT * FROM campaign_health_alerts WHERE campaign_id = $1 AND resolved_at IS NULL ORDER BY created_at DESC`,
+      `SELECT id, campaign_id, alert_type, severity, title, description, metric_name, current_value, threshold_value, recommended_action, auto_action_taken, acknowledged, acknowledged_by, created_at, resolved_at FROM campaign_health_alerts WHERE campaign_id = $1 AND resolved_at IS NULL ORDER BY created_at DESC`,
       [campaignId],
     );
 
@@ -674,7 +674,7 @@ export class CampaignHealthMonitorService {
       catch { /* skip */ }
     }
 
-    const ra = await pool.query(`SELECT * FROM campaign_health_alerts ORDER BY created_at DESC LIMIT 10`);
+    const ra = await pool.query(`SELECT id, campaign_id, alert_type, severity, title, description, metric_name, current_value, threshold_value, recommended_action, auto_action_taken, acknowledged, acknowledged_by, created_at, resolved_at FROM campaign_health_alerts ORDER BY created_at DESC LIMIT 10`);
 
     const dashboard: HealthDashboard = {
       total_campaigns: Number(r.total) || 0, healthy_campaigns: Number(r.healthy) || 0,
@@ -700,7 +700,7 @@ export class CampaignHealthMonitorService {
     if (filters?.severity) { conds.push(`severity=$${pi++}`); params.push(filters.severity); }
     if (filters?.acknowledged !== undefined) { conds.push(`acknowledged=$${pi++}`); params.push(filters.acknowledged); }
     const where = conds.length > 0 ? `WHERE ${conds.join(' AND ')}` : '';
-    const res = await pool.query(`SELECT * FROM campaign_health_alerts ${where} ORDER BY created_at DESC LIMIT 200`, params);
+    const res = await pool.query(`SELECT id, campaign_id, alert_type, severity, title, description, metric_name, current_value, threshold_value, recommended_action, auto_action_taken, acknowledged, acknowledged_by, created_at, resolved_at FROM campaign_health_alerts ${where} ORDER BY created_at DESC LIMIT 200`, params);
     return res.rows.map(mapAlert);
   }
 
@@ -739,7 +739,7 @@ export class CampaignHealthMonitorService {
     const ck = `${CACHE_PREFIX}:config`;
     const cached = await cacheGet<HealthConfig>(ck);
     if (cached) return cached;
-    const res = await pool.query(`SELECT * FROM campaign_health_config ORDER BY updated_at DESC LIMIT 1`);
+    const res = await pool.query(`SELECT cpa_volatility_threshold, spend_velocity_threshold, creative_fatigue_threshold, ctr_decline_threshold, pixel_signal_loss_threshold, check_interval_minutes, auto_pause_on_critical, updated_at FROM campaign_health_config ORDER BY updated_at DESC LIMIT 1`);
     let config: HealthConfig;
     if (res.rows.length > 0) {
       const r = res.rows[0];

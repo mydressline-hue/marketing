@@ -72,19 +72,71 @@ const pool = new Pool({
   min: env.DB_POOL_MIN,
   max: env.DB_POOL_MAX,
   ssl: sslConfig,
-  idleTimeoutMillis: 30000,
+  idleTimeoutMillis: env.DB_IDLE_TIMEOUT,
   connectionTimeoutMillis: 5000,
+});
+
+// ---------------------------------------------------------------------------
+// Pool event logging for debugging and observability
+// ---------------------------------------------------------------------------
+pool.on('connect', (_client) => {
+  logger.debug('Pool: new client connected', {
+    totalCount: pool.totalCount,
+    idleCount: pool.idleCount,
+    waitingCount: pool.waitingCount,
+  });
+});
+
+pool.on('acquire', () => {
+  logger.debug('Pool: client acquired', {
+    totalCount: pool.totalCount,
+    idleCount: pool.idleCount,
+    waitingCount: pool.waitingCount,
+  });
+});
+
+pool.on('remove', () => {
+  logger.debug('Pool: client removed', {
+    totalCount: pool.totalCount,
+    idleCount: pool.idleCount,
+    waitingCount: pool.waitingCount,
+  });
 });
 
 pool.on('error', (err: Error) => {
   logger.error('Unexpected error on idle database client:', err);
 });
 
+logger.info('Database connection pool configured', {
+  min: env.DB_POOL_MIN,
+  max: env.DB_POOL_MAX,
+  idleTimeoutMillis: env.DB_IDLE_TIMEOUT,
+});
+
+// ---------------------------------------------------------------------------
+// Slow-query logging threshold (configurable via SLOW_QUERY_THRESHOLD_MS)
+// ---------------------------------------------------------------------------
+const slowQueryThresholdMs: number = env.SLOW_QUERY_THRESHOLD_MS;
+
 async function query<T extends QueryResultRow = QueryResultRow>(
   text: string,
   params?: unknown[],
 ): Promise<QueryResult<T>> {
-  return pool.query<T>(text, params);
+  const start = Date.now();
+  const result = await pool.query<T>(text, params);
+  const durationMs = Date.now() - start;
+
+  if (durationMs >= slowQueryThresholdMs) {
+    const truncatedQuery =
+      text.length > 200 ? text.substring(0, 200) + '...' : text;
+    logger.warn('Slow query detected', {
+      query: truncatedQuery,
+      duration_ms: durationMs,
+      rows: result.rowCount,
+    });
+  }
+
+  return result;
 }
 
 async function getClient(): Promise<PoolClient> {

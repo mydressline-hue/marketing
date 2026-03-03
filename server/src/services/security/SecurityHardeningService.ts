@@ -692,7 +692,7 @@ export class SecurityHardeningService {
 
       case 'get': {
         const result = await pool.query(
-          `SELECT * FROM secrets_vault WHERE name = $1`,
+          `SELECT id, name, encrypted_value, created_by, expires_at, last_rotated_at, created_at FROM secrets_vault WHERE name = $1`,
           [name],
         );
 
@@ -742,7 +742,7 @@ export class SecurityHardeningService {
         }
 
         const existing = await pool.query(
-          `SELECT * FROM secrets_vault WHERE name = $1`,
+          `SELECT id, name, encrypted_value, created_by, expires_at, last_rotated_at, created_at FROM secrets_vault WHERE name = $1`,
           [name],
         );
 

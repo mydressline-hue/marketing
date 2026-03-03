@@ -10,6 +10,7 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
 import { KillSwitchService, OperationType } from '../services/killswitch/KillSwitchService';
 import { GovernanceService, ApprovalRequest } from '../services/governance/GovernanceService';
+import { ValidationError } from '../utils/errors';
 import type { DateRange } from '../types';
 
 // ===========================================================================
@@ -209,11 +210,9 @@ export const checkOperation = asyncHandler(async (req: Request, res: Response) =
     try {
       parsedContext = JSON.parse(context as string);
     } catch {
-      res.status(400).json({
-        success: false,
-        error: 'Invalid JSON in context query parameter',
-      });
-      return;
+      throw new ValidationError('Invalid JSON in context query parameter', [
+        { field: 'context', message: 'Must be valid JSON' },
+      ]);
     }
   }
 

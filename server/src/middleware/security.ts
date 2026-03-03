@@ -22,19 +22,33 @@ declare global {
 // ---------------------------------------------------------------------------
 // 1. CORS
 // ---------------------------------------------------------------------------
+const corsOrigin = env.CORS_ORIGIN || env.CORS_ORIGINS;
+
 export const corsMiddleware = cors({
-  origin: env.CORS_ORIGINS.split(',').map((o) => o.trim()),
+  origin: corsOrigin.split(',').map((o: string) => o.trim()),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Request-ID', 'X-CSRF-Token'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-API-Key',
+    'X-Request-ID',
+    'X-CSRF-Token',
+    'Accept',
+    'Origin',
+  ],
+  exposedHeaders: ['X-Request-ID'],
+  maxAge: 86400, // 24 hours – browsers cache preflight responses
 });
 
 // ---------------------------------------------------------------------------
-// 2. Helmet
+// 2. Helmet  (core HTTP security headers)
 // ---------------------------------------------------------------------------
 const isDev = env.NODE_ENV === 'development';
+const isProd = env.NODE_ENV === 'production';
 
 export const helmetMiddleware = helmet({
+  // ── Content-Security-Policy ────────────────────────────────────────────
   contentSecurityPolicy: isDev
     ? false
     : {
@@ -50,8 +64,44 @@ export const helmetMiddleware = helmet({
           upgradeInsecureRequests: [],
         },
       },
+
+  // ── X-Content-Type-Options: nosniff ────────────────────────────────────
+  xContentTypeOptions: true,
+
+  // ── X-Frame-Options: DENY ──────────────────────────────────────────────
+  frameguard: { action: 'deny' },
+
+  // ── X-XSS-Protection: 0 (explicitly disabled – modern CSP supersedes) ─
+  xXssProtection: false,
+
+  // ── Referrer-Policy ────────────────────────────────────────────────────
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+
+  // ── Strict-Transport-Security (HSTS) – production only ─────────────────
+  // In non-production environments we disable HSTS to avoid breaking local
+  // HTTP dev servers and CI pipelines.
+  strictTransportSecurity: isProd
+    ? { maxAge: 31536000, includeSubDomains: true }
+    : false,
+
+  // ── Cross-Origin policies ──────────────────────────────────────────────
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 });
+
+// ---------------------------------------------------------------------------
+// 2b. Permissions-Policy  (not covered by Helmet out of the box)
+// ---------------------------------------------------------------------------
+export const permissionsPolicyMiddleware = (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): void => {
+  res.setHeader(
+    'Permissions-Policy',
+    'camera=(), microphone=(), geolocation=()',
+  );
+  next();
+};
 
 // ---------------------------------------------------------------------------
 // 3. Rate Limiter

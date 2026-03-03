@@ -1,0 +1,13 @@
+{
+  "name": "@marketing/shared",
+  "version": "1.0.0",
+  "description": "Shared type definitions for the marketing platform monorepo",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}

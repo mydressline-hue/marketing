@@ -55,7 +55,7 @@ export class LearningService {
 
   static async evaluateStrategy(strategyId: string) {
     const { rows } = await pool.query(
-      `SELECT * FROM strategy_outcomes
+      `SELECT id, agent_type, strategy_type, country, channel, action_taken, outcome_metrics, reward_score, context, recorded_at FROM strategy_outcomes
        WHERE strategy_type = $1
        ORDER BY recorded_at DESC LIMIT 50`,
       [strategyId],
@@ -193,7 +193,7 @@ export class LearningService {
     const total = parseInt(countResult.rows[0].total, 10);
 
     const dataResult = await pool.query(
-      `SELECT * FROM strategy_memory ${where} ORDER BY updated_at DESC LIMIT $${idx++} OFFSET $${idx}`,
+      `SELECT id, strategy_key, country, channel, parameters, status, success_rate, total_applications, average_reward, created_at, updated_at FROM strategy_memory ${where} ORDER BY updated_at DESC LIMIT $${idx++} OFFSET $${idx}`,
       [...params, limit, offset],
     );
 
@@ -277,7 +277,7 @@ export class LearningService {
     }
 
     const { rows } = await pool.query(
-      `SELECT * FROM country_performance_history
+      `SELECT id, country, channel, total_spend, total_revenue, overall_roas, avg_cac, avg_ctr, total_conversions, period_start, period_end, recorded_at FROM country_performance_history
        WHERE ${conditions.join(' AND ')}
        ORDER BY recorded_at DESC
        LIMIT 30`,

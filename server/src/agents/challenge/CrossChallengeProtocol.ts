@@ -579,7 +579,7 @@ export class CrossChallengeProtocol {
    * Flags low confidence scores and missing confidence factors.
    */
   private evaluateConfidence(
-    challengerId: AgentType,
+    _challengerId: AgentType,
     challengedId: AgentType,
     output: AgentOutput,
   ): ChallengeFinding[] {

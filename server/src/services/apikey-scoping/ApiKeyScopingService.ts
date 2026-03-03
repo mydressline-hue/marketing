@@ -700,6 +700,60 @@ export class ApiKeyScopingService {
    * Check whether the key is within its rate limit using a Redis sliding
    * window counter (hourly bucket).
    */
+  /**
+   * Rotate a scoped API key.
+   *
+   * Delegates the base key rotation to {@link ApiKeyService.rotate}, then
+   * migrates the scoping metadata (platforms, IP whitelist, rate limit,
+   * expiration, description) to the newly created key, and invalidates
+   * relevant caches.
+   *
+   * @returns The new key ID and raw key string (shown once to the user).
+   */
+  static async rotateScopedKey(
+    keyId: string,
+    userId: string,
+  ): Promise<{ id: string; key: string }> {
+    // Fetch current scoping data before rotation
+    const currentKey = await ApiKeyScopingService.getKeyById(keyId, userId);
+    if (!currentKey) {
+      throw new NotFoundError('API key not found');
+    }
+
+    // Rotate the base key (revokes old, creates new with same name/scopes)
+    const newKey = await ApiKeyService.rotate(keyId, userId);
+
+    // Migrate scoping data to the new key
+    const scopeId = generateId();
+    await pool.query(
+      `INSERT INTO api_key_scopes (
+        id, api_key_id, platforms, ip_whitelist, rate_limit_per_hour,
+        expires_at, description, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())`,
+      [
+        scopeId,
+        newKey.id,
+        currentKey.platforms,
+        currentKey.ipWhitelist,
+        currentKey.rateLimitPerHour,
+        currentKey.expiresAt,
+        currentKey.description,
+      ],
+    );
+
+    // Invalidate caches
+    await cacheDel(`apikeys:user:${userId}`);
+    await cacheDel(`apikey:scope:${keyId}`);
+
+    logger.info('Scoped API key rotated', {
+      oldKeyId: keyId,
+      newKeyId: newKey.id,
+      userId,
+    });
+
+    return newKey;
+  }
+
   private static async checkRateLimit(
     apiKeyId: string,
     limitPerHour: number,

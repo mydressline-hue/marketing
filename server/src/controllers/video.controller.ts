@@ -11,6 +11,7 @@ import { asyncHandler } from '../middleware/errorHandler';
 import { VideoGenerationService } from '../services/video/VideoGenerationService';
 import { TextEnhancementService } from '../services/video/TextEnhancementService';
 import { SocialPublisherService } from '../services/video/SocialPublisherService';
+import { ValidationError } from '../utils/errors';
 import type { SocialPlatform } from '../services/video/TextEnhancementService';
 
 // ---------------------------------------------------------------------------
@@ -227,11 +228,7 @@ export const publishVideo = asyncHandler(async (req: Request, res: Response) => 
   const task = await VideoGenerationService.getTaskById(req.params.id);
 
   if (!task.videoUrl) {
-    res.status(400).json({
-      success: false,
-      error: { message: 'Video is not yet ready for publishing' },
-    });
-    return;
+    throw new ValidationError('Video is not yet ready for publishing');
   }
 
   const enhancements = await TextEnhancementService.getByVideoTaskId(req.params.id);

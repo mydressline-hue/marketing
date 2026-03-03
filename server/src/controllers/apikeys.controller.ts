@@ -159,10 +159,7 @@ export const revokeKey = asyncHandler(async (req: Request, res: Response) => {
 
   await ApiKeyService.revoke(keyId, userId);
 
-  res.json({
-    success: true,
-    data: { message: 'API key revoked successfully' },
-  });
+  res.status(204).send();
 });
 
 // ===========================================================================
@@ -178,39 +175,7 @@ export const rotateKey = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.id;
   const { keyId } = req.params;
 
-  // Fetch current scoping data before rotation
-  const currentKey = await ApiKeyScopingService.getKeyById(keyId, userId);
-  if (!currentKey) {
-    throw new NotFoundError('API key not found');
-  }
-
-  // Rotate the base key (revokes old, creates new with same name/scopes)
-  const newKey = await ApiKeyService.rotate(keyId, userId);
-
-  // Migrate scoping data to the new key
-  const scopeId = (await import('../utils/helpers')).generateId();
-  const { pool: dbPool } = await import('../config/database');
-
-  await dbPool.query(
-    `INSERT INTO api_key_scopes (
-      id, api_key_id, platforms, ip_whitelist, rate_limit_per_hour,
-      expires_at, description, created_at, updated_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())`,
-    [
-      scopeId,
-      newKey.id,
-      currentKey.platforms,
-      currentKey.ipWhitelist,
-      currentKey.rateLimitPerHour,
-      currentKey.expiresAt,
-      currentKey.description,
-    ],
-  );
-
-  // Invalidate caches
-  const { cacheDel: cacheDelFn } = await import('../config/redis');
-  await cacheDelFn(`apikeys:user:${userId}`);
-  await cacheDelFn(`apikey:scope:${keyId}`);
+  const newKey = await ApiKeyScopingService.rotateScopedKey(keyId, userId);
 
   res.json({
     success: true,
@@ -266,13 +231,7 @@ export const revokeByPlatform = asyncHandler(async (req: Request, res: Response)
     ]);
   }
 
-  const result = await ApiKeyScopingService.revokeByPlatform(userId, platformType);
+  await ApiKeyScopingService.revokeByPlatform(userId, platformType);
 
-  res.json({
-    success: true,
-    data: {
-      revokedCount: result.revokedCount,
-      message: `${result.revokedCount} API key(s) for platform '${platformType}' revoked successfully`,
-    },
-  });
+  res.status(204).send();
 });
