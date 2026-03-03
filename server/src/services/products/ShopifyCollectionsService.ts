@@ -8,6 +8,7 @@
 import { pool } from '../../config/database';
 import { NotFoundError, ValidationError } from '../../utils/errors';
 import { generateId } from '../../utils/helpers';
+import { withTransaction } from '../../utils/transaction';
 import logger from '../../utils/logger';
 
 // ---------------------------------------------------------------------------
@@ -171,27 +172,34 @@ export class ShopifyCollectionsService {
     await ShopifyCollectionsService.getCollection(collectionId);
     if (!productIds || productIds.length === 0) throw new ValidationError('Product IDs required');
 
-    let added = 0;
-    const maxPosResult = await pool.query('SELECT COALESCE(MAX(position), 0) AS max_pos FROM collection_products WHERE collection_id = $1', [collectionId]);
-    let pos = parseInt(maxPosResult.rows[0].max_pos as string, 10) + 1;
+    const added = await withTransaction(async (client) => {
+      let count = 0;
+      const maxPosResult = await client.query('SELECT COALESCE(MAX(position), 0) AS max_pos FROM collection_products WHERE collection_id = $1', [collectionId]);
+      let pos = parseInt(maxPosResult.rows[0].max_pos as string, 10) + 1;
 
-    for (const pid of productIds) {
-      try {
-        await pool.query(
-          `INSERT INTO collection_products (id, collection_id, product_id, position, added_at) VALUES ($1, $2, $3, $4, NOW()) ON CONFLICT DO NOTHING`,
-          [generateId(), collectionId, pid, pos++]);
-        added++;
-      } catch { /* skip duplicates */ }
-    }
+      for (const pid of productIds) {
+        try {
+          await client.query(
+            `INSERT INTO collection_products (id, collection_id, product_id, position, added_at) VALUES ($1, $2, $3, $4, NOW()) ON CONFLICT DO NOTHING`,
+            [generateId(), collectionId, pid, pos++]);
+          count++;
+        } catch { /* skip duplicates */ }
+      }
 
-    await pool.query('UPDATE shopify_collections SET product_count = (SELECT COUNT(*) FROM collection_products WHERE collection_id = $1), updated_at = NOW() WHERE id = $1', [collectionId]);
+      await client.query('UPDATE shopify_collections SET product_count = (SELECT COUNT(*) FROM collection_products WHERE collection_id = $1), updated_at = NOW() WHERE id = $1', [collectionId]);
+
+      return count;
+    });
+
     logger.info('Products added to collection', { collectionId, added });
     return { added };
   }
 
   static async removeProductsFromCollection(collectionId: string, productIds: string[]): Promise<void> {
-    await pool.query('DELETE FROM collection_products WHERE collection_id = $1 AND product_id = ANY($2)', [collectionId, productIds]);
-    await pool.query('UPDATE shopify_collections SET product_count = (SELECT COUNT(*) FROM collection_products WHERE collection_id = $1), updated_at = NOW() WHERE id = $1', [collectionId]);
+    await withTransaction(async (client) => {
+      await client.query('DELETE FROM collection_products WHERE collection_id = $1 AND product_id = ANY($2)', [collectionId, productIds]);
+      await client.query('UPDATE shopify_collections SET product_count = (SELECT COUNT(*) FROM collection_products WHERE collection_id = $1), updated_at = NOW() WHERE id = $1', [collectionId]);
+    });
     logger.info('Products removed from collection', { collectionId, removed: productIds.length });
   }
 
@@ -214,9 +222,11 @@ export class ShopifyCollectionsService {
   }
 
   static async reorderCollectionProducts(collectionId: string, productIds: string[]): Promise<{ reordered: number }> {
-    for (let i = 0; i < productIds.length; i++) {
-      await pool.query('UPDATE collection_products SET position = $1 WHERE collection_id = $2 AND product_id = $3', [i, collectionId, productIds[i]]);
-    }
+    await withTransaction(async (client) => {
+      for (let i = 0; i < productIds.length; i++) {
+        await client.query('UPDATE collection_products SET position = $1 WHERE collection_id = $2 AND product_id = $3', [i, collectionId, productIds[i]]);
+      }
+    });
     logger.info('Collection products reordered', { collectionId, count: productIds.length });
     return { reordered: productIds.length };
   }

@@ -4,7 +4,7 @@
 // ============================================================
 
 import type { AgentType } from '../../types';
-import type { DecisionMatrix, DecisionMatrixEntry } from './DecisionMatrix';
+import type { DecisionMatrix } from './DecisionMatrix';
 import { pool } from '../../config/database';
 import { logger } from '../../utils/logger';
 import { generateId } from '../../utils/helpers';

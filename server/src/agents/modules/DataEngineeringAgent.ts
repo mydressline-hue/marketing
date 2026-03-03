@@ -8,8 +8,8 @@
 // ============================================================
 
 import { BaseAgent } from '../base/BaseAgent';
-import type { AgentInput, AgentOutput, AgentConfidenceScore } from '../base/types';
-import type { AgentType, DateRange } from '../../types';
+import type { AgentInput, AgentOutput } from '../base/types';
+import type { AgentType } from '../../types';
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet } from '../../config/redis';
 import { retryWithBackoff } from '../../utils/helpers';
@@ -37,7 +37,7 @@ const DUPLICATE_THRESHOLD_PERCENT = 5;
 const MIN_QUALITY_SCORE = 70;
 
 /** Maximum staleness in hours before a table is considered stale */
-const DEFAULT_MAX_STALENESS_HOURS = 24;
+const _DEFAULT_MAX_STALENESS_HOURS = 24;
 
 /** Anomaly detection z-score threshold */
 const ANOMALY_Z_SCORE_THRESHOLD = 3;
@@ -642,7 +642,7 @@ Output format: Respond with valid JSON matching the requested schema.`;
 
       // Test endpoint connectivity by querying for provider configuration in DB
       try {
-        const result = await pool.query(
+        await pool.query(
           `SELECT id FROM agent_states WHERE agent_type = $1 LIMIT 1`,
           ['data_engineering'],
         );

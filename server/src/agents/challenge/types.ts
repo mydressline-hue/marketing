@@ -3,7 +3,7 @@
 // Type definitions for the agent cross-challenge system
 // ============================================================
 
-import type { AgentType, CrossChallengeResult } from '../../types';
+import type { AgentType } from '../../types';
 import type { AgentOutput } from '../base/types';
 
 // ---- Severity ----

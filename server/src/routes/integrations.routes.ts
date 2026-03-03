@@ -9,6 +9,8 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
+import { validateBody } from '../middleware/validation';
+import { connectPlatformSchema } from '../validators/schemas';
 import {
   connectPlatform,
   disconnectPlatform,
@@ -36,6 +38,7 @@ router.use(authenticate);
 router.post(
   '/connect',
   requirePermission('write:integrations'),
+  validateBody(connectPlatformSchema),
   connectPlatform,
 );
 

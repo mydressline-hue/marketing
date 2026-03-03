@@ -7,14 +7,9 @@
 
 import { ContinuousLearningService } from './ContinuousLearningService';
 import { pool } from '../../config/database';
-import { cacheGet, cacheSet, cacheDel } from '../../config/redis';
-import { logger } from '../../utils/logger';
 import { generateId } from '../../utils/helpers';
 import { NotFoundError, ValidationError } from '../../utils/errors';
 import { AuditService } from '../audit.service';
-
-const CACHE_PREFIX = 'learning_svc';
-const CACHE_TTL = 300;
 
 export class LearningService {
   // ---------------------------------------------------------------------------
@@ -49,7 +44,7 @@ export class LearningService {
       },
       reward_score: 0,
       context: context || {},
-    } as any);
+    } as Omit<import('./ContinuousLearningService').LearningRecord, 'id' | 'recorded_at'>);
 
     return record;
   }
@@ -70,9 +65,9 @@ export class LearningService {
       throw new NotFoundError(`No outcomes found for strategy ${strategyId}`);
     }
 
-    const totalReward = rows.reduce((sum: number, r: any) => sum + (r.reward_score || 0), 0);
+    const totalReward = rows.reduce((sum: number, r: Record<string, unknown>) => sum + (Number(r.reward_score) || 0), 0);
     const avgReward = totalReward / rows.length;
-    const successCount = rows.filter((r: any) => (r.reward_score || 0) > 0.5).length;
+    const successCount = rows.filter((r: Record<string, unknown>) => (Number(r.reward_score) || 0) > 0.5).length;
 
     return {
       strategyId,
@@ -117,8 +112,8 @@ export class LearningService {
 
     if (topStrategies.rows.length > 0) {
       const topIds = topStrategies.rows
-        .filter((r: any) => r.strategy_type !== strategyId)
-        .map((r: any) => r.strategy_type);
+        .filter((r: Record<string, unknown>) => r.strategy_type !== strategyId)
+        .map((r: Record<string, unknown>) => r.strategy_type);
       if (topIds.length > 0) {
         suggestions.push(`Top-performing peer strategies: ${topIds.join(', ')}`);
       }
@@ -258,7 +253,7 @@ export class LearningService {
 
   static async getCountryPerformanceHistory(
     country: string,
-    filters?: { channel?: string; startDate?: string; endDate?: string },
+    _filters?: { channel?: string; startDate?: string; endDate?: string },
   ) {
     const memory = await ContinuousLearningService.getCountryPerformanceMemory(country);
     return memory;
@@ -290,7 +285,7 @@ export class LearningService {
     );
 
     const metric = filters?.metric || 'overall_roas';
-    const values = rows.map((r: any) => r[metric] || 0).reverse();
+    const values = rows.map((r: Record<string, unknown>) => Number(r[metric]) || 0).reverse();
     const trend = values.length >= 2
       ? values[values.length - 1] > values[0] ? 'improving' : 'declining'
       : 'insufficient_data';
@@ -375,13 +370,13 @@ export class LearningService {
   static async analyzeMarketTrends(
     country: string,
     channel: string,
-    filters?: { timeframe?: string; signalTypes?: string },
+    _filters?: { timeframe?: string; signalTypes?: string },
   ) {
     const trends = await ContinuousLearningService.detectMarketTrends();
     const filtered = trends.filter(
-      (t: any) =>
-        (!country || t.country === country || country === 'all') &&
-        (!channel || t.channel === channel || channel === 'all'),
+      (t) =>
+        (!country || t.affected_countries.includes(country) || country === 'all') &&
+        (!channel || t.affected_channels.includes(channel) || channel === 'all'),
     );
 
     return {

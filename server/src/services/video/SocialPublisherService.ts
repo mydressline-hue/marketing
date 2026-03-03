@@ -97,7 +97,7 @@ async function publishToPlatform(
   caption: string,
   hashtags: string[],
   cta: string,
-  credentials: Record<string, unknown>,
+  _credentials: Record<string, unknown>,
 ): Promise<{ externalPostId: string; postUrl: string }> {
   // Platform API integration layer – each case dispatches to the
   // corresponding platform SDK (Graph API, TikTok Creator API, YouTube

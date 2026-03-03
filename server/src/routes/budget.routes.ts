@@ -10,10 +10,11 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
-import { validateBody, validateParams } from '../middleware/validation';
+import { validateBody, validateQuery, validateParams } from '../middleware/validation';
 import {
   createBudgetAllocationSchema,
   recordSpendSchema,
+  listBudgetAllocationsQuerySchema,
   idParamSchema,
 } from '../validators/schemas';
 import {
@@ -38,8 +39,8 @@ router.get('/summary/country', getSpendByCountry);
 router.get('/summary/channel', getSpendByChannel);
 
 // ---- Read operations ----
-router.get('/', listAllocations);
-router.get('/:id', getAllocation);
+router.get('/', validateQuery(listBudgetAllocationsQuerySchema), listAllocations);
+router.get('/:id', validateParams(idParamSchema), getAllocation);
 router.get('/:id/guardrails', checkGuardrails);
 
 // ---- Write operations (require write:budget permission) ----

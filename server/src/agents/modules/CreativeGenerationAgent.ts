@@ -4,11 +4,9 @@
 // ============================================================
 
 import { BaseAgent } from '../base/BaseAgent';
-import { calculateWeightedConfidence } from '../base/ConfidenceScoring';
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet } from '../../config/redis';
-import { generateId } from '../../utils/helpers';
-import type { AgentType, CreativePerformance, FatigueScore, Platform } from '../../types';
+import type { AgentType, CreativePerformance, FatigueScore } from '../../types';
 import type {
   AgentInput,
   AgentOutput,

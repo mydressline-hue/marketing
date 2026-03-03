@@ -15,6 +15,29 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
+import { validateBody, validateQuery, validateParams } from '../middleware/validation';
+import {
+  spendMonitoringQuerySchema,
+  alertsQuerySchema,
+  resolveAlertBodySchema,
+  updateAlertConfigBodySchema,
+  tableParamSchema,
+  anonymizePiiBodySchema,
+  userIdParamSchema,
+  manageConsentBodySchema,
+  rotateKeysBodySchema,
+  addToIpWhitelistBodySchema,
+  runThreatScanBodySchema,
+  securityReportQuerySchema,
+  traceIdParamSchema,
+  errorDashboardQuerySchema,
+  confidenceDriftQuerySchema,
+  updateLogRetentionBodySchema,
+  enterDegradedModeBodySchema,
+  attemptRecoveryBodySchema,
+  initiateBackupBodySchema,
+  backupHistoryQuerySchema,
+} from '../validators/schemas';
 import {
   // Monitoring
   getSpendMonitoring,
@@ -82,6 +105,7 @@ router.use(authenticate);
 router.get(
   '/monitoring/spend',
   requirePermission('read:infrastructure'),
+  validateQuery(spendMonitoringQuerySchema),
   getSpendMonitoring,
 );
 
@@ -96,6 +120,7 @@ router.get(
 router.get(
   '/monitoring/alerts',
   requirePermission('read:infrastructure'),
+  validateQuery(alertsQuerySchema),
   getAlerts,
 );
 
@@ -110,6 +135,7 @@ router.post(
 router.post(
   '/monitoring/alerts/:id/resolve',
   requirePermission('write:campaigns'),
+  validateBody(resolveAlertBodySchema),
   resolveAlert,
 );
 
@@ -124,6 +150,7 @@ router.get(
 router.put(
   '/monitoring/alerts/config',
   requirePermission('write:infrastructure'),
+  validateBody(updateAlertConfigBodySchema),
   updateAlertConfig,
 );
 
@@ -149,6 +176,7 @@ router.get(
 router.post(
   '/data-quality/validate/:table',
   requirePermission('write:infrastructure'),
+  validateParams(tableParamSchema),
   validateTableSchema,
 );
 
@@ -156,6 +184,7 @@ router.post(
 router.get(
   '/data-quality/lineage/:table',
   requirePermission('read:infrastructure'),
+  validateParams(tableParamSchema),
   getDataLineage,
 );
 
@@ -170,6 +199,7 @@ router.get(
 router.post(
   '/data-quality/anonymize',
   requirePermission('write:infrastructure'),
+  validateBody(anonymizePiiBodySchema),
   anonymizePii,
 );
 
@@ -177,6 +207,7 @@ router.post(
 router.get(
   '/data-quality/consent/:userId',
   requirePermission('write:infrastructure'),
+  validateParams(userIdParamSchema),
   getUserConsent,
 );
 
@@ -184,6 +215,7 @@ router.get(
 router.post(
   '/data-quality/consent',
   requirePermission('write:infrastructure'),
+  validateBody(manageConsentBodySchema),
   manageConsent,
 );
 
@@ -195,6 +227,7 @@ router.post(
 router.post(
   '/security/rotate-keys',
   requirePermission('write:infrastructure'),
+  validateBody(rotateKeysBodySchema),
   rotateKeys,
 );
 
@@ -216,6 +249,7 @@ router.get(
 router.post(
   '/security/ip-whitelist',
   requirePermission('write:infrastructure'),
+  validateBody(addToIpWhitelistBodySchema),
   addToIpWhitelist,
 );
 
@@ -230,6 +264,7 @@ router.delete(
 router.post(
   '/security/scan',
   requirePermission('write:infrastructure'),
+  validateBody(runThreatScanBodySchema),
   runThreatScan,
 );
 
@@ -244,6 +279,7 @@ router.get(
 router.get(
   '/security/report',
   requirePermission('write:infrastructure'),
+  validateQuery(securityReportQuerySchema),
   getSecurityReport,
 );
 
@@ -255,6 +291,7 @@ router.get(
 router.get(
   '/observability/trace/:traceId',
   requirePermission('read:infrastructure'),
+  validateParams(traceIdParamSchema),
   getTrace,
 );
 
@@ -262,6 +299,7 @@ router.get(
 router.get(
   '/observability/errors',
   requirePermission('read:infrastructure'),
+  validateQuery(errorDashboardQuerySchema),
   getErrorDashboard,
 );
 
@@ -269,6 +307,7 @@ router.get(
 router.get(
   '/observability/confidence-drift',
   requirePermission('read:infrastructure'),
+  validateQuery(confidenceDriftQuerySchema),
   getConfidenceDrift,
 );
 
@@ -283,6 +322,7 @@ router.get(
 router.put(
   '/observability/log-retention',
   requirePermission('write:infrastructure'),
+  validateBody(updateLogRetentionBodySchema),
   updateLogRetention,
 );
 
@@ -315,6 +355,7 @@ router.get(
 router.post(
   '/system/failover/degraded',
   requirePermission('write:infrastructure'),
+  validateBody(enterDegradedModeBodySchema),
   enterDegradedMode,
 );
 
@@ -322,6 +363,7 @@ router.post(
 router.post(
   '/system/failover/recover',
   requirePermission('write:infrastructure'),
+  validateBody(attemptRecoveryBodySchema),
   attemptRecovery,
 );
 
@@ -329,6 +371,7 @@ router.post(
 router.post(
   '/system/backup',
   requirePermission('write:infrastructure'),
+  validateBody(initiateBackupBodySchema),
   initiateBackup,
 );
 
@@ -336,6 +379,7 @@ router.post(
 router.get(
   '/system/backups',
   requirePermission('write:infrastructure'),
+  validateQuery(backupHistoryQuerySchema),
   getBackupHistory,
 );
 

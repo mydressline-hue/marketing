@@ -5,7 +5,6 @@
 // ============================================================
 
 import { BaseAgent } from '../base/BaseAgent';
-import { calculateWeightedConfidence } from '../base/ConfidenceScoring';
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet } from '../../config/redis';
 import type {
@@ -19,7 +18,6 @@ import type {
 import type {
   AgentInput,
   AgentOutput,
-  AgentConfidenceScore,
 } from '../base/types';
 
 // ---- Local Types ----
@@ -107,7 +105,7 @@ interface FunnelRow {
 
 const CACHE_PREFIX = 'perf_analytics';
 const CACHE_TTL_SECONDS = 300; // 5 minutes
-const FUNNEL_STAGE_ORDER: FunnelStage[] = [
+const _FUNNEL_STAGE_ORDER: FunnelStage[] = [
   'awareness',
   'interest',
   'consideration',
@@ -1419,7 +1417,7 @@ each business goal. Always quantify uncertainty and flag data gaps.`;
     totalConversions: number,
   ): ChannelAttribution[] {
     const attributions: ChannelAttribution[] = [];
-    const totalRevenue = Array.from(channelMap.values()).reduce(
+    const _totalRevenue = Array.from(channelMap.values()).reduce(
       (sum, ch) => sum + ch.revenue,
       0,
     );

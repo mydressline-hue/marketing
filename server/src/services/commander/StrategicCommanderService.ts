@@ -22,7 +22,7 @@
  */
 
 import { pool } from '../../config/database';
-import { cacheGet, cacheSet, cacheDel } from '../../config/redis';
+import { cacheGet, cacheSet } from '../../config/redis';
 import { logger } from '../../utils/logger';
 import { generateId } from '../../utils/helpers';
 import { NotFoundError, ValidationError } from '../../utils/errors';
@@ -264,7 +264,7 @@ export class StrategicCommanderService {
    */
   static async generateScenarios(
     userId: string,
-    params: any,
+    params: Record<string, unknown>,
   ): Promise<Record<string, unknown>[]> {
     const id = generateId();
 
@@ -596,8 +596,8 @@ export class StrategicCommanderService {
    */
   static async compareStrategies(
     userId: string,
-    strategyA: any,
-    strategyB: any,
+    strategyA: Record<string, unknown>,
+    strategyB: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     const id = generateId();
 
@@ -678,7 +678,7 @@ export class StrategicCommanderService {
   static async runPreBudgetSimulation(
     userId: string,
     totalBudget: number,
-    constraints: any,
+    constraints: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     const id = generateId();
 

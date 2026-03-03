@@ -6,10 +6,13 @@
  * for generating access and refresh tokens.
  */
 
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import { env } from '../config/env';
+import { pool } from '../config/database';
 import { AuthenticationError } from '../utils/errors';
+import { logger } from '../utils/logger';
 
 // ---------------------------------------------------------------------------
 // Module augmentation -- attach `user` to Express Request
@@ -53,33 +56,77 @@ export function generateRefreshToken(payload: { id: string }): string {
 }
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Produces a SHA-256 hex digest of the given token, matching the format
+ * stored in the `sessions.token_hash` column.
+ */
+function hashToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+// ---------------------------------------------------------------------------
 // Middleware
 // ---------------------------------------------------------------------------
 
 /**
  * Extracts a Bearer token from the Authorization header, verifies it, and
- * attaches the decoded payload to `req.user`. Throws an
- * `AuthenticationError` if the token is missing or invalid.
+ * attaches the decoded payload to `req.user`. After JWT verification the
+ * middleware checks that the session has not been revoked by querying the
+ * `sessions` table. Returns 401 if the token is missing, invalid, or the
+ * corresponding session has been revoked / expired.
  */
-export function authenticate(
+export async function authenticate(
   req: Request,
   _res: Response,
   next: NextFunction,
-): void {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw new AuthenticationError('Missing or invalid authorization header');
-  }
-
-  const token = authHeader.split(' ')[1];
-
+): Promise<void> {
   try {
-    const decoded = jwt.verify(token, env.JWT_SECRET!) as {
-      id: string;
-      email: string;
-      role: string;
-    };
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new AuthenticationError('Missing or invalid authorization header');
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    let decoded: { id: string; email: string; role: string };
+
+    try {
+      decoded = jwt.verify(token, env.JWT_SECRET!) as {
+        id: string;
+        email: string;
+        role: string;
+      };
+    } catch (error) {
+      if (error instanceof jwt.TokenExpiredError) {
+        throw new AuthenticationError('Token has expired');
+      }
+      if (error instanceof jwt.JsonWebTokenError) {
+        throw new AuthenticationError('Invalid token');
+      }
+      throw new AuthenticationError('Authentication failed');
+    }
+
+    // -----------------------------------------------------------------
+    // Session validation: ensure the session has not been revoked and
+    // has not expired in the database.
+    // -----------------------------------------------------------------
+    const tokenHash = hashToken(token);
+
+    const sessionResult = await pool.query(
+      'SELECT id FROM sessions WHERE token_hash = $1 AND expires_at > NOW()',
+      [tokenHash],
+    );
+
+    if (sessionResult.rows.length === 0) {
+      logger.warn('Session revoked or expired', {
+        userId: decoded.id,
+      });
+      throw new AuthenticationError('Session has been revoked or expired');
+    }
 
     req.user = {
       id: decoded.id,
@@ -89,13 +136,7 @@ export function authenticate(
 
     next();
   } catch (error) {
-    if (error instanceof jwt.TokenExpiredError) {
-      throw new AuthenticationError('Token has expired');
-    }
-    if (error instanceof jwt.JsonWebTokenError) {
-      throw new AuthenticationError('Invalid token');
-    }
-    throw new AuthenticationError('Authentication failed');
+    next(error);
   }
 }
 

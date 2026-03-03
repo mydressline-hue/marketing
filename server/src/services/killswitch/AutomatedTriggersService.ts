@@ -10,7 +10,7 @@
 
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet, cacheDel } from '../../config/redis';
-import { logger, createChildLogger } from '../../utils/logger';
+import { createChildLogger } from '../../utils/logger';
 import { generateId } from '../../utils/helpers';
 import { NotFoundError, ValidationError } from '../../utils/errors';
 import { AuditService } from '../audit.service';

@@ -10,7 +10,7 @@
 import { pool } from '../../config/database';
 import { redis, cacheGet, cacheSet, cacheDel } from '../../config/redis';
 import { logger } from '../../utils/logger';
-import { generateId, retryWithBackoff } from '../../utils/helpers';
+import { generateId } from '../../utils/helpers';
 import { AuditService } from '../audit.service';
 
 // ---------------------------------------------------------------------------

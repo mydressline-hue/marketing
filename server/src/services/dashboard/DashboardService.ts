@@ -220,8 +220,8 @@ export class DashboardService {
       ),
 
       // -- Spend: by platform --
-      pool.query<{ platform: string; spend: string }>(
-        `SELECT platform, COALESCE(SUM(spent), 0) AS spend
+      pool.query<{ platform: string; spend: string; currency: string }>(
+        `SELECT platform, COALESCE(SUM(spent), 0) AS spend, COALESCE(MAX(currency), 'USD') AS currency
          FROM campaigns
          GROUP BY platform
          ORDER BY spend DESC`,

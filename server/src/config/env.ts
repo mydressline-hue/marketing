@@ -44,6 +44,10 @@ export const envSchema = z
     DB_POOL_MIN: coerceNumber(2),
     DB_POOL_MAX: coerceNumber(10),
     DB_SSL: coerceBoolean(false),
+    DB_SSL_ENABLED: coerceBoolean(false),
+    DB_SSL_CA: z.string().optional(),
+    DB_SSL_KEY: z.string().optional(),
+    DB_SSL_CERT: z.string().optional(),
 
     // ── Redis ──────────────────────────────────────────────────────────
     REDIS_URL: z.string().default('redis://localhost:6379'),
@@ -66,9 +70,17 @@ export const envSchema = z
     // ── Kling AI Video ──────────────────────────────────────────────────
     KLING_API_KEY: z.string().optional(),
 
+    // ── Account Lockout ────────────────────────────────────────────────
+    LOCKOUT_THRESHOLD: coerceNumber(5),
+    LOCKOUT_DURATION_MINUTES: coerceNumber(15),
+
     // ── Rate Limiting ──────────────────────────────────────────────────
     RATE_LIMIT_WINDOW_MS: coerceNumber(900000),
     RATE_LIMIT_MAX_REQUESTS: coerceNumber(100),
+
+    // ── Per-User Rate Limiting ────────────────────────────────────────
+    USER_RATE_LIMIT_MAX: coerceNumber(100),
+    USER_RATE_LIMIT_WINDOW_SECONDS: coerceNumber(60),
 
     // ── Logging ────────────────────────────────────────────────────────
     LOG_LEVEL: z.string().default('info'),
@@ -188,5 +200,5 @@ function loadEnv(): Env {
 export const env: Env = loadEnv();
 
 // Derive AI_ENABLED from ANTHROPIC_API_KEY presence
-(env as any).AI_ENABLED = !!env.ANTHROPIC_API_KEY;
+(env as Record<string, unknown>).AI_ENABLED = !!env.ANTHROPIC_API_KEY;
 export const AI_ENABLED = !!env.ANTHROPIC_API_KEY;

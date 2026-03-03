@@ -8,13 +8,11 @@
 import { BaseAgent } from '../base/BaseAgent';
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet } from '../../config/redis';
-import { generateId } from '../../utils/helpers';
 import { ValidationError, ExternalServiceError } from '../../utils/errors';
 import type { AgentType, Content } from '../../types';
 import type {
   AgentInput,
   AgentOutput,
-  AgentConfidenceScore,
 } from '../base/types';
 
 // ---- Agent-specific type definitions ----

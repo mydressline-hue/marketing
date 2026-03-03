@@ -8,8 +8,8 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
-import { validateBody } from '../middleware/validation';
-import { enqueueJobSchema } from '../validators/schemas';
+import { validateBody, validateQuery } from '../middleware/validation';
+import { enqueueJobSchema, listJobsQuerySchema } from '../validators/schemas';
 import {
   enqueueJob,
   getJob,
@@ -30,7 +30,7 @@ const router = Router();
 router.post('/jobs', authenticate, requirePermission('write:infrastructure'), validateBody(enqueueJobSchema), enqueueJob);
 
 // GET /queue/jobs – list jobs with optional filters and pagination
-router.get('/jobs', authenticate, requirePermission('read:infrastructure'), listJobs);
+router.get('/jobs', authenticate, requirePermission('read:infrastructure'), validateQuery(listJobsQuerySchema), listJobs);
 
 // GET /queue/stats – aggregate queue statistics
 router.get('/stats', authenticate, requirePermission('read:infrastructure'), getQueueStats);

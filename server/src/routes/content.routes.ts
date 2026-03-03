@@ -19,8 +19,14 @@ import {
 } from '../controllers/content.controller';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
-import { validateBody, validateParams } from '../middleware/validation';
-import { createContentSchema, idParamSchema } from '../validators/schemas';
+import { validateBody, validateQuery, validateParams } from '../middleware/validation';
+import {
+  createContentSchema,
+  updateContentSchema,
+  listContentQuerySchema,
+  searchContentQuerySchema,
+  idParamSchema,
+} from '../validators/schemas';
 
 // ---------------------------------------------------------------------------
 // Router
@@ -32,13 +38,13 @@ const router = Router();
 router.use(authenticate);
 
 // ── Read routes ───────────────────────────────────────────────────────────
-router.get('/', listContent);
-router.get('/search', searchContent);
+router.get('/', validateQuery(listContentQuerySchema), listContent);
+router.get('/search', validateQuery(searchContentQuerySchema), searchContent);
 router.get('/:id', validateParams(idParamSchema), getContentById);
 
 // ── Write routes ──────────────────────────────────────────────────────────
 router.post('/', requirePermission('write:content'), validateBody(createContentSchema), createContent);
-router.put('/:id', requirePermission('write:content'), validateParams(idParamSchema), updateContent);
+router.put('/:id', requirePermission('write:content'), validateParams(idParamSchema), validateBody(updateContentSchema), updateContent);
 router.delete('/:id', requirePermission('write:content'), validateParams(idParamSchema), deleteContent);
 router.post('/:id/publish', requirePermission('write:content'), validateParams(idParamSchema), publishContent);
 router.post('/:id/unpublish', requirePermission('write:content'), validateParams(idParamSchema), unpublishContent);

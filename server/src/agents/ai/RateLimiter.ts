@@ -154,7 +154,7 @@ export class RateLimiter {
    *                       request. If provided and different from the estimate,
    *                       the token window is adjusted accordingly.
    */
-  async release(actualTokens?: number): Promise<void> {
+  async release(_actualTokens?: number): Promise<void> {
     const state = await this.getState();
     const now = Date.now();
     const cleanedState = this.cleanWindow(state, now);

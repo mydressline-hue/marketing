@@ -228,8 +228,8 @@ export class SalesforceService {
           data.title?.trim() || null,
         ],
       );
-    } catch (err: any) {
-      if (err?.code === '23505') {
+    } catch (err: unknown) {
+      if (err instanceof Object && 'code' in err && err.code === '23505') {
         throw new ValidationError('A contact with this email already exists');
       }
       throw err;
@@ -534,7 +534,9 @@ export class SalesforceService {
       }
 
       // 3. Parse response
-      const data = await response.json();
+      const data = await response.json() as Record<string, unknown>;
+      const totalSize = data.totalSize as number | undefined;
+      const records = data.records as unknown[] | undefined;
 
       // 4. Log the sync operation
       const syncId = generateId();
@@ -542,7 +544,7 @@ export class SalesforceService {
         await pool.query(
           `INSERT INTO crm_sync_logs (id, connection_id, platform_type, sync_type, status, records_synced, records_failed, started_at, completed_at)
            VALUES ($1, $2, $3, 'contacts', 'completed', $4, 0, NOW(), NOW())`,
-          [syncId, integrationId, PLATFORM_TYPE, data.totalSize || 0],
+          [syncId, integrationId, PLATFORM_TYPE, totalSize || 0],
         );
       } catch (logErr) {
         logger.warn('Failed to insert Salesforce sync log', {
@@ -560,13 +562,13 @@ export class SalesforceService {
         action: 'salesforce_api_sync',
         resourceType: 'crm_sync',
         resourceId: integrationId,
-        details: { totalSize: data.totalSize, recordCount: data.records?.length },
+        details: { totalSize, recordCount: records?.length },
       });
 
       logger.info('Salesforce API sync completed', {
         integrationId,
-        totalSize: data.totalSize,
-        recordCount: data.records?.length,
+        totalSize,
+        recordCount: records?.length,
       });
 
       // 5. Return the data

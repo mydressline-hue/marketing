@@ -4,7 +4,7 @@
 // ============================================================
 
 import type { AgentType } from '../../types';
-import type { AgentOutput, AgentConfidenceScore } from '../base/types';
+import type { AgentOutput } from '../base/types';
 import { logger } from '../../utils/logger';
 
 // ---- Aggregated Result Interfaces ----

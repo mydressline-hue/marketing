@@ -9,6 +9,7 @@
 
 import { pool } from '../config/database';
 import { generateId } from '../utils/helpers';
+import { withTransaction } from '../utils/transaction';
 import { logger } from '../utils/logger';
 import { NotFoundError } from '../utils/errors';
 
@@ -199,30 +200,34 @@ export class AlertsService {
    * Records the acknowledgement in the audit log.
    */
   static async acknowledge(id: string, userId: string): Promise<FraudAlert> {
-    const result = await pool.query(
-      `UPDATE fraud_alerts
-       SET status = 'investigating',
-           acknowledged_by = $2,
-           acknowledged_at = NOW()
-       WHERE id = $1
-       RETURNING *`,
-      [id, userId],
-    );
+    const row = await withTransaction(async (client) => {
+      const result = await client.query(
+        `UPDATE fraud_alerts
+         SET status = 'investigating',
+             acknowledged_by = $2,
+             acknowledged_at = NOW()
+         WHERE id = $1
+         RETURNING *`,
+        [id, userId],
+      );
 
-    if (result.rows.length === 0) {
-      throw new NotFoundError(`Fraud alert with id '${id}' not found`);
-    }
+      if (result.rows.length === 0) {
+        throw new NotFoundError(`Fraud alert with id '${id}' not found`);
+      }
 
-    // Record in audit log
-    await pool.query(
-      `INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details, created_at)
-       VALUES ($1, $2, 'alert_acknowledged', 'fraud_alert', $3, $4, NOW())`,
-      [generateId(), userId, id, JSON.stringify({ status: 'investigating' })],
-    );
+      // Record in audit log
+      await client.query(
+        `INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details, created_at)
+         VALUES ($1, $2, 'alert_acknowledged', 'fraud_alert', $3, $4, NOW())`,
+        [generateId(), userId, id, JSON.stringify({ status: 'investigating' })],
+      );
+
+      return result.rows[0];
+    });
 
     logger.info('Fraud alert acknowledged', { alertId: id, userId });
 
-    return rowToAlert(result.rows[0]);
+    return rowToAlert(row);
   }
 
   /**
@@ -236,59 +241,67 @@ export class AlertsService {
     userId: string,
     resolution?: string,
   ): Promise<FraudAlert> {
-    const result = await pool.query(
-      `UPDATE fraud_alerts
-       SET status = 'resolved',
-           resolved_by = $2,
-           resolved_at = NOW(),
-           resolution = $3
-       WHERE id = $1
-       RETURNING *`,
-      [id, userId, resolution ?? null],
-    );
+    const row = await withTransaction(async (client) => {
+      const result = await client.query(
+        `UPDATE fraud_alerts
+         SET status = 'resolved',
+             resolved_by = $2,
+             resolved_at = NOW(),
+             resolution = $3
+         WHERE id = $1
+         RETURNING *`,
+        [id, userId, resolution ?? null],
+      );
 
-    if (result.rows.length === 0) {
-      throw new NotFoundError(`Fraud alert with id '${id}' not found`);
-    }
+      if (result.rows.length === 0) {
+        throw new NotFoundError(`Fraud alert with id '${id}' not found`);
+      }
 
-    // Record in audit log
-    await pool.query(
-      `INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details, created_at)
-       VALUES ($1, $2, 'alert_resolved', 'fraud_alert', $3, $4, NOW())`,
-      [generateId(), userId, id, JSON.stringify({ status: 'resolved', resolution: resolution ?? null })],
-    );
+      // Record in audit log
+      await client.query(
+        `INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details, created_at)
+         VALUES ($1, $2, 'alert_resolved', 'fraud_alert', $3, $4, NOW())`,
+        [generateId(), userId, id, JSON.stringify({ status: 'resolved', resolution: resolution ?? null })],
+      );
+
+      return result.rows[0];
+    });
 
     logger.info('Fraud alert resolved', { alertId: id, userId, resolution });
 
-    return rowToAlert(result.rows[0]);
+    return rowToAlert(row);
   }
 
   /**
    * Dismiss an alert, setting its status to `dismissed`.
    */
   static async dismiss(id: string, userId: string): Promise<FraudAlert> {
-    const result = await pool.query(
-      `UPDATE fraud_alerts
-       SET status = 'dismissed'
-       WHERE id = $1
-       RETURNING *`,
-      [id],
-    );
+    const row = await withTransaction(async (client) => {
+      const result = await client.query(
+        `UPDATE fraud_alerts
+         SET status = 'dismissed'
+         WHERE id = $1
+         RETURNING *`,
+        [id],
+      );
 
-    if (result.rows.length === 0) {
-      throw new NotFoundError(`Fraud alert with id '${id}' not found`);
-    }
+      if (result.rows.length === 0) {
+        throw new NotFoundError(`Fraud alert with id '${id}' not found`);
+      }
 
-    // Record in audit log
-    await pool.query(
-      `INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details, created_at)
-       VALUES ($1, $2, 'alert_dismissed', 'fraud_alert', $3, $4, NOW())`,
-      [generateId(), userId, id, JSON.stringify({ status: 'dismissed' })],
-    );
+      // Record in audit log
+      await client.query(
+        `INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details, created_at)
+         VALUES ($1, $2, 'alert_dismissed', 'fraud_alert', $3, $4, NOW())`,
+        [generateId(), userId, id, JSON.stringify({ status: 'dismissed' })],
+      );
+
+      return result.rows[0];
+    });
 
     logger.info('Fraud alert dismissed', { alertId: id, userId });
 
-    return rowToAlert(result.rows[0]);
+    return rowToAlert(row);
   }
 
   /**

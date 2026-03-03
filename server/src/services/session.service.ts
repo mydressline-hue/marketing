@@ -7,10 +7,19 @@
  * from both stores to ensure consistency.
  */
 
+import crypto from 'crypto';
 import { cacheGet, cacheSet, cacheDel } from '../config/redis';
 import { pool } from '../config/database';
 import { generateId } from '../utils/helpers';
 import { logger } from '../utils/logger';
+
+/**
+ * Produces a hex-encoded SHA-256 hash of the given token.
+ * Used to store and look up session tokens without keeping the plaintext.
+ */
+function hashToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -56,18 +65,20 @@ export class SessionService {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + SESSION_TTL_SECONDS * 1000);
 
-    // Persist to the database
+    const tokenHash = hashToken(token);
+
+    // Persist to the database (store only the hash, never the plaintext token)
     await pool.query(
-      `INSERT INTO sessions (id, user_id, token, ip_address, user_agent, created_at, expires_at)
+      `INSERT INTO sessions (id, user_id, token_hash, ip_address, user_agent, created_at, expires_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [id, userId, token, ip, userAgent, now.toISOString(), expiresAt.toISOString()],
+      [id, userId, tokenHash, ip, userAgent, now.toISOString(), expiresAt.toISOString()],
     );
 
-    // Cache in Redis
+    // Cache in Redis (store the hash, not the plaintext token)
     const sessionData: Session = {
       id,
       userId,
-      token,
+      token: tokenHash,
       ipAddress: ip,
       userAgent,
       createdAt: now.toISOString(),
@@ -108,7 +119,7 @@ export class SessionService {
 
     // Fallback to the database
     const result = await pool.query(
-      `SELECT id, user_id, token, ip_address, user_agent, created_at, expires_at
+      `SELECT id, user_id, token_hash, ip_address, user_agent, created_at, expires_at
        FROM sessions
        WHERE id = $1`,
       [sessionId],
@@ -122,7 +133,7 @@ export class SessionService {
     const session: Session = {
       id: row.id,
       userId: row.user_id,
-      token: row.token,
+      token: row.token_hash,
       ipAddress: row.ip_address,
       userAgent: row.user_agent,
       createdAt: row.created_at,
@@ -202,7 +213,7 @@ export class SessionService {
    */
   static async getActiveSessions(userId: string): Promise<Session[]> {
     const result = await pool.query(
-      `SELECT id, user_id, token, ip_address, user_agent, created_at, expires_at
+      `SELECT id, user_id, token_hash, ip_address, user_agent, created_at, expires_at
        FROM sessions
        WHERE user_id = $1 AND expires_at > NOW()
        ORDER BY created_at DESC`,
@@ -212,7 +223,7 @@ export class SessionService {
     return result.rows.map((row) => ({
       id: row.id,
       userId: row.user_id,
-      token: row.token,
+      token: row.token_hash,
       ipAddress: row.ip_address,
       userAgent: row.user_agent,
       createdAt: row.created_at,

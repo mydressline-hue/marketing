@@ -244,8 +244,8 @@ export class HubSpotService {
           data.title?.trim() || null,
         ],
       );
-    } catch (err: any) {
-      if (err?.code === '23505') {
+    } catch (err: unknown) {
+      if (err instanceof Object && 'code' in err && err.code === '23505') {
         throw new ValidationError('A contact with this email already exists');
       }
       throw err;
@@ -601,7 +601,9 @@ export class HubSpotService {
       }
 
       // 3. Parse response
-      const data = await response.json();
+      const data = await response.json() as Record<string, unknown>;
+      const results = data.results as unknown[] | undefined;
+      const paging = data.paging as Record<string, unknown> | undefined;
 
       // 4. Log the sync operation
       const syncId = generateId();
@@ -609,7 +611,7 @@ export class HubSpotService {
         await pool.query(
           `INSERT INTO crm_sync_logs (id, connection_id, platform_type, sync_type, status, records_synced, records_failed, started_at, completed_at)
            VALUES ($1, $2, $3, 'contacts', 'completed', $4, 0, NOW(), NOW())`,
-          [syncId, integrationId, PLATFORM_TYPE, data.results?.length || 0],
+          [syncId, integrationId, PLATFORM_TYPE, results?.length || 0],
         );
       } catch (logErr) {
         logger.warn('Failed to insert HubSpot sync log', {
@@ -627,12 +629,12 @@ export class HubSpotService {
         action: 'hubspot_api_sync',
         resourceType: 'crm_sync',
         resourceId: integrationId,
-        details: { recordCount: data.results?.length, hasMore: data.paging?.next ? true : false },
+        details: { recordCount: results?.length, hasMore: paging?.next ? true : false },
       });
 
       logger.info('HubSpot API sync completed', {
         integrationId,
-        recordCount: data.results?.length,
+        recordCount: results?.length,
       });
 
       // 5. Return the data

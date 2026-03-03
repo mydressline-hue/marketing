@@ -1356,7 +1356,7 @@ export class GovernanceService {
 
     const avgRiskScore = parseFloat(riskResult.rows[0].avg_risk_score);
     const autoApprovedCount = parseInt(riskResult.rows[0].auto_approved_count, 10);
-    const totalAssessments = parseInt(riskResult.rows[0].total_assessments, 10);
+    const _totalAssessments = parseInt(riskResult.rows[0].total_assessments, 10);
 
     // Approval metrics
     const approvalConditions: string[] = [];

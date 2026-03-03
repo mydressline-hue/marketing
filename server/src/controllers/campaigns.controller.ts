@@ -9,7 +9,6 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
 import { CampaignsService } from '../services/campaigns.service';
 import { KillSwitchService } from '../services/killswitch/KillSwitchService';
-import { GovernanceService } from '../services/governance/GovernanceService';
 
 // ---------------------------------------------------------------------------
 // Handlers

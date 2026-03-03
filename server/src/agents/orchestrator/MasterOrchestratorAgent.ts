@@ -16,7 +16,7 @@ import type {
 } from '../base/types';
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet } from '../../config/redis';
-import { logger, createChildLogger } from '../../utils/logger';
+import { createChildLogger } from '../../utils/logger';
 import { generateId } from '../../utils/helpers';
 import {
   AgentAggregator,

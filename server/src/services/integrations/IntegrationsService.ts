@@ -15,9 +15,21 @@
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet, cacheDel, cacheFlush } from '../../config/redis';
 import { logger } from '../../utils/logger';
-import { generateId } from '../../utils/helpers';
+import { generateId, encrypt, decrypt } from '../../utils/helpers';
+import { withTransaction } from '../../utils/transaction';
 import { NotFoundError, ValidationError } from '../../utils/errors';
 import { AuditService } from '../audit.service';
+import { env } from '../../config/env';
+
+/** Encrypt a credentials object for storage in the database. */
+function encryptCredentials(credentials: Record<string, unknown>): string {
+  return encrypt(JSON.stringify(credentials), env.ENCRYPTION_KEY as string);
+}
+
+/** Decrypt a credentials string read from the database back to an object. */
+function decryptCredentials(encrypted: string): Record<string, unknown> {
+  return JSON.parse(decrypt(encrypted, env.ENCRYPTION_KEY as string));
+}
 
 import { GoogleAdsService } from './ads/GoogleAdsService';
 import { MetaAdsService } from './ads/MetaAdsService';
@@ -101,7 +113,7 @@ function getAdService(pt: AdPlatform) {
   return map[pt];
 }
 
-function getCrmService(pt: CrmPlatform) {
+function _getCrmService(pt: CrmPlatform) {
   const map = { salesforce: SalesforceService, hubspot: HubSpotService, klaviyo: KlaviyoService, mailchimp: MailchimpService, iterable: IterableService };
   return map[pt];
 }
@@ -174,7 +186,7 @@ export class IntegrationsService {
       await pool.query(
         `UPDATE ${table} SET credentials = $1, config = $2, status = 'active', connected_at = $3, updated_at = $3
          WHERE user_id = $4 AND platform_type = $5 AND is_active = true`,
-        [JSON.stringify(credentials), config ? JSON.stringify(config) : null, now, user_id, platform_type],
+        [encryptCredentials(credentials), config ? JSON.stringify(config) : null, now, user_id, platform_type],
       );
       const updatedId = existing.rows[0].id;
       await cacheDel(`${CACHE_PREFIX}:status:${user_id}`);
@@ -188,7 +200,7 @@ export class IntegrationsService {
     await pool.query(
       `INSERT INTO ${table} (id, user_id, platform_type, credentials, config, status, is_active, connected_at, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, 'active', true, $6, $6, $6)`,
-      [id, user_id, platform_type, JSON.stringify(credentials), config ? JSON.stringify(config) : null, now],
+      [id, user_id, platform_type, encryptCredentials(credentials), config ? JSON.stringify(config) : null, now],
     );
 
     await cacheDel(`${CACHE_PREFIX}:status:${user_id}`);
@@ -319,7 +331,7 @@ export class IntegrationsService {
    * Trigger a data sync for the specified platform. Delegates to the
    * platform-specific service. NotFoundError if not connected.
    */
-  static async triggerSync(platformType: string, userId: string, options?: Record<string, unknown>) {
+  static async triggerSync(platformType: string, userId: string, _options?: Record<string, unknown>) {
     validatePlatformType(platformType);
     const table = getConnectionTable(platformType);
 
@@ -330,6 +342,8 @@ export class IntegrationsService {
     if (conn.rows.length === 0) throw new NotFoundError(`Platform ${platformType} is not connected`);
 
     const connectionId = conn.rows[0].id;
+    // Decrypt credentials for use by platform-specific services
+    const _credentials = conn.rows[0].credentials ? decryptCredentials(conn.rows[0].credentials) : null;
     const syncId = generateId();
     const startedAt = new Date().toISOString();
 
@@ -361,14 +375,16 @@ export class IntegrationsService {
       const completedAt = new Date().toISOString();
       const durationMs = new Date(completedAt).getTime() - new Date(startedAt).getTime();
 
-      await pool.query(
-        `UPDATE sync_logs SET status = 'completed', completed_at = $1, records_synced = $2,
-             records_created = $3, records_updated = $4, records_failed = $5, duration_ms = $6
-         WHERE id = $7`,
-        [completedAt, result.records_synced || 0, result.records_created || 0, result.records_updated || 0, result.records_failed || 0, durationMs, syncId],
-      );
+      await withTransaction(async (client) => {
+        await client.query(
+          `UPDATE sync_logs SET status = 'completed', completed_at = $1, records_synced = $2,
+               records_created = $3, records_updated = $4, records_failed = $5, duration_ms = $6
+           WHERE id = $7`,
+          [completedAt, result.records_synced || 0, result.records_created || 0, result.records_updated || 0, result.records_failed || 0, durationMs, syncId],
+        );
 
-      await pool.query(`UPDATE ${table} SET last_synced_at = $1, updated_at = $1 WHERE id = $2`, [completedAt, connectionId]);
+        await client.query(`UPDATE ${table} SET last_synced_at = $1, updated_at = $1 WHERE id = $2`, [completedAt, connectionId]);
+      });
       await cacheDel(`${CACHE_PREFIX}:status:${userId}`);
       await cacheDel(`${CACHE_PREFIX}:status:${userId}:${platformType}`);
 
@@ -482,7 +498,7 @@ export class IntegrationsService {
    * Sync contacts from a CRM platform. Delegates to the platform-specific
    * CRM service. Returns counts of created, updated, skipped, and failed.
    */
-  static async syncCrmContacts(platformType: string, userId: string, options?: Record<string, unknown>) {
+  static async syncCrmContacts(platformType: string, userId: string, _options?: Record<string, unknown>) {
     validatePlatformType(platformType);
     if (!isCrmPlatform(platformType)) throw new ValidationError(`Platform ${platformType} is not a CRM platform`);
 
@@ -492,7 +508,9 @@ export class IntegrationsService {
     );
     if (conn.rows.length === 0) throw new NotFoundError(`CRM platform ${platformType} is not connected`);
 
-    const connectionId = conn.rows[0].id;
+    const _connectionId = conn.rows[0].id;
+    // Decrypt credentials for use by platform-specific services
+    const _credentials = conn.rows[0].credentials ? decryptCredentials(conn.rows[0].credentials) : null;
     const syncId = generateId();
     const startedAt = new Date();
 
@@ -572,7 +590,9 @@ export class IntegrationsService {
     );
     if (conn.rows.length === 0) throw new NotFoundError(`Analytics platform ${platformType} is not connected`);
 
-    const connectionId = conn.rows[0].id;
+    const _connectionId = conn.rows[0].id;
+    // Decrypt credentials for use by platform-specific services
+    const _credentials = conn.rows[0].credentials ? decryptCredentials(conn.rows[0].credentials) : null;
     const exportId = generateId();
     const requestedAt = new Date().toISOString();
 
@@ -614,7 +634,7 @@ export class IntegrationsService {
     if (conn.rows.length === 0) throw new NotFoundError(`Analytics platform ${platformType} is not connected`);
 
     const service = getAnalyticsService(platformType);
-    const result = await (service as any).listDashboards({ page, limit }) as { data: unknown[]; total: number; page: number; totalPages: number };
+    const result = await (service as unknown as { listDashboards: (filters: { page: number; limit: number }) => Promise<Record<string, unknown>> }).listDashboards({ page, limit }) as { data: unknown[]; total: number; page: number; totalPages: number };
 
     const dashboards = {
       data: result.data || [],

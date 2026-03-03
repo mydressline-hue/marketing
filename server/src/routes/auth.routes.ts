@@ -19,7 +19,12 @@ import {
 } from '../controllers/auth.controller';
 import { authenticate } from '../middleware/auth';
 import { validateBody } from '../middleware/validation';
-import { createUserSchema, loginSchema } from '../validators/schemas';
+import {
+  createUserSchema,
+  loginSchema,
+  updateProfileSchema,
+  changePasswordSchema,
+} from '../validators/schemas';
 
 // ---------------------------------------------------------------------------
 // Router
@@ -35,7 +40,7 @@ router.post('/refresh-token', refreshToken);
 // ── Authenticated routes ───────────────────────────────────────────────────
 router.post('/logout', authenticate, logout);
 router.get('/profile', authenticate, getProfile);
-router.patch('/profile', authenticate, updateProfile);
-router.post('/change-password', authenticate, changePassword);
+router.patch('/profile', authenticate, validateBody(updateProfileSchema), updateProfile);
+router.post('/change-password', authenticate, validateBody(changePasswordSchema), changePassword);
 
 export default router;

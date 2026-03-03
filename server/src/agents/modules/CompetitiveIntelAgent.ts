@@ -7,10 +7,8 @@ import { BaseAgent } from '../base/BaseAgent';
 import type {
   AgentInput,
   AgentOutput,
-  AgentConfidenceScore,
   AgentConfig,
 } from '../base/types';
-import { calculateWeightedConfidence } from '../base/ConfidenceScoring';
 import type {
   AgentType,
   Competitor,

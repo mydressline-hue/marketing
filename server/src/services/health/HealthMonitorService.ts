@@ -5,11 +5,8 @@
  * signatures that the advanced-ai controller expects.
  */
 
-import { CampaignHealthMonitorService } from './CampaignHealthMonitorService';
+import { CampaignHealthMonitorService, HealthConfig } from './CampaignHealthMonitorService';
 import { pool } from '../../config/database';
-import { cacheGet, cacheSet } from '../../config/redis';
-import { generateId } from '../../utils/helpers';
-import { NotFoundError, ValidationError } from '../../utils/errors';
 import { AuditService } from '../audit.service';
 
 export class HealthMonitorService {
@@ -51,7 +48,7 @@ export class HealthMonitorService {
 
   static async runFullHealthCheck(campaignId: string, thresholds?: Record<string, unknown>) {
     if (thresholds) {
-      await CampaignHealthMonitorService.updateHealthConfig(thresholds as any);
+      await CampaignHealthMonitorService.updateHealthConfig(thresholds as Partial<HealthConfig>);
     }
     return CampaignHealthMonitorService.checkCampaignHealth(campaignId);
   }
@@ -179,7 +176,7 @@ export class HealthMonitorService {
   // ---------------------------------------------------------------------------
 
   static async setThresholds(thresholds: Record<string, unknown>, userId: string) {
-    const config = await CampaignHealthMonitorService.updateHealthConfig(thresholds as any);
+    const config = await CampaignHealthMonitorService.updateHealthConfig(thresholds as Partial<HealthConfig>);
 
     await AuditService.log({
       userId,

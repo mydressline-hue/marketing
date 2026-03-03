@@ -53,7 +53,7 @@ export const updateCountrySchema = createCountrySchema.partial();
 // Campaign schemas
 // ---------------------------------------------------------------------------
 
-export const createCampaignSchema = z.object({
+const campaignBaseSchema = z.object({
   name: z.string().min(1, 'Campaign name is required'),
   countryId: uuidString,
   platform: z.enum(['google', 'bing', 'meta', 'tiktok', 'snapchat'], {
@@ -67,9 +67,23 @@ export const createCampaignSchema = z.object({
   endDate: isoDateString,
 });
 
-export const updateCampaignSchema = createCampaignSchema.partial().extend({
+export const createCampaignSchema = campaignBaseSchema.refine(
+  (data) => new Date(data.endDate) > new Date(data.startDate),
+  {
+    message: 'endDate must be after startDate',
+    path: ['endDate'],
+  },
+);
+
+export const updateCampaignSchema = campaignBaseSchema.partial().extend({
   status: z.string().optional(),
-});
+}).refine(
+  (data) => !data.endDate || !data.startDate || new Date(data.endDate) > new Date(data.startDate),
+  {
+    message: 'endDate must be after startDate',
+    path: ['endDate'],
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Creative schemas
@@ -318,7 +332,13 @@ export const paginationSchema = z.object({
 export const dateRangeSchema = z.object({
   startDate: isoDateString,
   endDate: isoDateString,
-});
+}).refine(
+  (data) => new Date(data.endDate) > new Date(data.startDate),
+  {
+    message: 'endDate must be after startDate',
+    path: ['endDate'],
+  },
+);
 
 export const idParamSchema = z.object({
   id: uuidString,
@@ -452,7 +472,13 @@ export const spendMonitoringQuerySchema = z.object({
   endDate: isoDateString.optional(),
   country: z.string().optional(),
   channel: z.string().optional(),
-});
+}).refine(
+  (data) => !data.endDate || !data.startDate || new Date(data.endDate) > new Date(data.startDate),
+  {
+    message: 'endDate must be after startDate',
+    path: ['endDate'],
+  },
+);
 
 export const alertsQuerySchema = z.object({
   severity: z.string().optional(),
@@ -509,7 +535,13 @@ export const runThreatScanBodySchema = z.object({
 export const securityReportQuerySchema = z.object({
   startDate: isoDateString.optional(),
   endDate: isoDateString.optional(),
-});
+}).refine(
+  (data) => !data.endDate || !data.startDate || new Date(data.endDate) > new Date(data.startDate),
+  {
+    message: 'endDate must be after startDate',
+    path: ['endDate'],
+  },
+);
 
 export const traceIdParamSchema = z.object({
   traceId: z.string().min(1, 'Trace ID is required'),
@@ -519,13 +551,25 @@ export const errorDashboardQuerySchema = z.object({
   startDate: isoDateString.optional(),
   endDate: isoDateString.optional(),
   severity: z.string().optional(),
-});
+}).refine(
+  (data) => !data.endDate || !data.startDate || new Date(data.endDate) > new Date(data.startDate),
+  {
+    message: 'endDate must be after startDate',
+    path: ['endDate'],
+  },
+);
 
 export const confidenceDriftQuerySchema = z.object({
   agentType: z.string().optional(),
   startDate: isoDateString.optional(),
   endDate: isoDateString.optional(),
-});
+}).refine(
+  (data) => !data.endDate || !data.startDate || new Date(data.endDate) > new Date(data.startDate),
+  {
+    message: 'endDate must be after startDate',
+    path: ['endDate'],
+  },
+);
 
 export const updateLogRetentionBodySchema = z.object({
   logType: z.string().min(1, 'Log type is required'),
@@ -578,7 +622,25 @@ export const filterProductsQuerySchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).optional(),
   page: z.coerce.number().int().positive().optional(),
   limit: z.coerce.number().int().positive().max(100).optional(),
-});
+}).refine(
+  (data) => !data.minPrice || !data.maxPrice || data.minPrice <= data.maxPrice,
+  {
+    message: 'minPrice must be less than or equal to maxPrice',
+    path: ['minPrice'],
+  },
+).refine(
+  (data) => !data.inventoryMin || !data.inventoryMax || data.inventoryMin <= data.inventoryMax,
+  {
+    message: 'inventoryMin must be less than or equal to inventoryMax',
+    path: ['inventoryMin'],
+  },
+).refine(
+  (data) => !data.createdBefore || !data.createdAfter || new Date(data.createdBefore) > new Date(data.createdAfter),
+  {
+    message: 'createdBefore must be after createdAfter',
+    path: ['createdBefore'],
+  },
+);
 
 export const filterAggregationsQuerySchema = z.object({
   category: z.string().optional(),
@@ -648,20 +710,381 @@ export const topProductsQuerySchema = z.object({
 export const analyticsSummaryQuerySchema = z.object({
   startDate: isoDateString.optional(),
   endDate: isoDateString.optional(),
-});
+}).refine(
+  (data) => !data.endDate || !data.startDate || new Date(data.endDate) > new Date(data.startDate),
+  {
+    message: 'endDate must be after startDate',
+    path: ['endDate'],
+  },
+);
 
 export const analyticsTrendsQuerySchema = z.object({
   startDate: isoDateString.optional(),
   endDate: isoDateString.optional(),
   granularity: z.string().optional(),
-});
+}).refine(
+  (data) => !data.endDate || !data.startDate || new Date(data.endDate) > new Date(data.startDate),
+  {
+    message: 'endDate must be after startDate',
+    path: ['endDate'],
+  },
+);
 
 export const collectionAnalyticsQuerySchema = z.object({
   startDate: isoDateString.optional(),
   endDate: isoDateString.optional(),
-});
+}).refine(
+  (data) => !data.endDate || !data.startDate || new Date(data.endDate) > new Date(data.startDate),
+  {
+    message: 'endDate must be after startDate',
+    path: ['endDate'],
+  },
+);
 
 export const productAnalyticsQuerySchema = z.object({
   startDate: isoDateString.optional(),
   endDate: isoDateString.optional(),
+}).refine(
+  (data) => !data.endDate || !data.startDate || new Date(data.endDate) > new Date(data.startDate),
+  {
+    message: 'endDate must be after startDate',
+    path: ['endDate'],
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Campaign status schema
+// ---------------------------------------------------------------------------
+
+export const updateCampaignStatusSchema = z.object({
+  status: z.string().min(1, 'Status is required'),
 });
+
+export type UpdateCampaignStatusInput = z.infer<typeof updateCampaignStatusSchema>;
+
+// ---------------------------------------------------------------------------
+// Creative update / performance schemas
+// ---------------------------------------------------------------------------
+
+export const updateCreativeSchema = createCreativeSchema.partial();
+
+export const updateCreativePerformanceSchema = z.object({
+  impressions: z.number().int().nonnegative('Impressions must be non-negative').optional(),
+  clicks: z.number().int().nonnegative('Clicks must be non-negative').optional(),
+  conversions: z.number().int().nonnegative('Conversions must be non-negative').optional(),
+  spend: z.number().nonnegative('Spend must be non-negative').optional(),
+  ctr: z.number().min(0).max(1, 'CTR must be between 0 and 1').optional(),
+  score: z.number().nonnegative('Score must be non-negative').optional(),
+  metadata: z.record(z.unknown()).optional(),
+});
+
+export type UpdateCreativeInput = z.infer<typeof updateCreativeSchema>;
+export type UpdateCreativePerformanceInput = z.infer<typeof updateCreativePerformanceSchema>;
+
+// ---------------------------------------------------------------------------
+// Content update schema
+// ---------------------------------------------------------------------------
+
+export const updateContentSchema = createContentSchema.partial();
+
+export type UpdateContentInput = z.infer<typeof updateContentSchema>;
+
+// ---------------------------------------------------------------------------
+// Product update / inventory sync schemas
+// ---------------------------------------------------------------------------
+
+export const updateProductSchema = createProductSchema.partial();
+
+export const syncInventorySchema = z.object({
+  sku: z.string().min(1, 'SKU is required').optional(),
+  stock: z.number().int().nonnegative('Stock must be a non-negative integer').optional(),
+  variants: z.array(z.object({
+    sku: z.string().min(1, 'SKU is required'),
+    stock: z.number().int().nonnegative('Stock must be a non-negative integer'),
+  })).optional(),
+  metadata: z.record(z.unknown()).optional(),
+});
+
+export type UpdateProductInput = z.infer<typeof updateProductSchema>;
+export type SyncInventoryInput = z.infer<typeof syncInventorySchema>;
+
+// ---------------------------------------------------------------------------
+// Settings notification / appearance schemas
+// ---------------------------------------------------------------------------
+
+export const updateNotificationsSettingsSchema = z.object({
+  email: z.boolean().optional(),
+  push: z.boolean().optional(),
+  sms: z.boolean().optional(),
+});
+
+export const updateAppearanceSettingsSchema = z.object({
+  theme: z.string().optional(),
+  language: z.string().optional(),
+  timezone: z.string().optional(),
+});
+
+export type UpdateNotificationsSettingsInput = z.infer<typeof updateNotificationsSettingsSchema>;
+export type UpdateAppearanceSettingsInput = z.infer<typeof updateAppearanceSettingsSchema>;
+
+// ---------------------------------------------------------------------------
+// Rate limit update schema
+// ---------------------------------------------------------------------------
+
+export const updateRateLimitsSchema = z.object({
+  requestsPerMinute: z.number().int().positive('Requests per minute must be a positive integer').optional(),
+  requestsPerHour: z.number().int().positive('Requests per hour must be a positive integer').optional(),
+  requestsPerDay: z.number().int().positive('Requests per day must be a positive integer').optional(),
+  burstLimit: z.number().int().positive('Burst limit must be a positive integer').optional(),
+  enabled: z.boolean().optional(),
+  metadata: z.record(z.unknown()).optional(),
+}).passthrough();
+
+export type UpdateRateLimitsInput = z.infer<typeof updateRateLimitsSchema>;
+
+// ---------------------------------------------------------------------------
+// Video enhancement update / engagement schemas
+// ---------------------------------------------------------------------------
+
+export const updateEnhancementSchema = z.object({
+  title: z.string().min(1, 'Title is required').optional(),
+  description: z.string().optional(),
+  hashtags: z.array(z.string()).optional(),
+  callToAction: z.string().optional(),
+  metadata: z.record(z.unknown()).optional(),
+}).passthrough();
+
+export const updateEngagementSchema = z.object({
+  views: z.number().int().nonnegative('Views must be non-negative').optional(),
+  likes: z.number().int().nonnegative('Likes must be non-negative').optional(),
+  shares: z.number().int().nonnegative('Shares must be non-negative').optional(),
+  comments: z.number().int().nonnegative('Comments must be non-negative').optional(),
+  clicks: z.number().int().nonnegative('Clicks must be non-negative').optional(),
+  metadata: z.record(z.unknown()).optional(),
+}).passthrough();
+
+export type UpdateEnhancementInput = z.infer<typeof updateEnhancementSchema>;
+export type UpdateEngagementInput = z.infer<typeof updateEngagementSchema>;
+
+// ---------------------------------------------------------------------------
+// Alert action schemas
+// ---------------------------------------------------------------------------
+
+export const acknowledgeAlertSchema = z.object({
+  note: z.string().optional(),
+});
+
+export const resolveAlertSchema = z.object({
+  resolution: z.string().min(1, 'Resolution is required'),
+  note: z.string().optional(),
+});
+
+export const dismissAlertSchema = z.object({
+  reason: z.string().optional(),
+});
+
+export type AcknowledgeAlertInput = z.infer<typeof acknowledgeAlertSchema>;
+export type ResolveAlertInput = z.infer<typeof resolveAlertSchema>;
+export type DismissAlertInput = z.infer<typeof dismissAlertSchema>;
+
+// ---------------------------------------------------------------------------
+// Auth profile / password schemas
+// ---------------------------------------------------------------------------
+
+export const updateProfileSchema = z.object({
+  name: z.string().min(1, 'Name is required').optional(),
+  email: z.string().email('Must be a valid email address').optional(),
+  avatar: z.string().url('Must be a valid URL').optional(),
+  metadata: z.record(z.unknown()).optional(),
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z
+    .string()
+    .min(8, 'New password must be at least 8 characters')
+    .regex(/[A-Z]/, 'New password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'New password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'New password must contain at least one number'),
+});
+
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+
+// ---------------------------------------------------------------------------
+// List/filter query schemas for routes missing them
+// ---------------------------------------------------------------------------
+
+export const listCreativesQuerySchema = z.object({
+  page: z.coerce.number().int().min(1, 'Page must be at least 1').default(1),
+  limit: z.coerce.number().int().min(1).max(100, 'Limit must not exceed 100').default(20),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+  type: z.string().optional(),
+  campaignId: z.string().optional(),
+});
+
+export const listContentQuerySchema = z.object({
+  page: z.coerce.number().int().min(1, 'Page must be at least 1').default(1),
+  limit: z.coerce.number().int().min(1).max(100, 'Limit must not exceed 100').default(20),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+  countryId: z.string().optional(),
+  language: z.string().optional(),
+  status: z.string().optional(),
+});
+
+export const searchContentQuerySchema = z.object({
+  q: z.string().min(1, 'Search query is required'),
+  page: z.coerce.number().int().min(1, 'Page must be at least 1').default(1),
+  limit: z.coerce.number().int().min(1).max(100, 'Limit must not exceed 100').default(20),
+});
+
+export const listProductsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1, 'Page must be at least 1').default(1),
+  limit: z.coerce.number().int().min(1).max(100, 'Limit must not exceed 100').default(20),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+});
+
+export const listBudgetAllocationsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1, 'Page must be at least 1').default(1),
+  limit: z.coerce.number().int().min(1).max(100, 'Limit must not exceed 100').default(20),
+  countryId: z.string().optional(),
+  period: z.string().optional(),
+});
+
+export const listAlertsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1, 'Page must be at least 1').default(1),
+  limit: z.coerce.number().int().min(1).max(100, 'Limit must not exceed 100').default(20),
+  severity: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+  status: z.string().optional(),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+});
+
+export const listWebhookRegistrationsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1, 'Page must be at least 1').default(1),
+  limit: z.coerce.number().int().min(1).max(100, 'Limit must not exceed 100').default(20),
+});
+
+export const listWebhookEventsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1, 'Page must be at least 1').default(1),
+  limit: z.coerce.number().int().min(1).max(100, 'Limit must not exceed 100').default(20),
+  platform: z.string().optional(),
+  status: z.string().optional(),
+});
+
+export const listJobsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1, 'Page must be at least 1').default(1),
+  limit: z.coerce.number().int().min(1).max(100, 'Limit must not exceed 100').default(20),
+  type: z.string().optional(),
+  status: z.string().optional(),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+});
+
+export const auditLogsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1, 'Page must be at least 1').default(1),
+  limit: z.coerce.number().int().min(1).max(100, 'Limit must not exceed 100').default(20),
+  action: z.string().optional(),
+  resourceType: z.string().optional(),
+  userId: z.string().optional(),
+  startDate: isoDateString.optional(),
+  endDate: isoDateString.optional(),
+}).refine(
+  (data) => !data.endDate || !data.startDate || new Date(data.endDate) > new Date(data.startDate),
+  {
+    message: 'endDate must be after startDate',
+    path: ['endDate'],
+  },
+);
+
+export const listNotificationsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1, 'Page must be at least 1').default(1),
+  limit: z.coerce.number().int().min(1).max(100, 'Limit must not exceed 100').default(20),
+  type: z.string().optional(),
+  read: z.coerce.boolean().optional(),
+});
+
+export const listVideoTasksQuerySchema = z.object({
+  page: z.coerce.number().int().min(1, 'Page must be at least 1').default(1),
+  limit: z.coerce.number().int().min(1).max(100, 'Limit must not exceed 100').default(20),
+  status: z.string().optional(),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+});
+
+export const listPublishRecordsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1, 'Page must be at least 1').default(1),
+  limit: z.coerce.number().int().min(1).max(100, 'Limit must not exceed 100').default(20),
+  platform: z.string().optional(),
+  status: z.string().optional(),
+});
+
+export const listPipelineRunsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1, 'Page must be at least 1').default(1),
+  limit: z.coerce.number().int().min(1).max(100, 'Limit must not exceed 100').default(20),
+  status: z.string().optional(),
+});
+
+// ---------------------------------------------------------------------------
+// Integration schemas
+// ---------------------------------------------------------------------------
+
+export const connectPlatformSchema = z.object({
+  platformType: z.string().min(1, 'Platform type is required'),
+  credentials: z.record(z.unknown()),
+  config: z.record(z.unknown()).optional(),
+});
+
+export type ConnectPlatformInput = z.infer<typeof connectPlatformSchema>;
+
+// ---------------------------------------------------------------------------
+// Product features: minPrice/maxPrice and inventory min/max refinements
+// ---------------------------------------------------------------------------
+
+export const filterProductsRefinedQuerySchema = filterProductsQuerySchema.refine(
+  (data) => {
+    if (data.minPrice !== undefined && data.maxPrice !== undefined) {
+      return data.minPrice <= data.maxPrice;
+    }
+    return true;
+  },
+  {
+    message: 'minPrice must be less than or equal to maxPrice',
+    path: ['minPrice'],
+  },
+).refine(
+  (data) => {
+    if (data.inventoryMin !== undefined && data.inventoryMax !== undefined) {
+      return data.inventoryMin <= data.inventoryMax;
+    }
+    return true;
+  },
+  {
+    message: 'inventoryMin must be less than or equal to inventoryMax',
+    path: ['inventoryMin'],
+  },
+).refine(
+  (data) => {
+    if (data.createdAfter && data.createdBefore) {
+      return new Date(data.createdBefore) > new Date(data.createdAfter);
+    }
+    return true;
+  },
+  {
+    message: 'createdBefore must be after createdAfter',
+    path: ['createdBefore'],
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Collection reorder body schema
+// ---------------------------------------------------------------------------
+
+export const reorderCollectionProductsBodySchema = z.object({
+  productIds: z.array(uuidString).min(1, 'At least one product ID is required'),
+});
+
+export type ReorderCollectionProductsInput = z.infer<typeof reorderCollectionProductsBodySchema>;

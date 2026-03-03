@@ -18,6 +18,7 @@ import { pool } from '../../config/database';
 import { cacheGet, cacheSet, cacheDel } from '../../config/redis';
 import { logger } from '../../utils/logger';
 import { generateId } from '../../utils/helpers';
+import { withTransaction } from '../../utils/transaction';
 import { NotFoundError, ValidationError } from '../../utils/errors';
 import { AuditService } from '../audit.service';
 
@@ -279,7 +280,7 @@ function strategyConfidence(total: number, successes: number): number {
   return round(lower * Math.min(total / 100, 1));
 }
 
-function fatigueAction(ctrD: number, convD: number, freq: number, days: number): CreativeFatigueAlert['recommended_action'] {
+function fatigueAction(ctrD: number, convD: number, freq: number, _days: number): CreativeFatigueAlert['recommended_action'] {
   if (ctrD > 40 || convD > 35 || freq > 8) return 'pause';
   if (ctrD > 25 || convD > 20 || freq > 5) return 'rotate';
   if (ctrD > 20 || convD > 15) return 'refresh';
@@ -1257,7 +1258,7 @@ export class ContinuousLearningService {
       [strategyId],
     );
     if (rows.length === 0) throw new NotFoundError(`No outcomes for strategy ${strategyId}`);
-    const scores = rows.map((r: any) => Number(r.performance_score || 0));
+    const scores = rows.map((r: Record<string, unknown>) => Number(r.performance_score || 0));
     const avg = scores.reduce((a: number, b: number) => a + b, 0) / scores.length;
     const trend = scores.length >= 3
       ? (scores[0] > scores[scores.length - 1] ? 'improving' : 'declining')
@@ -1271,7 +1272,7 @@ export class ContinuousLearningService {
       [strategyId],
     );
     const avgScore = outcomes.length > 0
-      ? outcomes.reduce((s: number, r: any) => s + Number(r.performance_score || 0), 0) / outcomes.length
+      ? outcomes.reduce((s: number, r: Record<string, unknown>) => s + Number(r.performance_score || 0), 0) / outcomes.length
       : 0;
     const { rows: topStrategies } = await pool.query(
       `SELECT * FROM strategy_memory ORDER BY success_rate DESC LIMIT 1`,
@@ -1333,7 +1334,7 @@ export class ContinuousLearningService {
 
   static async getTopStrategies(countryCode: string, channel: string) {
     const key = ck(`top:${countryCode}:${channel}`);
-    const cached = await cacheGet<any[]>(key);
+    const cached = await cacheGet<Record<string, unknown>[]>(key);
     if (cached) return cached;
     const { rows } = await pool.query(
       `SELECT * FROM strategy_memory_v2 WHERE country_code = $1 AND channel = $2
@@ -1389,7 +1390,7 @@ export class ContinuousLearningService {
     return rows[0];
   }
 
-  static async compareCountryPerformance(countryCodes: string[], opts?: { period?: string }) {
+  static async compareCountryPerformance(countryCodes: string[], _opts?: { period?: string }) {
     const { rows } = await pool.query(
       `SELECT * FROM country_performance WHERE country_code = ANY($1) ORDER BY avg_roas DESC`,
       [countryCodes],
@@ -1406,7 +1407,7 @@ export class ContinuousLearningService {
       `SELECT * FROM creative_performance WHERE campaign_id = $1 AND fatigue_score < 0.3 ORDER BY fatigue_score ASC`,
       [campaignId],
     );
-    const rotations = fatigued.map((f: any, i: number) => ({
+    const rotations = fatigued.map((f: Record<string, unknown>, i: number) => ({
       current_creative_id: f.creative_id,
       suggested_replacement_id: fresh[i]?.creative_id || null,
       current_fatigue_score: f.fatigue_score,
@@ -1452,7 +1453,7 @@ export class ContinuousLearningService {
 
   static async getSeasonalAdjustments(countryCode: string, channel: string) {
     const key = ck(`seasonal:${countryCode}:${channel}`);
-    const cached = await cacheGet<any>(key);
+    const cached = await cacheGet<Record<string, unknown>>(key);
     if (cached) return cached;
     const { rows } = await pool.query(
       `SELECT * FROM seasonal_adjustments WHERE country_code = $1 AND channel = $2 ORDER BY created_at DESC LIMIT 1`,
@@ -1541,7 +1542,7 @@ export class ContinuousLearningService {
 
   static async getSystemStatus() {
     const key = ck('system_status');
-    const cached = await cacheGet<any>(key);
+    const cached = await cacheGet<Record<string, unknown>>(key);
     if (cached) return cached;
     const { rows } = await pool.query(
       `SELECT * FROM learning_system_status ORDER BY updated_at DESC LIMIT 1`,
@@ -1552,9 +1553,17 @@ export class ContinuousLearningService {
   }
 
   static async resetLearningData(userId: string, opts: { scope: string }) {
-    const r1 = await pool.query(`DELETE FROM strategy_memory_v2 RETURNING COUNT(*) AS deleted_count`);
-    const r2 = await pool.query(`DELETE FROM strategy_outcomes RETURNING COUNT(*) AS deleted_count`);
-    const r3 = await pool.query(`DELETE FROM market_signals_v2 RETURNING COUNT(*) AS deleted_count`);
+    const deleted = await withTransaction(async (client) => {
+      const r1 = await client.query(`DELETE FROM strategy_memory_v2 RETURNING COUNT(*) AS deleted_count`);
+      const r2 = await client.query(`DELETE FROM strategy_outcomes RETURNING COUNT(*) AS deleted_count`);
+      const r3 = await client.query(`DELETE FROM market_signals_v2 RETURNING COUNT(*) AS deleted_count`);
+      return {
+        strategies: Number(r1.rows[0]?.deleted_count || 0),
+        outcomes: Number(r2.rows[0]?.deleted_count || 0),
+        signals: Number(r3.rows[0]?.deleted_count || 0),
+      };
+    });
+
     await cacheDel(ck('*'));
     await AuditService.log({
       userId,
@@ -1562,12 +1571,6 @@ export class ContinuousLearningService {
       resourceType: 'learning_system',
       details: { scope: opts.scope },
     });
-    return {
-      deleted: {
-        strategies: Number(r1.rows[0]?.deleted_count || 0),
-        outcomes: Number(r2.rows[0]?.deleted_count || 0),
-        signals: Number(r3.rows[0]?.deleted_count || 0),
-      },
-    };
+    return { deleted };
   }
 }

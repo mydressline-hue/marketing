@@ -9,12 +9,19 @@ import { SimulationEngineService } from './SimulationEngineService';
 
 export class SimulationService {
   static async runCampaignSimulation(
-    params: { campaign: any; parameters: any; scenarios?: any },
+    params: {
+      campaign: string | { id: string };
+      parameters: { budget?: number; dailyBudget?: number; durationDays?: number };
+      scenarios?: Record<string, unknown>;
+    },
     userId: string,
   ) {
+    const campaignId = typeof params.campaign === 'string'
+      ? params.campaign
+      : params.campaign?.id;
     return SimulationEngineService.simulateCampaign(userId, {
-      campaignId: params.campaign?.id || params.campaign,
-      budget: params.parameters?.budget || params.parameters?.dailyBudget * (params.parameters?.durationDays || 30),
+      campaignId,
+      budget: params.parameters?.budget || (params.parameters?.dailyBudget ?? 0) * (params.parameters?.durationDays || 30),
       durationDays: params.parameters?.durationDays || 30,
     });
   }
@@ -32,9 +39,9 @@ export class SimulationService {
   }
 
   static async modelCompetitorReaction(params: {
-    strategy: any;
+    strategy: { campaignId?: string; budgetIncrease?: number };
     market: string;
-    competitors?: any[];
+    competitors?: Record<string, unknown>[];
     timeframe?: string;
   }) {
     const campaignId = params.strategy?.campaignId || params.market;
@@ -47,7 +54,7 @@ export class SimulationService {
     channel: string;
     country: string;
     timeframe?: string;
-    competitorActivity?: any;
+    competitorActivity?: Record<string, unknown>;
   }) {
     const { rows } = await (await import('../../config/database')).pool.query(
       `SELECT id FROM campaigns WHERE platform = $1 AND country_code = $2 LIMIT 1`,
@@ -61,7 +68,7 @@ export class SimulationService {
   }
 
   static async modelAudienceSaturation(params: {
-    audience: any;
+    audience: Record<string, unknown>;
     channel: string;
     country: string;
     currentReach?: number;
@@ -76,7 +83,12 @@ export class SimulationService {
   }
 
   static async runSandboxSimulation(
-    params: { name: string; description?: string; parameters: any; constraints?: any },
+    params: {
+      name: string;
+      description?: string;
+      parameters: Record<string, unknown> & { historicalPeriod?: { start: string; end: string } };
+      constraints?: Record<string, unknown>;
+    },
     userId: string,
   ) {
     return SimulationEngineService.runSandboxSimulation(userId, {
@@ -90,7 +102,7 @@ export class SimulationService {
 
   static async preLaunchRiskAssessment(
     campaignId: string,
-    params: { scenarios?: any; riskFactors?: any },
+    _params: { scenarios?: Record<string, unknown>; riskFactors?: Record<string, unknown> },
   ) {
     return SimulationEngineService.assessPreLaunchRisk(campaignId);
   }

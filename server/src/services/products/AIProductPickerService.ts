@@ -204,7 +204,7 @@ export class AIProductPickerService {
          COALESCE(rs.rsc, 0) * 20 * 0.15 + LEAST(p.inventory_level, 100) * 0.15) DESC
        LIMIT $${limitParams.length}`, limitParams);
 
-    return result.rows.map((r, i) => {
+    return result.rows.map((r, _i) => {
       const views = Number(r.view_count) || 0;
       const sold = Number(r.total_sold) || 0;
       const recentSales = Number(r.recent_sales) || 0;

@@ -10,8 +10,9 @@
  */
 
 import { pool } from '../config/database';
-import { cacheGet, cacheSet, cacheDel, cacheFlush } from '../config/redis';
+import { cacheGet, cacheSet } from '../config/redis';
 import { generateId } from '../utils/helpers';
+import { withTransaction } from '../utils/transaction';
 import { logger } from '../utils/logger';
 import { env } from '../config/env';
 
@@ -68,23 +69,25 @@ export class SettingsService {
    * transparently. The change is recorded in the audit log.
    */
   static async set(key: string, value: unknown, userId: string): Promise<void> {
-    await pool.query(
-      `INSERT INTO agent_states (id, agent_type, agent_id, state, updated_at)
-       VALUES ($1, $2, $3, $4, NOW())
-       ON CONFLICT (agent_type, agent_id)
-       DO UPDATE SET state = $4, updated_at = NOW()`,
-      [generateId(), AGENT_TYPE, key, JSON.stringify(value)],
-    );
+    await withTransaction(async (client) => {
+      await client.query(
+        `INSERT INTO agent_states (id, agent_type, agent_id, state, updated_at)
+         VALUES ($1, $2, $3, $4, NOW())
+         ON CONFLICT (agent_type, agent_id)
+         DO UPDATE SET state = $4, updated_at = NOW()`,
+        [generateId(), AGENT_TYPE, key, JSON.stringify(value)],
+      );
 
-    // Update cache
+      // Audit log
+      await client.query(
+        `INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details, created_at)
+         VALUES ($1, $2, 'setting_updated', 'system_setting', $3, $4, NOW())`,
+        [generateId(), userId, key, JSON.stringify({ key, value })],
+      );
+    });
+
+    // Update cache after successful transaction
     await cacheSet(`${CACHE_PREFIX}${key}`, value, CACHE_TTL);
-
-    // Audit log
-    await pool.query(
-      `INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details, created_at)
-       VALUES ($1, $2, 'setting_updated', 'system_setting', $3, $4, NOW())`,
-      [generateId(), userId, key, JSON.stringify({ key, value })],
-    );
 
     logger.info('System setting updated', { key, userId });
   }

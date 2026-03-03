@@ -17,7 +17,7 @@
  */
 
 import { pool } from '../../config/database';
-import { cacheGet, cacheSet, cacheDel } from '../../config/redis';
+import { cacheGet, cacheSet } from '../../config/redis';
 import { logger } from '../../utils/logger';
 import { generateId } from '../../utils/helpers';
 import { NotFoundError, ValidationError } from '../../utils/errors';
@@ -135,11 +135,10 @@ export class SimulationEngineService {
    * Projects spend, conversions, ROAS and CPA for a given budget and
    * duration, using the campaign's historical performance as a baseline.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static async simulateCampaign(
     userId: string,
     params: { campaignId: string; budget: number; durationDays: number },
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const { campaignId, budget, durationDays } = params;
 
     // -- Validation ----------------------------------------------------------
@@ -265,11 +264,10 @@ export class SimulationEngineService {
    * Uses diminishing returns modelling to project conversions and efficiency
    * at the target budget level.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static async predictScalingOutcome(
     campaignId: string,
     params: { targetBudget: number },
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const { targetBudget } = params;
 
     // -- Lookup campaign -----------------------------------------------------
@@ -286,7 +284,7 @@ export class SimulationEngineService {
     const currentBudget = Number(campaign.daily_budget) || 100;
     const totalConversions = Number(campaign.total_conversions) || 0;
     const totalSpend = Number(campaign.total_spend) || 1;
-    const conversionRate = totalConversions / Math.max(totalSpend, 1);
+    const _conversionRate = totalConversions / Math.max(totalSpend, 1);
 
     const drFactor = diminishingReturnsFactor(currentBudget, targetBudget);
     const scaleFactor = targetBudget / Math.max(currentBudget, 1);
@@ -341,11 +339,10 @@ export class SimulationEngineService {
    * Estimates the number of competitors, their aggressiveness, and the
    * resulting CPC and market-share impact.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static async modelCompetitorReaction(
     campaignId: string,
     params: { budgetIncrease: number },
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const { budgetIncrease } = params;
 
     // -- Lookup campaign -----------------------------------------------------
@@ -434,11 +431,10 @@ export class SimulationEngineService {
    * Optionally includes seasonality factors and competitive-pressure
    * multipliers.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static async modelCPCInflation(
     campaignId: string,
     options?: { includeSeasonality?: boolean; includeCompetition?: boolean },
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const includeSeasonality = options?.includeSeasonality ?? false;
     const includeCompetition = options?.includeCompetition ?? false;
 
@@ -561,10 +557,9 @@ export class SimulationEngineService {
    * Uses a logistic curve model to project days to saturation and computes
    * frequency fatigue scores with optimal frequency recommendations.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static async modelAudienceSaturation(
     campaignId: string,
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     // -- Lookup campaign -----------------------------------------------------
     const campaignResult = await pool.query(
       `SELECT * FROM campaigns WHERE id = $1`,
@@ -688,14 +683,13 @@ export class SimulationEngineService {
    * Compares simulated results with actual outcomes to produce a variance
    * and accuracy score.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static async runSandboxSimulation(
     userId: string,
     params: {
       strategy: Record<string, unknown>;
       historicalPeriod: { start: string; end: string };
     },
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const { strategy, historicalPeriod } = params;
 
     // -- Validate historical period ------------------------------------------
@@ -718,7 +712,7 @@ export class SimulationEngineService {
 
     // Compute simulated metrics based on strategy parameters
     const budgetParam = Number(strategy.budget) || 10000;
-    const periodDays = Math.max(
+    const _periodDays = Math.max(
       1,
       Math.round(
         (endDate.getTime() - new Date(historicalPeriod.start).getTime()) /
@@ -819,10 +813,9 @@ export class SimulationEngineService {
    * and market conditions to produce a risk score, risk factors, a go/no-go
    * recommendation, and mitigation steps.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static async assessPreLaunchRisk(
     simulationId: string,
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     // -- Lookup simulation ---------------------------------------------------
     const simResult = await pool.query(
       `SELECT * FROM simulations WHERE id = $1`,
@@ -978,7 +971,6 @@ export class SimulationEngineService {
    * Retrieve paginated simulation history with optional type filtering
    * and date range.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static async getSimulationHistory(
     filters?: {
       type?: string;
@@ -988,7 +980,7 @@ export class SimulationEngineService {
       endDate?: string;
     },
   ): Promise<{
-    data: any[];
+    data: Record<string, unknown>[];
     total: number;
     page: number;
     totalPages: number;
@@ -1082,10 +1074,9 @@ export class SimulationEngineService {
   /**
    * Retrieve a single simulation by its ID.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static async getSimulationById(
     id: string,
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     // -- Check cache ---------------------------------------------------------
     const cacheKey = ck('detail', id);
     const cached = await cacheGet<Record<string, unknown>>(cacheKey);
@@ -1120,13 +1111,12 @@ export class SimulationEngineService {
    *
    * Produces metric deltas and identifies the "winner" (highest projected ROAS).
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static async compareSimulations(
     simulationIds: string[],
     metrics?: string[],
   ): Promise<{
-    simulations: any[];
-    comparison: Record<string, any>;
+    simulations: Record<string, unknown>[];
+    comparison: Record<string, unknown>;
     winner: string;
   }> {
     // -- Validation ----------------------------------------------------------

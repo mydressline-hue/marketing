@@ -23,10 +23,20 @@ import {
 // Zod schemas
 // ---------------------------------------------------------------------------
 
+const isoDateString = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}/, 'Must be a valid ISO date string (YYYY-MM-DD)');
+
 const spendBreakdownQuerySchema = z.object({
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
-});
+  startDate: isoDateString.optional(),
+  endDate: isoDateString.optional(),
+}).refine(
+  (data) => !data.endDate || !data.startDate || new Date(data.endDate) > new Date(data.startDate),
+  {
+    message: 'endDate must be after startDate',
+    path: ['endDate'],
+  },
+);
 
 const campaignPerformanceQuerySchema = z.object({
   platform: z.string().optional(),
@@ -35,7 +45,7 @@ const campaignPerformanceQuerySchema = z.object({
 });
 
 const recentActivityQuerySchema = z.object({
-  limit: z.coerce.number().optional(),
+  limit: z.coerce.number().int().min(1, 'Limit must be at least 1').max(100, 'Limit must not exceed 100').optional(),
 });
 
 const router = Router();

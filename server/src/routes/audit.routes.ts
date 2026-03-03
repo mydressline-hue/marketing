@@ -9,6 +9,8 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
+import { validateQuery } from '../middleware/validation';
+import { auditLogsQuerySchema } from '../validators/schemas';
 import {
   queryAuditLogs,
   getAuditStats,
@@ -28,6 +30,7 @@ router.use(authenticate);
 router.get(
   '/',
   requirePermission('write:infrastructure'),
+  validateQuery(auditLogsQuerySchema),
   queryAuditLogs,
 );
 

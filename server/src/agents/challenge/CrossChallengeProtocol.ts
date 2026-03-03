@@ -10,7 +10,6 @@ import type { AgentOutput } from '../base/types';
 import type {
   ChallengeMapConfig,
   ChallengeMapEntry,
-  ChallengeRequest,
   ChallengeResponse,
   ChallengeRound,
   ChallengeFinding,

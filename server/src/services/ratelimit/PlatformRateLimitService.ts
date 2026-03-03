@@ -17,7 +17,7 @@ import { pool } from '../../config/database';
 import { redis, cacheGet, cacheSet, cacheDel } from '../../config/redis';
 import { logger } from '../../utils/logger';
 import { generateId } from '../../utils/helpers';
-import { ValidationError, NotFoundError } from '../../utils/errors';
+import { ValidationError } from '../../utils/errors';
 
 // ---------------------------------------------------------------------------
 // Types

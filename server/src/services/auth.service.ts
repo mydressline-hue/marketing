@@ -7,6 +7,7 @@
  * from the utils layer handle password hashing and ID generation.
  */
 
+import crypto from 'crypto';
 import { pool } from '../config/database';
 import {
   generateId,
@@ -22,9 +23,19 @@ import {
   generateToken,
   generateRefreshToken,
 } from '../middleware/auth';
+import { withTransaction } from '../utils/transaction';
 import logger from '../utils/logger';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
+import { AccountLockoutService } from './account-lockout.service';
+
+/**
+ * Produces a hex-encoded SHA-256 hash of the given token.
+ * Used to store and look up session tokens without keeping the plaintext.
+ */
+function hashToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -37,11 +48,6 @@ interface User {
   role: string;
   created_at: string;
   updated_at: string;
-}
-
-interface AuthTokens {
-  token: string;
-  refreshToken: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -63,27 +69,29 @@ export class AuthService {
     name: string,
     role: string = 'user',
   ): Promise<{ user: User; token: string; refreshToken: string }> {
-    // Check for existing user
-    const existing = await pool.query(
-      'SELECT id FROM users WHERE email = $1',
-      [email.toLowerCase()],
-    );
-
-    if (existing.rows.length > 0) {
-      throw new ConflictError('A user with this email already exists');
-    }
-
     const id = generateId();
     const passwordHash = await hashPassword(password);
 
-    const result = await pool.query(
-      `INSERT INTO users (id, email, password_hash, name, role, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-       RETURNING id, email, name, role, created_at, updated_at`,
-      [id, email.toLowerCase(), passwordHash, name, role],
-    );
+    const user = await withTransaction(async (client) => {
+      // Check for existing user inside the transaction to prevent race conditions
+      const existing = await client.query(
+        'SELECT id FROM users WHERE email = $1',
+        [email.toLowerCase()],
+      );
 
-    const user: User = result.rows[0];
+      if (existing.rows.length > 0) {
+        throw new ConflictError('A user with this email already exists');
+      }
+
+      const result = await client.query(
+        `INSERT INTO users (id, email, password_hash, name, role, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+         RETURNING id, email, name, role, created_at, updated_at`,
+        [id, email.toLowerCase(), passwordHash, name, role],
+      );
+
+      return result.rows[0] as User;
+    });
 
     const token = generateToken({
       id: user.id,
@@ -104,10 +112,15 @@ export class AuthService {
   /**
    * Validates credentials, updates the last login timestamp, creates a
    * session record, logs an audit event, and returns tokens.
+   *
+   * Performs account-lockout checks before credential validation and
+   * records failed attempts (or resets on success) for brute-force
+   * protection.
    */
   static async login(
     email: string,
     password: string,
+    ipAddress: string = 'unknown',
   ): Promise<{ user: User; token: string; refreshToken: string }> {
     const result = await pool.query(
       `SELECT id, email, password_hash, name, role, created_at, updated_at
@@ -120,12 +133,33 @@ export class AuthService {
     }
 
     const row = result.rows[0];
+
+    // --- Lockout check: reject early if account is locked ----------------
+    const locked = await AccountLockoutService.isLocked(row.id);
+    if (locked) {
+      const status = await AccountLockoutService.getLockoutStatus(row.id);
+      const minutesRemaining = Math.ceil(status.timeRemainingMs / 60000);
+      logger.warn('Login attempt on locked account', {
+        userId: row.id,
+        email: row.email,
+        ipAddress,
+        minutesRemaining,
+      });
+      throw new AuthenticationError(
+        `Account is temporarily locked. Please try again in ${minutesRemaining} minute${minutesRemaining === 1 ? '' : 's'}.`,
+      );
+    }
+
+    // --- Credential validation -------------------------------------------
     const passwordValid = await comparePassword(password, row.password_hash);
 
     if (!passwordValid) {
+      // Record the failed attempt (may trigger a lockout)
+      await AccountLockoutService.recordFailedAttempt(row.id, ipAddress);
       throw new AuthenticationError('Invalid email or password');
     }
 
+    // --- Successful login: reset any prior failed attempts ---------------
     const token = generateToken({
       id: row.id,
       email: row.email,
@@ -133,24 +167,26 @@ export class AuthService {
     });
     const refreshTkn = generateRefreshToken({ id: row.id });
 
-    // Run independent post-login queries in parallel
+    // Run post-login writes inside a transaction for atomicity
     const sessionId = generateId();
-    await Promise.all([
-      pool.query(
+    await withTransaction(async (client) => {
+      await client.query(
         'UPDATE users SET last_login_at = NOW() WHERE id = $1',
         [row.id],
-      ),
-      pool.query(
-        `INSERT INTO sessions (id, user_id, token, created_at, expires_at)
+      );
+      await client.query(
+        `INSERT INTO sessions (id, user_id, token_hash, created_at, expires_at)
          VALUES ($1, $2, $3, NOW(), NOW() + INTERVAL '24 hours')`,
-        [sessionId, row.id, token],
-      ),
-      pool.query(
+        [sessionId, row.id, hashToken(token)],
+      );
+      await client.query(
         `INSERT INTO audit_logs (id, user_id, action, details, created_at)
          VALUES ($1, $2, $3, $4, NOW())`,
         [generateId(), row.id, 'LOGIN', JSON.stringify({ email: row.email })],
-      ),
-    ]);
+      );
+    });
+    // Reset lockout attempts outside the transaction (non-critical)
+    await AccountLockoutService.resetAttempts(row.id);
 
     const user: User = {
       id: row.id,
@@ -174,17 +210,17 @@ export class AuthService {
    * Removes the user's session and logs an audit event.
    */
   static async logout(userId: string, token: string): Promise<void> {
-    await Promise.all([
-      pool.query(
-        'DELETE FROM sessions WHERE user_id = $1 AND token = $2',
-        [userId, token],
-      ),
-      pool.query(
+    await withTransaction(async (client) => {
+      await client.query(
+        'DELETE FROM sessions WHERE user_id = $1 AND token_hash = $2',
+        [userId, hashToken(token)],
+      );
+      await client.query(
         `INSERT INTO audit_logs (id, user_id, action, details, created_at)
          VALUES ($1, $2, $3, $4, NOW())`,
         [generateId(), userId, 'LOGOUT', JSON.stringify({})],
-      ),
-    ]);
+      );
+    });
 
     logger.info('User logged out', { userId });
   }

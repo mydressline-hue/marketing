@@ -41,8 +41,9 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
  */
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
+  const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
 
-  const result = await AuthService.login(email, password);
+  const result = await AuthService.login(email, password, ipAddress);
 
   res.json({
     success: true,

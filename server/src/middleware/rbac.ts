@@ -21,12 +21,6 @@ import {
 
 export type Permission = string;
 
-interface UserPayload {
-  id: string;
-  role: string;
-  [key: string]: unknown;
-}
-
 // Note: `req.user` is declared globally in auth.ts.
 // We reuse that declaration here rather than redeclaring it.
 

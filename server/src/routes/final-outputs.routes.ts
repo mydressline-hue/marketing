@@ -879,7 +879,7 @@ function extractWeaknesses(
   return indicators;
 }
 
-function generateRecommendation(
+function _generateRecommendation(
   agentType: string,
   avgConfidence: number,
   lowConfidenceCount: number,
@@ -899,7 +899,7 @@ function generateRecommendation(
   return `${agentType} requires significant attention. Recommend retraining with expanded datasets and revisiting the decision framework.`;
 }
 
-function generateCategoryRecommendations(category: string): Record<string, unknown>[] {
+function _generateCategoryRecommendations(category: string): Record<string, unknown>[] {
   const recommendations: Record<string, Record<string, unknown>[]> = {
     data_enrichment: [
       { action: 'Add alternative data sources for market sizing', priority: 'high', effort: 'medium' },

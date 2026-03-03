@@ -114,7 +114,7 @@ export class IterableService {
          VALUES ($1, $2, $3, 'users', 'completed', $4, 0, NOW(), NOW())`,
         [syncId, connection.id, PLATFORM_TYPE, synced],
       );
-    } catch (_) { /* optional sync log */ }
+    } catch { /* optional sync log */ }
 
     await AuditService.log({
       userId,
@@ -142,7 +142,7 @@ export class IterableService {
       last_name?: string;
       data_fields?: Record<string, unknown>;
     },
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     if (!data.email || data.email.trim().length === 0) {
       throw new ValidationError('Email is required', [
         { field: 'email', message: 'Email is required' },
@@ -165,8 +165,8 @@ export class IterableService {
           data.data_fields ? JSON.stringify(data.data_fields) : null,
         ],
       );
-    } catch (err: any) {
-      if (err && err.code === '23505') {
+    } catch (err: unknown) {
+      if (err instanceof Object && 'code' in err && err.code === '23505') {
         throw new ValidationError('A user with this email already exists', [
           { field: 'email', message: 'Duplicate email address', value: data.email },
         ]);
@@ -183,7 +183,7 @@ export class IterableService {
          VALUES ($1, $2, $3, $4, 'user', NOW())`,
         [generateId(), PLATFORM_TYPE, id, user.iterable_user_id || id],
       );
-    } catch (_) { /* optional mapping */ }
+    } catch { /* optional mapping */ }
 
     await AuditService.log({
       userId,
@@ -205,7 +205,7 @@ export class IterableService {
     userId: string,
     iterableUserId: string,
     data: Record<string, unknown>,
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     await requireConnection(userId);
 
     const result = await pool.query(
@@ -228,12 +228,12 @@ export class IterableService {
   /**
    * Get a single user. Cache first, DB on miss, null when not found.
    */
-  static async getUser(userId: string): Promise<any | null> {
+  static async getUser(userId: string): Promise<Record<string, unknown> | null> {
     const cacheKey = `iterable:user:${userId}`;
-    const cached = await cacheGet(cacheKey);
+    const cached = await cacheGet<Record<string, unknown>>(cacheKey);
     if (cached) {
       logger.debug('Iterable user cache hit', { userId });
-      return typeof cached === 'string' ? JSON.parse(cached) : cached;
+      return typeof cached === 'string' ? JSON.parse(cached as unknown as string) : cached;
     }
 
     const result = await pool.query(
@@ -251,7 +251,7 @@ export class IterableService {
   /**
    * Paginated list with optional search. Defaults: page 1, limit 20.
    */
-  static async listUsers(filters: IterableUserFilters = {}): Promise<PaginatedResult<any>> {
+  static async listUsers(filters: IterableUserFilters = {}): Promise<PaginatedResult<Record<string, unknown>>> {
     const page = Math.max(1, filters.page || 1);
     const limit = Math.max(1, Math.min(100, filters.limit || 20));
     const offset = (page - 1) * limit;
@@ -295,7 +295,7 @@ export class IterableService {
   static async trackEvent(
     userId: string,
     eventData: IterableEventData,
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     if (!eventData.event_name || eventData.event_name.trim().length === 0) {
       throw new ValidationError('Event name is required', [
         { field: 'event_name', message: 'Event name is required' },
@@ -333,7 +333,7 @@ export class IterableService {
   static async trackPurchase(
     userId: string,
     purchaseData: IterablePurchaseData,
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     await requireConnection(userId);
 
     const id = generateId();
@@ -386,7 +386,7 @@ export class IterableService {
          VALUES ($1, $2, 'campaigns', 'completed', $3, 0, NOW(), NOW())`,
         [syncId, PLATFORM_TYPE, synced],
       );
-    } catch (_) { /* optional sync log */ }
+    } catch { /* optional sync log */ }
 
     logger.info('Iterable campaigns synced', { userId, synced });
 
@@ -423,7 +423,7 @@ export class IterableService {
   static async createList(
     userId: string,
     data: IterableListCreateData,
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     if (!data.name || data.name.trim().length === 0) {
       throw new ValidationError('List name is required', [
         { field: 'name', message: 'List name is required' },
@@ -499,7 +499,7 @@ export class IterableService {
    * Get sync status. Returns last sync time and record counts.
    * Returns defaults when no sync has occurred.
    */
-  static async getSyncStatus(): Promise<any> {
+  static async getSyncStatus(): Promise<Record<string, unknown>> {
     const result = await pool.query(
       `SELECT last_sync_at, users_count, campaigns_count, lists_count
        FROM crm_sync_status WHERE platform_type = $1 LIMIT 1`,
@@ -522,7 +522,7 @@ export class IterableService {
    * Get connection status. Returns active, disconnected, or error
    * based on the connection record status.
    */
-  static async getConnectionStatus(userId: string): Promise<any> {
+  static async getConnectionStatus(userId: string): Promise<Record<string, unknown>> {
     const result = await pool.query(
       `SELECT * FROM crm_connections WHERE user_id = $1 AND platform_type = $2 LIMIT 1`,
       [userId, PLATFORM_TYPE],

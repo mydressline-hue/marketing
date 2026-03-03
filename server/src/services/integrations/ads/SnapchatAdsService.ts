@@ -19,7 +19,7 @@ import { AuditService } from '../../audit.service';
 // Constants
 // ---------------------------------------------------------------------------
 
-const PLATFORM_TYPE = 'snapchat_ads';
+const _PLATFORM_TYPE = 'snapchat_ads';
 const CACHE_TTL = 120; // seconds
 
 // ---------------------------------------------------------------------------
@@ -48,8 +48,8 @@ export class SnapchatAdsService {
    */
   static async createCampaign(
     userId: string,
-    data: Record<string, any>,
-  ): Promise<any> {
+    data: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
     // Verify active Snapchat Ads connection
     const connectionResult = await pool.query(
       `SELECT * FROM platform_connections
@@ -111,8 +111,8 @@ export class SnapchatAdsService {
   static async updateCampaign(
     userId: string,
     campaignId: string,
-    data: Record<string, any>,
-  ): Promise<any> {
+    data: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
     // Ensure the campaign exists
     const existing = await pool.query(
       `SELECT * FROM platform_campaigns WHERE id = $1 AND user_id = $2 AND platform_type = 'snapchat_ads'`,
@@ -175,7 +175,7 @@ export class SnapchatAdsService {
   static async pauseCampaign(
     userId: string,
     campaignId: string,
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const existing = await pool.query(
       `SELECT * FROM platform_campaigns WHERE id = $1 AND user_id = $2 AND platform_type = 'snapchat_ads'`,
       [campaignId, userId],
@@ -224,10 +224,10 @@ export class SnapchatAdsService {
    * populates the cache with a TTL. Throws when the campaign
    * does not exist.
    */
-  static async getCampaign(campaignId: string): Promise<any> {
+  static async getCampaign(campaignId: string): Promise<Record<string, unknown>> {
     // Check cache
     const cacheKey = campaignCacheKey(campaignId);
-    const cached = await cacheGet(cacheKey);
+    const cached = await cacheGet<Record<string, unknown>>(cacheKey);
 
     if (cached) {
       logger.debug('Snapchat Ads campaign cache hit', { campaignId });
@@ -261,7 +261,7 @@ export class SnapchatAdsService {
   static async listCampaigns(
     userId: string,
     filters: { status?: string; page?: number; limit?: number } = {},
-  ): Promise<{ data: any[]; total: number; page: number }> {
+  ): Promise<{ data: Record<string, unknown>[]; total: number; page: number }> {
     const page = filters.page ?? 1;
     const limit = filters.limit ?? 20;
     const offset = (page - 1) * limit;
@@ -352,7 +352,7 @@ export class SnapchatAdsService {
   static async getReport(
     campaignId: string,
     dateRange: { start_date: string; end_date: string },
-  ): Promise<any[]> {
+  ): Promise<Record<string, unknown>[]> {
     const result = await pool.query(
       `SELECT * FROM platform_reports
        WHERE campaign_id = $1
@@ -374,7 +374,7 @@ export class SnapchatAdsService {
    * Validates that the user has an active connection, retrieves the
    * ad_account_id, and upserts campaign records into the local database.
    */
-  static async syncCampaigns(userId: string): Promise<any> {
+  static async syncCampaigns(userId: string): Promise<Record<string, unknown>> {
     // Verify connection
     const connectionResult = await pool.query(
       `SELECT * FROM platform_connections
@@ -426,7 +426,7 @@ export class SnapchatAdsService {
    * Returns an object indicating whether the user has an active connection
    * and the associated account details.
    */
-  static async getConnectionStatus(userId: string): Promise<any> {
+  static async getConnectionStatus(userId: string): Promise<Record<string, unknown>> {
     const result = await pool.query(
       `SELECT * FROM platform_connections
        WHERE user_id = $1 AND platform_type = 'snapchat_ads'
