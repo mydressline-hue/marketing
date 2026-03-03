@@ -154,7 +154,7 @@ export class SimulationEngineService {
 
     // -- Lookup campaign -----------------------------------------------------
     const campaignResult = await pool.query(
-      `SELECT * FROM campaigns WHERE id = $1`,
+      `SELECT id, name, country_id, platform, type, status, budget, spent, start_date, end_date, targeting, metrics, daily_budget, roas, avg_cpc, avg_ctr, created_by, created_at, updated_at FROM campaigns WHERE id = $1`,
       [campaignId],
     );
     const campaign = campaignResult.rows[0];
@@ -272,7 +272,7 @@ export class SimulationEngineService {
 
     // -- Lookup campaign -----------------------------------------------------
     const campaignResult = await pool.query(
-      `SELECT * FROM campaigns WHERE id = $1`,
+      `SELECT id, name, country_id, platform, type, status, budget, spent, start_date, end_date, targeting, metrics, daily_budget, roas, avg_cpc, avg_ctr, created_by, created_at, updated_at FROM campaigns WHERE id = $1`,
       [campaignId],
     );
     const campaign = campaignResult.rows[0];
@@ -345,7 +345,7 @@ export class SimulationEngineService {
 
     // -- Lookup campaign -----------------------------------------------------
     const campaignResult = await pool.query(
-      `SELECT * FROM campaigns WHERE id = $1`,
+      `SELECT id, name, country_id, platform, type, status, budget, spent, start_date, end_date, targeting, metrics, daily_budget, roas, avg_cpc, avg_ctr, created_by, created_at, updated_at FROM campaigns WHERE id = $1`,
       [campaignId],
     );
     const campaign = campaignResult.rows[0];
@@ -438,7 +438,7 @@ export class SimulationEngineService {
 
     // -- Lookup campaign -----------------------------------------------------
     const campaignResult = await pool.query(
-      `SELECT * FROM campaigns WHERE id = $1`,
+      `SELECT id, name, country_id, platform, type, status, budget, spent, start_date, end_date, targeting, metrics, daily_budget, roas, avg_cpc, avg_ctr, created_by, created_at, updated_at FROM campaigns WHERE id = $1`,
       [campaignId],
     );
     const campaign = campaignResult.rows[0];
@@ -560,7 +560,7 @@ export class SimulationEngineService {
   ): Promise<Record<string, unknown>> {
     // -- Lookup campaign -----------------------------------------------------
     const campaignResult = await pool.query(
-      `SELECT * FROM campaigns WHERE id = $1`,
+      `SELECT id, name, country_id, platform, type, status, budget, spent, start_date, end_date, targeting, metrics, daily_budget, roas, avg_cpc, avg_ctr, created_by, created_at, updated_at FROM campaigns WHERE id = $1`,
       [campaignId],
     );
     const campaign = campaignResult.rows[0];

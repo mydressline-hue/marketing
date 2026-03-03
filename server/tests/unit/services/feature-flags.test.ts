@@ -72,7 +72,7 @@ function makeFlag(overrides: Partial<FeatureFlag> = {}): FeatureFlag {
 
 describe('FeatureFlagsService', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockPoolQuery.mockReset();
     FeatureFlagsService.clearCache();
     // Reset cache TTL to a known value
     FeatureFlagsService.setCacheTtl(30_000);
