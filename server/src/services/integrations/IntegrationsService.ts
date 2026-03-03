@@ -15,7 +15,7 @@
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet, cacheDel, cacheFlush } from '../../config/redis';
 import { logger } from '../../utils/logger';
-import { generateId, encrypt, decrypt } from '../../utils/helpers';
+import { generateId, encrypt } from '../../utils/helpers';
 import { withTransaction } from '../../utils/transaction';
 import { NotFoundError, ValidationError } from '../../utils/errors';
 import { AuditService } from '../audit.service';
@@ -24,11 +24,6 @@ import { env } from '../../config/env';
 /** Encrypt a credentials object for storage in the database. */
 function encryptCredentials(credentials: Record<string, unknown>): string {
   return encrypt(JSON.stringify(credentials), env.ENCRYPTION_KEY as string);
-}
-
-/** Decrypt a credentials string read from the database back to an object. */
-function decryptCredentials(encrypted: string): Record<string, unknown> {
-  return JSON.parse(decrypt(encrypted, env.ENCRYPTION_KEY as string));
 }
 
 import { GoogleAdsService } from './ads/GoogleAdsService';

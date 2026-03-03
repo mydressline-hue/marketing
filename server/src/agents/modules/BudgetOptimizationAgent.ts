@@ -1247,9 +1247,8 @@ When making recommendations:
       if (allocationResult.rows.length > 0) {
         const alloc = allocationResult.rows[0];
         const totalBudget = parseFloat(alloc.total_budget) || 0;
-        const periodStart = new Date(alloc.period_start).getTime();
-        const periodEnd = new Date(alloc.period_end).getTime();
-        const now = Date.now();
+        const periodStart = new Date(alloc.period_start as string).getTime();
+        const periodEnd = new Date(alloc.period_end as string).getTime();
 
         if (periodEnd > periodStart) {
           const expectedSpendRate = totalBudget / ((periodEnd - periodStart) / 86400000);

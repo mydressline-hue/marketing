@@ -108,7 +108,7 @@ const CACHE_TTL = 300;
 
 async function requireConnection(userId: string) {
   const conn = await pool.query(
-    `SELECT * FROM crm_connections WHERE user_id = $1 AND platform_type = $2 AND status = 'active' LIMIT 1`,
+    `SELECT id, user_id, platform_type, status, api_key, last_sync_at, created_at, updated_at FROM crm_connections WHERE user_id = $1 AND platform_type = $2 AND status = 'active' LIMIT 1`,
     [userId, PLATFORM_TYPE],
   );
   if (conn.rows.length === 0) {
@@ -264,7 +264,7 @@ export class KlaviyoService {
     }
 
     const result = await pool.query(
-      `SELECT * FROM crm_contact_mappings WHERE id = $1 AND platform_type = $2`,
+      `SELECT id, user_id, platform_type, email, external_id, local_id, metadata, created_at, updated_at FROM crm_contact_mappings WHERE id = $1 AND platform_type = $2`,
       [profileId, PLATFORM_TYPE],
     );
     if (result.rows.length === 0) return null;
@@ -303,7 +303,7 @@ export class KlaviyoService {
     const where = `WHERE ${conditions.join(' AND ')}`;
 
     const dataRes = await pool.query(
-      `SELECT * FROM crm_contact_mappings ${where} ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
+      `SELECT id, user_id, platform_type, email, external_id, local_id, metadata, created_at, updated_at FROM crm_contact_mappings ${where} ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
       [...params, limit, offset],
     );
 
@@ -375,7 +375,7 @@ export class KlaviyoService {
     await requireConnection(userId);
 
     const campaigns = await pool.query(
-      `SELECT * FROM email_campaign_syncs WHERE user_id = $1 AND platform_type = $2`,
+      `SELECT id, user_id, platform_type, campaign_id, name, status, sent_at, created_at FROM email_campaign_syncs WHERE user_id = $1 AND platform_type = $2`,
       [userId, PLATFORM_TYPE],
     );
     const synced = campaigns.rows.length;
@@ -403,7 +403,7 @@ export class KlaviyoService {
     }
 
     const result = await pool.query(
-      `SELECT * FROM email_campaign_metrics WHERE campaign_id = $1`,
+      `SELECT id, campaign_id, open_rate, click_rate, bounce_rate, unsubscribe_rate, created_at FROM email_campaign_metrics WHERE campaign_id = $1`,
       [campaignId],
     );
     if (result.rows.length === 0) return null;
@@ -460,7 +460,7 @@ export class KlaviyoService {
     await requireConnection(userId);
 
     const listRes = await pool.query(
-      `SELECT * FROM crm_lists WHERE id = $1 AND platform_type = $2`,
+      `SELECT id, user_id, platform_type, name, member_count, created_at, updated_at FROM crm_lists WHERE id = $1 AND platform_type = $2`,
       [listId, PLATFORM_TYPE],
     );
     if (listRes.rows.length === 0) {
@@ -507,7 +507,7 @@ export class KlaviyoService {
     try {
       // 1. Read credentials from DB
       const connResult = await pool.query(
-        `SELECT * FROM crm_connections WHERE id = $1 AND platform_type = $2 LIMIT 1`,
+        `SELECT id, user_id, platform_type, status, api_key, last_sync_at, created_at, updated_at FROM crm_connections WHERE id = $1 AND platform_type = $2 LIMIT 1`,
         [integrationId, PLATFORM_TYPE],
       );
       if (connResult.rows.length === 0) {
@@ -627,7 +627,7 @@ export class KlaviyoService {
    */
   static async getConnectionStatus(userId: string): Promise<Record<string, unknown>> {
     const result = await pool.query(
-      `SELECT * FROM crm_connections WHERE user_id = $1 AND platform_type = $2 LIMIT 1`,
+      `SELECT id, user_id, platform_type, status, api_key, last_sync_at, created_at, updated_at FROM crm_connections WHERE user_id = $1 AND platform_type = $2 LIMIT 1`,
       [userId, PLATFORM_TYPE],
     );
 

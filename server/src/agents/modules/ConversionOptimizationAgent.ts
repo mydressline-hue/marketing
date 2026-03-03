@@ -6,7 +6,8 @@
 
 import { BaseAgent } from '../base/BaseAgent';
 import type { AgentInput, AgentOutput, AgentConfig } from '../base/types';
-import type { AgentType, DateRange, FunnelStage } from '../../types';
+import type { AgentType, DateRange as _DateRange } from '../../types';
+type DateRange = _DateRange;
 import { pool } from '../../config/database';
 import { cacheGet, cacheSet } from '../../config/redis';
 import { generateId } from '../../utils/helpers';

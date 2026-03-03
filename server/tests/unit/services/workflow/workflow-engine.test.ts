@@ -411,14 +411,14 @@ describe('WorkflowEngine', () => {
     it('should execute steps in topological order and mark workflow completed', async () => {
       const now = new Date().toISOString();
 
-      // Fetch workflow
+      // 1. Fetch workflow
       mockPoolQuery.mockResolvedValueOnce({
         rows: [{ id: 'wf-1', name: 'Test', status: 'pending', created_by: 'user-1' }],
         rowCount: 1,
       });
-      // Mark workflow running
+      // 2. Mark workflow running
       mockPoolQuery.mockResolvedValueOnce({ rowCount: 1 });
-      // Load steps (two steps: step-1 independent, step-2 depends on step-1)
+      // 3. Load steps (two steps: step-1 independent, step-2 depends on step-1)
       mockPoolQuery.mockResolvedValueOnce({
         rows: [
           {
@@ -437,18 +437,18 @@ describe('WorkflowEngine', () => {
 
       // For each step: check workflow status, mark running, mark completed
       // Step 1:
-      mockPoolQuery.mockResolvedValueOnce({ rows: [{ status: 'running' }], rowCount: 1 }); // check status
-      mockPoolQuery.mockResolvedValueOnce({ rowCount: 1 }); // mark running
-      mockPoolQuery.mockResolvedValueOnce({ rowCount: 1 }); // mark completed
+      mockPoolQuery.mockResolvedValueOnce({ rows: [{ status: 'running' }], rowCount: 1 }); // 4. check status
+      mockPoolQuery.mockResolvedValueOnce({ rowCount: 1 }); // 5. mark running
+      mockPoolQuery.mockResolvedValueOnce({ rowCount: 1 }); // 6. mark completed
       // Step 2:
-      mockPoolQuery.mockResolvedValueOnce({ rows: [{ status: 'running' }], rowCount: 1 }); // check status
-      mockPoolQuery.mockResolvedValueOnce({ rowCount: 1 }); // mark running
-      mockPoolQuery.mockResolvedValueOnce({ rowCount: 1 }); // mark completed
+      mockPoolQuery.mockResolvedValueOnce({ rows: [{ status: 'running' }], rowCount: 1 }); // 7. check status
+      mockPoolQuery.mockResolvedValueOnce({ rowCount: 1 }); // 8. mark running
+      mockPoolQuery.mockResolvedValueOnce({ rowCount: 1 }); // 9. mark completed
 
-      // Mark workflow completed
+      // 10. Mark workflow completed
       mockPoolQuery.mockResolvedValueOnce({ rowCount: 1 });
 
-      // getWorkflowStatus calls
+      // 11-12. getWorkflowStatus calls (workflow query + steps query)
       mockPoolQuery.mockResolvedValueOnce({
         rows: [{
           id: 'wf-1', name: 'Test', status: 'completed', created_by: 'user-1',
@@ -476,6 +476,9 @@ describe('WorkflowEngine', () => {
 
       expect(result.status).toBe('completed');
       expect(result.steps).toHaveLength(2);
+      // Verify steps are in correct order
+      expect(result.steps[0].name).toBe('Step 1');
+      expect(result.steps[1].name).toBe('Step 2');
     });
   });
 
@@ -560,19 +563,20 @@ describe('WorkflowEngine', () => {
     it('should cancel a pending workflow and mark pending steps as skipped', async () => {
       const now = new Date().toISOString();
 
-      // Fetch workflow
+      // 1. Fetch workflow (pool.query)
       mockPoolQuery.mockResolvedValueOnce({
         rows: [{ id: 'wf-1', status: 'pending' }],
         rowCount: 1,
       });
 
-      // Transaction: BEGIN, update steps, update workflow, COMMIT
-      mockClientQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 }); // BEGIN
-      mockClientQuery.mockResolvedValueOnce({ rowCount: 2 }); // Update steps to skipped
-      mockClientQuery.mockResolvedValueOnce({ rowCount: 1 }); // Update workflow to failed
-      mockClientQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 }); // COMMIT
+      // Transaction via pool.connect -> client: BEGIN, update steps, update workflow, COMMIT
+      mockClientQuery
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 }) // BEGIN
+        .mockResolvedValueOnce({ rowCount: 2 }) // Update steps to skipped
+        .mockResolvedValueOnce({ rowCount: 1 }) // Update workflow to failed
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 }); // COMMIT
 
-      // getWorkflowStatus after cancel
+      // 2-3. getWorkflowStatus (pool.query): workflow + steps
       mockPoolQuery.mockResolvedValueOnce({
         rows: [{
           id: 'wf-1', name: 'Test', description: null, status: 'failed',
@@ -592,22 +596,27 @@ describe('WorkflowEngine', () => {
       const workflow = await WorkflowEngine.cancelWorkflow('wf-1');
 
       expect(workflow.status).toBe('failed');
+      expect(workflow.steps).toHaveLength(1);
       expect(workflow.steps[0].status).toBe('skipped');
     });
 
     it('should cancel a running workflow', async () => {
       const now = new Date().toISOString();
 
+      // 1. Fetch workflow
       mockPoolQuery.mockResolvedValueOnce({
         rows: [{ id: 'wf-1', status: 'running' }],
         rowCount: 1,
       });
 
-      mockClientQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 }); // BEGIN
-      mockClientQuery.mockResolvedValueOnce({ rowCount: 1 }); // Update steps
-      mockClientQuery.mockResolvedValueOnce({ rowCount: 1 }); // Update workflow
-      mockClientQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 }); // COMMIT
+      // Transaction via pool.connect -> client
+      mockClientQuery
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 }) // BEGIN
+        .mockResolvedValueOnce({ rowCount: 1 }) // Update steps
+        .mockResolvedValueOnce({ rowCount: 1 }) // Update workflow
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 }); // COMMIT
 
+      // 2-3. getWorkflowStatus
       mockPoolQuery.mockResolvedValueOnce({
         rows: [{
           id: 'wf-1', name: 'Test', description: null, status: 'failed',
@@ -615,11 +624,15 @@ describe('WorkflowEngine', () => {
         }],
         rowCount: 1,
       });
-      mockPoolQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+      mockPoolQuery.mockResolvedValueOnce({
+        rows: [],
+        rowCount: 0,
+      });
 
       const workflow = await WorkflowEngine.cancelWorkflow('wf-1');
 
       expect(workflow.status).toBe('failed');
+      expect(workflow.steps).toHaveLength(0);
     });
   });
 });

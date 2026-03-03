@@ -531,7 +531,7 @@ export class ShopifyAdminService {
    */
   static async listWebhooks(): Promise<Record<string, unknown>[]> {
     const result = await pool.query(
-      `SELECT * FROM shopify_webhooks ORDER BY created_at DESC`,
+      `SELECT id, user_id, topic, address, format, status, created_at, updated_at FROM shopify_webhooks ORDER BY created_at DESC`,
     );
 
     return result.rows;
@@ -684,7 +684,7 @@ export class ShopifyAdminService {
 
     // 2. Data query
     const dataResult = await pool.query(
-      `SELECT * FROM shopify_pixel_events ${whereClause}
+      `SELECT id, user_id, event_name, event_data, recorded_at, created_at FROM shopify_pixel_events ${whereClause}
        ORDER BY recorded_at DESC
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, limit, offset],
@@ -717,7 +717,7 @@ export class ShopifyAdminService {
     userId: string,
   ): Promise<{ connected: boolean; connection?: Record<string, unknown> }> {
     const result = await pool.query(
-      `SELECT * FROM platform_connections
+      `SELECT id, user_id, platform_type, status, credentials, access_token, refresh_token, expires_at, created_at, updated_at FROM platform_connections
        WHERE user_id = $1 AND platform_type = 'shopify'
        LIMIT 1`,
       [userId],

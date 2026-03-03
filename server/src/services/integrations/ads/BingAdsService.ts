@@ -131,7 +131,7 @@ export class BingAdsService {
   ): Promise<BingAdsCampaign> {
     // Verify an active Bing Ads connection exists
     const connectionResult = await pool.query(
-      `SELECT * FROM platform_connections
+      `SELECT id, user_id, platform_type, status, credentials, access_token, refresh_token, expires_at, created_at, updated_at FROM platform_connections
        WHERE platform_type = $1 AND is_active = TRUE
        LIMIT 1`,
       [PLATFORM_TYPE],
@@ -216,7 +216,7 @@ export class BingAdsService {
   ): Promise<BingAdsCampaign> {
     // Verify campaign exists
     const existing = await pool.query<BingAdsCampaign>(
-      `SELECT * FROM platform_campaigns WHERE id = $1 AND platform_type = $2`,
+      `SELECT id, user_id, platform_type, external_id, name, status, budget, spend, impressions, clicks, conversions, config, created_at, updated_at FROM platform_campaigns WHERE id = $1 AND platform_type = $2`,
       [campaignId, PLATFORM_TYPE],
     );
 
@@ -314,7 +314,7 @@ export class BingAdsService {
   ): Promise<BingAdsCampaign> {
     // Verify campaign exists
     const existing = await pool.query<BingAdsCampaign>(
-      `SELECT * FROM platform_campaigns WHERE id = $1 AND platform_type = $2`,
+      `SELECT id, user_id, platform_type, external_id, name, status, budget, spend, impressions, clicks, conversions, config, created_at, updated_at FROM platform_campaigns WHERE id = $1 AND platform_type = $2`,
       [campaignId, PLATFORM_TYPE],
     );
 
@@ -383,7 +383,7 @@ export class BingAdsService {
 
     // Fetch from database
     const result = await pool.query<BingAdsCampaign>(
-      `SELECT * FROM platform_campaigns
+      `SELECT id, user_id, platform_type, external_id, name, status, budget, spend, impressions, clicks, conversions, config, created_at, updated_at FROM platform_campaigns
        WHERE id = $1 AND platform_type = $2`,
       [campaignId, PLATFORM_TYPE],
     );
@@ -452,7 +452,7 @@ export class BingAdsService {
 
     // Fetch the page of data
     const dataResult = await pool.query<BingAdsCampaign>(
-      `SELECT * FROM platform_campaigns ${whereClause}
+      `SELECT id, user_id, platform_type, external_id, name, status, budget, spend, impressions, clicks, conversions, config, created_at, updated_at FROM platform_campaigns ${whereClause}
        ORDER BY created_at DESC
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, limit, offset],
@@ -488,7 +488,7 @@ export class BingAdsService {
   ): Promise<void> {
     // Verify campaign exists
     const existing = await pool.query<BingAdsCampaign>(
-      `SELECT * FROM platform_campaigns WHERE id = $1 AND platform_type = $2`,
+      `SELECT id, user_id, platform_type, external_id, name, status, budget, spend, impressions, clicks, conversions, config, created_at, updated_at FROM platform_campaigns WHERE id = $1 AND platform_type = $2`,
       [campaignId, PLATFORM_TYPE],
     );
 
@@ -542,7 +542,7 @@ export class BingAdsService {
     dateRange: { start_date: string; end_date: string },
   ): Promise<BingAdsReport[]> {
     const result = await pool.query<BingAdsReport>(
-      `SELECT * FROM platform_reports
+      `SELECT id, user_id, platform_type, campaign_id, report_type, metrics, period_start, period_end, created_at FROM platform_reports
        WHERE campaign_id = $1
          AND platform_type = $2
          AND date_range_start >= $3
@@ -580,7 +580,7 @@ export class BingAdsService {
   static async syncCampaigns(userId: string): Promise<SyncResult> {
     // Verify an active Bing Ads connection exists
     const connectionResult = await pool.query(
-      `SELECT * FROM platform_connections
+      `SELECT id, user_id, platform_type, status, credentials, access_token, refresh_token, expires_at, created_at, updated_at FROM platform_connections
        WHERE platform_type = $1 AND is_active = TRUE
        LIMIT 1`,
       [PLATFORM_TYPE],
@@ -681,7 +681,7 @@ export class BingAdsService {
   ): Promise<BingAdsCampaign> {
     // Verify campaign exists
     const existing = await pool.query<BingAdsCampaign>(
-      `SELECT * FROM platform_campaigns WHERE id = $1 AND platform_type = $2`,
+      `SELECT id, user_id, platform_type, external_id, name, status, budget, spend, impressions, clicks, conversions, config, created_at, updated_at FROM platform_campaigns WHERE id = $1 AND platform_type = $2`,
       [campaignId, PLATFORM_TYPE],
     );
 
@@ -747,7 +747,7 @@ export class BingAdsService {
    */
   static async getConnectionStatus(userId: string): Promise<ConnectionStatus> {
     const result = await pool.query(
-      `SELECT * FROM platform_connections
+      `SELECT id, user_id, platform_type, status, credentials, access_token, refresh_token, expires_at, created_at, updated_at FROM platform_connections
        WHERE platform_type = 'bing_ads' AND connected_by = $1
        LIMIT 1`,
       [userId],

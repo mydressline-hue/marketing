@@ -122,7 +122,7 @@ export class GoogleAdsService {
   ): Promise<GoogleAdsCampaign> {
     // Verify an active Google Ads connection exists
     const connectionResult = await pool.query(
-      `SELECT * FROM platform_connections
+      `SELECT id, user_id, platform_type, status, credentials, access_token, refresh_token, expires_at, created_at, updated_at FROM platform_connections
        WHERE platform_type = $1 AND is_active = TRUE
        LIMIT 1`,
       [PLATFORM_TYPE],
@@ -199,7 +199,7 @@ export class GoogleAdsService {
   ): Promise<GoogleAdsCampaign> {
     // Verify campaign exists
     const existing = await pool.query<GoogleAdsCampaign>(
-      `SELECT * FROM platform_campaigns WHERE id = $1 AND platform_type = $2`,
+      `SELECT id, user_id, platform_type, external_id, name, status, budget, spend, impressions, clicks, conversions, config, created_at, updated_at FROM platform_campaigns WHERE id = $1 AND platform_type = $2`,
       [campaignId, PLATFORM_TYPE],
     );
 
@@ -254,7 +254,7 @@ export class GoogleAdsService {
   ): Promise<GoogleAdsCampaign> {
     // Verify campaign exists
     const existing = await pool.query<GoogleAdsCampaign>(
-      `SELECT * FROM platform_campaigns WHERE id = $1 AND platform_type = $2`,
+      `SELECT id, user_id, platform_type, external_id, name, status, budget, spend, impressions, clicks, conversions, config, created_at, updated_at FROM platform_campaigns WHERE id = $1 AND platform_type = $2`,
       [campaignId, PLATFORM_TYPE],
     );
 
@@ -315,7 +315,7 @@ export class GoogleAdsService {
 
     // Fetch from database
     const result = await pool.query<GoogleAdsCampaign>(
-      `SELECT * FROM platform_campaigns
+      `SELECT id, user_id, platform_type, external_id, name, status, budget, spend, impressions, clicks, conversions, config, created_at, updated_at FROM platform_campaigns
        WHERE id = $1 AND platform_type = $2`,
       [campaignId, PLATFORM_TYPE],
     );
@@ -384,7 +384,7 @@ export class GoogleAdsService {
 
     // Fetch the page of data
     const dataResult = await pool.query<GoogleAdsCampaign>(
-      `SELECT * FROM platform_campaigns ${whereClause}
+      `SELECT id, user_id, platform_type, external_id, name, status, budget, spend, impressions, clicks, conversions, config, created_at, updated_at FROM platform_campaigns ${whereClause}
        ORDER BY created_at DESC
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, limit, offset],
@@ -420,7 +420,7 @@ export class GoogleAdsService {
   ): Promise<void> {
     // Verify campaign exists
     const existing = await pool.query<GoogleAdsCampaign>(
-      `SELECT * FROM platform_campaigns WHERE id = $1 AND platform_type = $2`,
+      `SELECT id, user_id, platform_type, external_id, name, status, budget, spend, impressions, clicks, conversions, config, created_at, updated_at FROM platform_campaigns WHERE id = $1 AND platform_type = $2`,
       [campaignId, PLATFORM_TYPE],
     );
 
@@ -472,7 +472,7 @@ export class GoogleAdsService {
     dateRange: { start_date: string; end_date: string },
   ): Promise<GoogleAdsReport[]> {
     const result = await pool.query<GoogleAdsReport>(
-      `SELECT * FROM platform_reports
+      `SELECT id, user_id, platform_type, campaign_id, report_type, metrics, period_start, period_end, created_at FROM platform_reports
        WHERE campaign_id = $1
          AND platform_type = 'google_ads'
          AND date_range_start >= $2
@@ -510,7 +510,7 @@ export class GoogleAdsService {
   static async syncCampaigns(userId: string): Promise<SyncResult> {
     // Verify an active Google Ads connection exists
     const connectionResult = await pool.query(
-      `SELECT * FROM platform_connections
+      `SELECT id, user_id, platform_type, status, credentials, access_token, refresh_token, expires_at, created_at, updated_at FROM platform_connections
        WHERE platform_type = $1 AND is_active = TRUE
        LIMIT 1`,
       [PLATFORM_TYPE],
@@ -600,7 +600,7 @@ export class GoogleAdsService {
   ): Promise<GoogleAdsCampaign> {
     // Verify campaign exists
     const existing = await pool.query<GoogleAdsCampaign>(
-      `SELECT * FROM platform_campaigns WHERE id = $1 AND platform_type = $2`,
+      `SELECT id, user_id, platform_type, external_id, name, status, budget, spend, impressions, clicks, conversions, config, created_at, updated_at FROM platform_campaigns WHERE id = $1 AND platform_type = $2`,
       [campaignId, PLATFORM_TYPE],
     );
 
@@ -666,7 +666,7 @@ export class GoogleAdsService {
    */
   static async getConnectionStatus(userId: string): Promise<ConnectionStatus> {
     const result = await pool.query(
-      `SELECT * FROM platform_connections
+      `SELECT id, user_id, platform_type, status, credentials, access_token, refresh_token, expires_at, created_at, updated_at FROM platform_connections
        WHERE platform_type = 'google_ads' AND connected_by = $1
        LIMIT 1`,
       [userId],

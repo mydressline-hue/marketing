@@ -120,7 +120,7 @@ export class HubSpotService {
   static async syncContacts(userId: string): Promise<SyncResult> {
     // Query 1: fetch connection
     const connection = await pool.query(
-      `SELECT * FROM crm_connections
+      `SELECT id, user_id, platform_type, status, api_key, last_sync_at, created_at, updated_at FROM crm_connections
        WHERE user_id = $1 AND platform_type = $2 AND status = 'active'`,
       [userId, PLATFORM_TYPE],
     );
@@ -171,7 +171,7 @@ export class HubSpotService {
   static async syncDeals(userId: string): Promise<SyncResult> {
     // Query 1: fetch connection
     const connection = await pool.query(
-      `SELECT * FROM crm_connections
+      `SELECT id, user_id, platform_type, status, api_key, last_sync_at, created_at, updated_at FROM crm_connections
        WHERE user_id = $1 AND platform_type = $2 AND status = 'active'`,
       [userId, PLATFORM_TYPE],
     );
@@ -216,7 +216,7 @@ export class HubSpotService {
 
     // Query 1: fetch connection
     const connection = await pool.query(
-      `SELECT * FROM crm_connections
+      `SELECT id, user_id, platform_type, status, api_key, last_sync_at, created_at, updated_at FROM crm_connections
        WHERE user_id = $1 AND platform_type = $2 AND status = 'active'`,
       [userId, PLATFORM_TYPE],
     );
@@ -269,7 +269,7 @@ export class HubSpotService {
   static async updateContact(userId: string, contactId: string, data: UpdateContactData): Promise<HubSpotContact> {
     // Query 1: fetch connection
     const connection = await pool.query(
-      `SELECT * FROM crm_connections
+      `SELECT id, user_id, platform_type, status, api_key, last_sync_at, created_at, updated_at FROM crm_connections
        WHERE user_id = $1 AND platform_type = $2 AND status = 'active'`,
       [userId, PLATFORM_TYPE],
     );
@@ -409,7 +409,7 @@ export class HubSpotService {
 
     // Query 1: fetch connection
     const connection = await pool.query(
-      `SELECT * FROM crm_connections
+      `SELECT id, user_id, platform_type, status, api_key, last_sync_at, created_at, updated_at FROM crm_connections
        WHERE user_id = $1 AND platform_type = $2 AND status = 'active'`,
       [userId, PLATFORM_TYPE],
     );
@@ -451,7 +451,7 @@ export class HubSpotService {
   static async addToList(userId: string, listId: string, contactIds: string[]): Promise<{ added: number }> {
     // Query 1: fetch connection
     const connection = await pool.query(
-      `SELECT * FROM crm_connections
+      `SELECT id, user_id, platform_type, status, api_key, last_sync_at, created_at, updated_at FROM crm_connections
        WHERE user_id = $1 AND platform_type = $2 AND status = 'active'`,
       [userId, PLATFORM_TYPE],
     );

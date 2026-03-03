@@ -96,8 +96,13 @@ describe('FeatureFlagsService', () => {
       expect(result.name).toBe('new-feature');
       expect(result.is_enabled).toBe(true);
 
-      // Verify the INSERT query was called
+      // Verify queries were called (check for existing + insert)
       expect(mockPoolQuery).toHaveBeenCalledTimes(2);
+
+      // Verify the flag is now cached -- no additional DB call needed
+      const cached = await FeatureFlagsService.get('new-feature');
+      expect(cached.name).toBe('new-feature');
+      expect(mockPoolQuery).toHaveBeenCalledTimes(2); // still 2, cache hit
     });
 
     it('should throw ConflictError when flag name already exists', async () => {
@@ -411,6 +416,11 @@ describe('FeatureFlagsService', () => {
       mockPoolQuery.mockResolvedValueOnce({ rows: [flag], rowCount: 1 });
       await FeatureFlagsService.get('test-flag');
 
+      // Verify cache is populated (no new query)
+      const cachedResult = await FeatureFlagsService.get('test-flag');
+      expect(cachedResult.name).toBe('test-flag');
+      expect(mockPoolQuery).toHaveBeenCalledTimes(1); // only the initial get
+
       // Delete
       mockPoolQuery.mockResolvedValueOnce({ rows: [{ id: 'flag-1' }], rowCount: 1 });
       await FeatureFlagsService.delete('test-flag');
@@ -419,7 +429,7 @@ describe('FeatureFlagsService', () => {
       mockPoolQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
       await expect(FeatureFlagsService.get('test-flag')).rejects.toThrow(NotFoundError);
 
-      // 3 queries: initial get, delete, second get attempt
+      // 3 queries total: initial get, delete, second get attempt
       expect(mockPoolQuery).toHaveBeenCalledTimes(3);
     });
 

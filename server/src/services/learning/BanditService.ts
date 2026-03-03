@@ -342,24 +342,6 @@ export class BanditService {
     return rows;
   }
 
-  /**
-   * Upsert a context weight for a given arm and feature.
-   */
-  private static async _upsertContextWeight(
-    armId: string,
-    featureName: string,
-    weight: number,
-  ): Promise<void> {
-    const id = generateId();
-    await pool.query(
-      `INSERT INTO bandit_context_weights (id, arm_id, feature_name, weight, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, NOW(), NOW())
-       ON CONFLICT (arm_id, feature_name)
-       DO UPDATE SET weight = $4, updated_at = NOW()`,
-      [id, armId, featureName, weight],
-    );
-  }
-
   // =========================================================================
   // CORE PUBLIC METHODS
   // =========================================================================
