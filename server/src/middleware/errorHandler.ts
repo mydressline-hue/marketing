@@ -51,13 +51,14 @@ interface ErrorResponseBody {
   };
 }
 
-function buildErrorResponse(err: AppError): ErrorResponseBody {
-  const body: ErrorResponseBody = {
+function buildErrorResponse(err: AppError): ErrorResponseBody & { success: boolean } {
+  const body = {
+    success: false as const,
     error: {
       code: err.code,
       message: err.message,
       statusCode: err.statusCode,
-    },
+    } as ErrorResponseBody['error'],
   };
 
   // Attach extra context from specialised error subclasses
@@ -88,11 +89,18 @@ export function errorHandler(
   res: Response,
   _next: NextFunction,
 ): void {
-  // Build a rich log context
+  // Build a rich log context (redact sensitive fields)
+  const sanitizedBody = req.body ? { ...req.body } : undefined;
+  if (sanitizedBody) {
+    delete sanitizedBody.password;
+    delete sanitizedBody.currentPassword;
+    delete sanitizedBody.newPassword;
+    delete sanitizedBody.refreshToken;
+  }
   const logContext: Record<string, unknown> = {
     method: req.method,
     url: req.originalUrl,
-    body: req.body,
+    body: sanitizedBody,
     ip: req.ip,
     // Express may attach a user object via auth middleware
     user: (req as unknown as Record<string, unknown>).user ?? undefined,

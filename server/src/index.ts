@@ -1,6 +1,7 @@
 import { env } from './config/env';
 import { logger } from './utils/logger';
 import { initializeConnections, closeConnections } from './config';
+import { getConfig } from './config/production';
 import app from './app';
 
 async function main(): Promise<void> {
@@ -8,6 +9,7 @@ async function main(): Promise<void> {
     // Initialize database and Redis connections
     await initializeConnections();
 
+    const config = getConfig();
     const server = app.listen(env.PORT, () => {
       logger.info(`Server running on port ${env.PORT}`);
       logger.info(`API prefix: ${env.API_PREFIX}`);
@@ -15,19 +17,28 @@ async function main(): Promise<void> {
     });
 
     // Graceful shutdown
+    let isShuttingDown = false;
     const shutdown = async (signal: string) => {
+      if (isShuttingDown) return;
+      isShuttingDown = true;
+
       logger.info(`Received ${signal}. Starting graceful shutdown...`);
       server.close(async () => {
-        await closeConnections();
-        logger.info('Server shut down gracefully');
-        process.exit(0);
+        try {
+          await closeConnections();
+          logger.info('Server shut down gracefully');
+          process.exit(0);
+        } catch (err) {
+          logger.error('Error during connection cleanup:', err);
+          process.exit(1);
+        }
       });
 
-      // Force shutdown after 30 seconds
+      // Force shutdown after configured timeout (unref so it doesn't keep process alive)
       setTimeout(() => {
         logger.error('Forced shutdown after timeout');
         process.exit(1);
-      }, 30000);
+      }, config.server.gracefulShutdownTimeoutMs).unref();
     };
 
     process.on('SIGTERM', () => shutdown('SIGTERM'));
@@ -37,5 +48,15 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 }
+
+// Global error handlers to prevent unhandled crashes
+process.on('unhandledRejection', (reason: unknown) => {
+  logger.error('Unhandled promise rejection:', reason);
+});
+
+process.on('uncaughtException', (error: Error) => {
+  logger.error('Uncaught exception:', error);
+  process.exit(1);
+});
 
 main();

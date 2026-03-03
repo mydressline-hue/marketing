@@ -1,17 +1,23 @@
 import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
 import { env } from './env';
+import { logger } from '../utils/logger';
 
 const pool = new Pool({
   connectionString: env.DATABASE_URL,
   min: env.DB_POOL_MIN,
   max: env.DB_POOL_MAX,
-  ssl: env.DB_SSL ? { rejectUnauthorized: false } : false,
+  ssl: env.DB_SSL
+    ? {
+        rejectUnauthorized: env.NODE_ENV === 'production',
+        ca: process.env.DB_SSL_CA || undefined,
+      }
+    : false,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
 });
 
 pool.on('error', (err: Error) => {
-  console.error('Unexpected error on idle database client:', err);
+  logger.error('Unexpected error on idle database client:', err);
 });
 
 async function query<T extends QueryResultRow = QueryResultRow>(
@@ -29,7 +35,7 @@ async function getClient(): Promise<PoolClient> {
 
   client.release = (err?: Error | boolean) => {
     if (released) {
-      console.warn('Client has already been released. Ignoring duplicate release call.');
+      logger.warn('Client has already been released. Ignoring duplicate release call.');
       return;
     }
     released = true;
@@ -45,19 +51,19 @@ async function testConnection(): Promise<boolean> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       await pool.query('SELECT 1');
-      console.log('Database connection established successfully.');
+      logger.info('Database connection established successfully.');
       return true;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
 
       if (attempt < maxRetries) {
         const delay = Math.pow(2, attempt) * 1000;
-        console.warn(
+        logger.warn(
           `Database connection attempt ${attempt}/${maxRetries} failed: ${message}. Retrying in ${delay}ms...`,
         );
         await new Promise<void>((resolve) => setTimeout(resolve, delay));
       } else {
-        console.error(
+        logger.error(
           `Database connection failed after ${maxRetries} attempts: ${message}`,
         );
       }
@@ -68,9 +74,9 @@ async function testConnection(): Promise<boolean> {
 }
 
 async function closePool(): Promise<void> {
-  console.log('Closing database connection pool...');
+  logger.info('Closing database connection pool...');
   await pool.end();
-  console.log('Database connection pool closed.');
+  logger.info('Database connection pool closed.');
 }
 
 export { pool, query, getClient, testConnection, closePool };

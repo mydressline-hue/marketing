@@ -126,12 +126,6 @@ export class AuthService {
       throw new AuthenticationError('Invalid email or password');
     }
 
-    // Update last_login_at
-    await pool.query(
-      'UPDATE users SET last_login_at = NOW() WHERE id = $1',
-      [row.id],
-    );
-
     const token = generateToken({
       id: row.id,
       email: row.email,
@@ -139,20 +133,24 @@ export class AuthService {
     });
     const refreshTkn = generateRefreshToken({ id: row.id });
 
-    // Create session
+    // Run independent post-login queries in parallel
     const sessionId = generateId();
-    await pool.query(
-      `INSERT INTO sessions (id, user_id, token, created_at, expires_at)
-       VALUES ($1, $2, $3, NOW(), NOW() + INTERVAL '24 hours')`,
-      [sessionId, row.id, token],
-    );
-
-    // Log audit event
-    await pool.query(
-      `INSERT INTO audit_logs (id, user_id, action, details, created_at)
-       VALUES ($1, $2, $3, $4, NOW())`,
-      [generateId(), row.id, 'LOGIN', JSON.stringify({ email: row.email })],
-    );
+    await Promise.all([
+      pool.query(
+        'UPDATE users SET last_login_at = NOW() WHERE id = $1',
+        [row.id],
+      ),
+      pool.query(
+        `INSERT INTO sessions (id, user_id, token, created_at, expires_at)
+         VALUES ($1, $2, $3, NOW(), NOW() + INTERVAL '24 hours')`,
+        [sessionId, row.id, token],
+      ),
+      pool.query(
+        `INSERT INTO audit_logs (id, user_id, action, details, created_at)
+         VALUES ($1, $2, $3, $4, NOW())`,
+        [generateId(), row.id, 'LOGIN', JSON.stringify({ email: row.email })],
+      ),
+    ]);
 
     const user: User = {
       id: row.id,
@@ -176,17 +174,17 @@ export class AuthService {
    * Removes the user's session and logs an audit event.
    */
   static async logout(userId: string, token: string): Promise<void> {
-    await pool.query(
-      'DELETE FROM sessions WHERE user_id = $1 AND token = $2',
-      [userId, token],
-    );
-
-    // Log audit event
-    await pool.query(
-      `INSERT INTO audit_logs (id, user_id, action, details, created_at)
-       VALUES ($1, $2, $3, $4, NOW())`,
-      [generateId(), userId, 'LOGOUT', JSON.stringify({})],
-    );
+    await Promise.all([
+      pool.query(
+        'DELETE FROM sessions WHERE user_id = $1 AND token = $2',
+        [userId, token],
+      ),
+      pool.query(
+        `INSERT INTO audit_logs (id, user_id, action, details, created_at)
+         VALUES ($1, $2, $3, $4, NOW())`,
+        [generateId(), userId, 'LOGOUT', JSON.stringify({})],
+      ),
+    ]);
 
     logger.info('User logged out', { userId });
   }

@@ -121,6 +121,20 @@ export const envSchema = z
           message: 'ENCRYPTION_KEY must be exactly 32 characters in production',
         });
       }
+      if (!data.REDIS_URL || data.REDIS_URL === 'redis://localhost:6379') {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['REDIS_URL'],
+          message: 'REDIS_URL should be explicitly set in production (not localhost)',
+        });
+      }
+      if (!data.CORS_ORIGINS || data.CORS_ORIGINS.includes('localhost')) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['CORS_ORIGINS'],
+          message: 'CORS_ORIGINS must be explicitly set to production domains',
+        });
+      }
     }
   });
 

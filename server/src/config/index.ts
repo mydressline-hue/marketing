@@ -24,6 +24,7 @@ import { testConnection } from './database';
 import { testRedisConnection } from './redis';
 import { closePool } from './database';
 import { closeRedis } from './redis';
+import { logger } from '../utils/logger';
 
 /**
  * Initialise all external connections (Postgres + Redis).
@@ -42,26 +43,26 @@ export async function initializeConnections(): Promise<void> {
   try {
     const redisOk = await testRedisConnection();
     if (!redisOk) {
-      console.warn(
+      logger.warn(
         'Redis is unavailable. The server will continue without caching.',
       );
     }
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    console.warn(
+    logger.warn(
       `Redis connection failed: ${message}. The server will continue without caching.`,
     );
   }
 
-  console.log('All connections initialised successfully.');
+  logger.info('All connections initialised successfully.');
 }
 
 /**
  * Gracefully shut down every external connection.
  */
 export async function closeConnections(): Promise<void> {
-  console.log('Shutting down connections...');
+  logger.info('Shutting down connections...');
   await closePool();
   await closeRedis();
-  console.log('All connections shut down.');
+  logger.info('All connections shut down.');
 }

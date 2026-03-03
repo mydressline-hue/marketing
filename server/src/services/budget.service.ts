@@ -96,24 +96,33 @@ export class BudgetService {
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    const sortColumn = pagination.sortBy ?? 'created_at';
+    // Whitelist sort columns to prevent SQL injection
+    const ALLOWED_SORT_COLUMNS: Record<string, string> = {
+      created_at: 'created_at',
+      updated_at: 'updated_at',
+      total_budget: 'total_budget',
+      total_spent: 'total_spent',
+      period_start: 'period_start',
+      period_end: 'period_end',
+    };
+    const sortColumn = ALLOWED_SORT_COLUMNS[pagination.sortBy ?? 'created_at'] ?? 'created_at';
     const sortDirection = pagination.sortOrder === 'asc' ? 'ASC' : 'DESC';
     const offset = (pagination.page - 1) * pagination.limit;
 
-    // Total count
-    const countResult = await query<{ count: string }>(
-      `SELECT COUNT(*) AS count FROM budget_allocations ${whereClause}`,
-      params,
-    );
+    // Total count and data page in parallel
+    const [countResult, dataResult] = await Promise.all([
+      query<{ count: string }>(
+        `SELECT COUNT(*) AS count FROM budget_allocations ${whereClause}`,
+        params,
+      ),
+      query<BudgetAllocation>(
+        `SELECT * FROM budget_allocations ${whereClause}
+         ORDER BY ${sortColumn} ${sortDirection}
+         LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
+        [...params, pagination.limit, offset],
+      ),
+    ]);
     const total = parseInt(countResult.rows[0].count, 10);
-
-    // Data page
-    const dataResult = await query<BudgetAllocation>(
-      `SELECT * FROM budget_allocations ${whereClause}
-       ORDER BY ${sortColumn} ${sortDirection}
-       LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
-      [...params, pagination.limit, offset],
-    );
 
     return {
       data: dataResult.rows,
@@ -265,6 +274,7 @@ export class BudgetService {
       throw new ValidationError('No fields to update');
     }
 
+    fields.push('updated_at = NOW()');
     params.push(id);
 
     const result = await query<BudgetAllocation>(

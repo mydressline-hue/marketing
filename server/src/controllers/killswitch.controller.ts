@@ -204,9 +204,22 @@ export const lockApiKeys = asyncHandler(async (req: Request, res: Response) => {
 export const checkOperation = asyncHandler(async (req: Request, res: Response) => {
   const { operation, context } = req.query;
 
+  let parsedContext = {};
+  if (context) {
+    try {
+      parsedContext = JSON.parse(context as string);
+    } catch {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid JSON in context query parameter',
+      });
+      return;
+    }
+  }
+
   const result = await KillSwitchService.isOperationAllowed(
     operation as OperationType,
-    context ? JSON.parse(context as string) : {},
+    parsedContext,
   );
 
   res.json({

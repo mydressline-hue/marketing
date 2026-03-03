@@ -360,7 +360,7 @@ export class DashboardService {
       spend_by_platform: spendByPlatformResult.rows.map((r) => ({
         platform: r.platform,
         spend: parseFloat(r.spend),
-        currency: 'USD',
+        currency: r.currency || 'USD',
       })),
       spend_trend: spendTrendResult.rows.map((r) => ({
         date: r.date,
