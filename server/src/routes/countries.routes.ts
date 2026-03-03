@@ -87,10 +87,11 @@ router.delete(
   remove,
 );
 
-// POST /countries/:id/score - calculate opportunity score
+// POST /countries/:id/score - calculate opportunity score (requires write:campaigns)
 router.post(
   '/:id/score',
   authenticate,
+  requirePermission('write:campaigns'),
   validateParams(idParamSchema),
   calculateScore,
 );

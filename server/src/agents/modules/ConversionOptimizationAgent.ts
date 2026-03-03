@@ -106,15 +106,6 @@ const FUNNEL_CACHE_TTL = 300; // 5 minutes
 const PAGE_ANALYSIS_CACHE_TTL = 600; // 10 minutes
 const SEGMENT_CACHE_TTL = 900; // 15 minutes
 
-const _FUNNEL_STAGES_ORDERED: FunnelStage[] = [
-  'awareness',
-  'interest',
-  'consideration',
-  'intent',
-  'purchase',
-  'loyalty',
-];
-
 const SEVERITY_THRESHOLDS = {
   critical: 0.5,
   high: 0.35,

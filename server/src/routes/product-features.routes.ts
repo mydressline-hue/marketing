@@ -88,8 +88,8 @@ router.get('/collections/:id/products', validateParams(idParamSchema), validateQ
 router.put('/collections/:id/products/reorder', requirePermission('write:campaigns'), validateParams(idParamSchema), validateBody(reorderCollectionProductsBodySchema), reorderCollectionProducts);
 
 // ── Analytics ────────────────────────────────────────────────────────────
-router.post('/analytics/view', validateBody(recordProductViewBodySchema), recordProductView);
-router.post('/analytics/sale', validateBody(recordProductSaleBodySchema), recordProductSale);
+router.post('/analytics/view', requirePermission('write:campaigns'), validateBody(recordProductViewBodySchema), recordProductView);
+router.post('/analytics/sale', requirePermission('write:campaigns'), validateBody(recordProductSaleBodySchema), recordProductSale);
 router.get('/analytics/top', validateQuery(topProductsQuerySchema), getTopProducts);
 router.get('/analytics/summary', validateQuery(analyticsSummaryQuerySchema), getAnalyticsSummary);
 router.get('/analytics/trends', validateQuery(analyticsTrendsQuerySchema), getAnalyticsTrends);

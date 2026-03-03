@@ -7,6 +7,7 @@
  */
 
 import express from 'express';
+import path from 'path';
 import cookieParser from 'cookie-parser';
 import { env } from './config/env';
 import {
@@ -124,6 +125,11 @@ app.use(`${prefix}/final-outputs/channel-allocation`, finalOutputsChannelsRoutes
 app.use(`${prefix}/final-outputs`, finalOutputsRoadmapRoutes);
 app.use(`${prefix}/final-outputs`, finalOutputsValidationRoutes);
 app.use(`${prefix}/video`, videoRoutes);
+
+// ── OpenAPI documentation ────────────────────────────────────────────────
+app.get('/api/docs/openapi.yaml', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'openapi.yaml'));
+});
 
 // ── Error handling ────────────────────────────────────────────────────────
 app.use(notFoundHandler);

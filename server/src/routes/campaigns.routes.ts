@@ -40,6 +40,7 @@ const router = Router();
 router.get(
   '/',
   authenticate,
+  requirePermission('read:campaigns'),
   dynamicCacheHeaders,
   validateQuery(paginationSchema),
   listCampaigns,
@@ -49,6 +50,7 @@ router.get(
 router.get(
   '/cursor',
   authenticate,
+  requirePermission('read:campaigns'),
   dynamicCacheHeaders,
   listCampaignsWithCursor,
 );
@@ -57,6 +59,7 @@ router.get(
 router.get(
   '/spend/summary',
   authenticate,
+  requirePermission('read:campaigns'),
   dynamicCacheHeaders,
   getSpendSummary,
 );
@@ -65,6 +68,7 @@ router.get(
 router.get(
   '/country/:countryId',
   authenticate,
+  requirePermission('read:campaigns'),
   dynamicCacheHeaders,
   getCampaignsByCountry,
 );
@@ -73,6 +77,7 @@ router.get(
 router.get(
   '/:id',
   authenticate,
+  requirePermission('read:campaigns'),
   dynamicCacheHeaders,
   validateParams(idParamSchema),
   getCampaign,
@@ -82,6 +87,7 @@ router.get(
 router.get(
   '/:id/metrics',
   authenticate,
+  requirePermission('read:campaigns'),
   dynamicCacheHeaders,
   validateParams(idParamSchema),
   getCampaignMetrics,

@@ -1,0 +1,2987 @@
+openapi: 3.0.3
+info:
+  title: Marketing Platform API
+  description: |
+    RESTful API for the marketing platform. Provides endpoints for authentication,
+    campaign management, country targeting, dashboard analytics, product features,
+    multi-factor authentication, feature flags, workflow orchestration, contextual
+    bandits (learning), settings, and Prometheus metrics.
+
+    All API routes (except health, metrics, and public auth endpoints) are prefixed
+    with `/api/v1` and require a Bearer JWT token.
+
+    Standard response envelope: `{ success: boolean, data: T, meta?: { ... } }`
+  version: 1.0.0
+  contact:
+    name: Marketing Platform Team
+
+servers:
+  - url: /api/v1
+    description: Default API prefix
+
+# ---------------------------------------------------------------------------
+# Security schemes
+# ---------------------------------------------------------------------------
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  # -----------------------------------------------------------------------
+  # Reusable schemas
+  # -----------------------------------------------------------------------
+  schemas:
+    # -- Shared envelope --------------------------------------------------
+    SuccessFlag:
+      type: boolean
+      example: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+    MessageResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+
+    CursorMeta:
+      type: object
+      properties:
+        nextCursor:
+          type: string
+          nullable: true
+        previousCursor:
+          type: string
+          nullable: true
+        hasMore:
+          type: boolean
+
+    # -- Auth schemas -----------------------------------------------------
+    RegisterRequest:
+      type: object
+      required: [email, password, name, role]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          description: Must contain at least one uppercase letter, one lowercase letter, and one number
+        name:
+          type: string
+          minLength: 1
+        role:
+          type: string
+          minLength: 1
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 1
+
+    AuthTokensResponse:
+      type: object
+      properties:
+        success:
+          $ref: '#/components/schemas/SuccessFlag'
+        data:
+          type: object
+          properties:
+            user:
+              type: object
+            token:
+              type: string
+            refreshToken:
+              type: string
+
+    RefreshTokenRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+
+    RefreshTokenResponse:
+      type: object
+      properties:
+        success:
+          $ref: '#/components/schemas/SuccessFlag'
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+            refreshToken:
+              type: string
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+        avatar:
+          type: string
+          format: uri
+        metadata:
+          type: object
+          additionalProperties: true
+
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          type: string
+          minLength: 1
+        newPassword:
+          type: string
+          minLength: 8
+          description: Must contain at least one uppercase letter, one lowercase letter, and one number
+
+    ForgotPasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+
+    ResetPasswordRequest:
+      type: object
+      required: [token, newPassword]
+      properties:
+        token:
+          type: string
+          minLength: 1
+        newPassword:
+          type: string
+          minLength: 8
+          description: Must contain at least one uppercase letter, one lowercase letter, and one number
+
+    # -- Campaign schemas -------------------------------------------------
+    CreateCampaignRequest:
+      type: object
+      required: [name, countryId, platform, type, budget, startDate, endDate]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        countryId:
+          type: string
+          format: uuid
+        platform:
+          type: string
+          enum: [google, bing, meta, tiktok, snapchat]
+        type:
+          type: string
+          minLength: 1
+        budget:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+        startDate:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}'
+          description: ISO date string (YYYY-MM-DD). endDate must be after startDate.
+        endDate:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}'
+          description: ISO date string (YYYY-MM-DD). Must be after startDate.
+
+    UpdateCampaignRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        countryId:
+          type: string
+          format: uuid
+        platform:
+          type: string
+          enum: [google, bing, meta, tiktok, snapchat]
+        type:
+          type: string
+          minLength: 1
+        budget:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+        startDate:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}'
+        endDate:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}'
+        status:
+          type: string
+
+    UpdateCampaignStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          minLength: 1
+
+    # -- Country schemas --------------------------------------------------
+    CreateCountryRequest:
+      type: object
+      required: [name, code, region, language, currency, timezone]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        code:
+          type: string
+          minLength: 2
+          maxLength: 2
+          description: ISO 3166-1 alpha-2 code (uppercased automatically)
+        region:
+          type: string
+          minLength: 1
+        language:
+          type: string
+          minLength: 1
+        currency:
+          type: string
+          minLength: 1
+        timezone:
+          type: string
+          minLength: 1
+
+    UpdateCountryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        code:
+          type: string
+          minLength: 2
+          maxLength: 2
+        region:
+          type: string
+          minLength: 1
+        language:
+          type: string
+          minLength: 1
+        currency:
+          type: string
+          minLength: 1
+        timezone:
+          type: string
+          minLength: 1
+
+    # -- Settings schemas -------------------------------------------------
+    UpdateSettingsRequest:
+      type: object
+      properties:
+        notifications:
+          type: object
+          properties:
+            email:
+              type: boolean
+            push:
+              type: boolean
+            sms:
+              type: boolean
+        appearance:
+          type: object
+          properties:
+            theme:
+              type: string
+            language:
+              type: string
+            timezone:
+              type: string
+        apiKeys:
+          type: object
+          properties:
+            google:
+              type: string
+            meta:
+              type: string
+            tiktok:
+              type: string
+            snapchat:
+              type: string
+            bing:
+              type: string
+
+    UpdateNotificationsSettingsRequest:
+      type: object
+      properties:
+        email:
+          type: boolean
+        push:
+          type: boolean
+        sms:
+          type: boolean
+
+    UpdateAppearanceSettingsRequest:
+      type: object
+      properties:
+        theme:
+          type: string
+        language:
+          type: string
+        timezone:
+          type: string
+
+    # -- Product Features schemas -----------------------------------------
+    PickProductsRequest:
+      type: object
+      required: [collectionId, strategy, count]
+      properties:
+        collectionId:
+          type: string
+          format: uuid
+        strategy:
+          type: string
+          minLength: 1
+        count:
+          type: integer
+          minimum: 1
+        filters:
+          type: object
+          additionalProperties: true
+
+    CreateCollectionRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        rules:
+          type: object
+          additionalProperties: true
+
+    UpdateCollectionRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        rules:
+          type: object
+          additionalProperties: true
+
+    CollectionProductsRequest:
+      type: object
+      required: [productIds]
+      properties:
+        productIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+
+    ReorderCollectionProductsRequest:
+      type: object
+      required: [productIds]
+      properties:
+        productIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+
+    RecordProductViewRequest:
+      type: object
+      required: [productId, source, sessionId]
+      properties:
+        productId:
+          type: string
+          format: uuid
+        source:
+          type: string
+          minLength: 1
+        sessionId:
+          type: string
+          minLength: 1
+
+    RecordProductSaleRequest:
+      type: object
+      required: [productId, quantity, revenue, orderId]
+      properties:
+        productId:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          minimum: 1
+        revenue:
+          type: number
+          minimum: 0
+        orderId:
+          type: string
+          minLength: 1
+
+    # -- MFA schemas ------------------------------------------------------
+    MfaVerifyRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+
+    MfaValidateRequest:
+      type: object
+      properties:
+        token:
+          type: string
+        recoveryCode:
+          type: string
+
+    MfaSetupResponse:
+      type: object
+      properties:
+        success:
+          $ref: '#/components/schemas/SuccessFlag'
+        data:
+          type: object
+          properties:
+            otpauthUri:
+              type: string
+            recoveryCodes:
+              type: array
+              items:
+                type: string
+
+    # -- Feature Flag schemas ---------------------------------------------
+    CreateFeatureFlagRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        is_enabled:
+          type: boolean
+        rollout_percentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+
+    UpdateFeatureFlagRequest:
+      type: object
+      properties:
+        description:
+          type: string
+        is_enabled:
+          type: boolean
+        rollout_percentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+
+    FeatureFlagCheckResponse:
+      type: object
+      properties:
+        success:
+          $ref: '#/components/schemas/SuccessFlag'
+        data:
+          type: object
+          properties:
+            name:
+              type: string
+            enabled:
+              type: boolean
+
+    # -- Workflow schemas -------------------------------------------------
+    CreateWorkflowRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          nullable: true
+        steps:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    # -- Learning / Bandit schemas ----------------------------------------
+    RecordObservationRequest:
+      type: object
+      required: [contextType, armName, reward]
+      properties:
+        contextType:
+          type: string
+        armName:
+          type: string
+        reward:
+          type: number
+        rewardType:
+          type: string
+        contextVector:
+          type: object
+          additionalProperties: true
+
+    ObservationResponse:
+      type: object
+      properties:
+        success:
+          $ref: '#/components/schemas/SuccessFlag'
+        data:
+          type: object
+          properties:
+            observation_id:
+              type: string
+            arm:
+              type: object
+              properties:
+                id:
+                  type: string
+                context_type:
+                  type: string
+                arm_name:
+                  type: string
+                observation_count:
+                  type: integer
+                alpha:
+                  type: number
+                beta:
+                  type: number
+                mu:
+                  type: number
+                lambda:
+                  type: number
+                a:
+                  type: number
+                b:
+                  type: number
+
+    ArmsStatsResponse:
+      type: object
+      properties:
+        success:
+          $ref: '#/components/schemas/SuccessFlag'
+        data:
+          type: object
+          properties:
+            context_type:
+              type: string
+            arms:
+              type: array
+              items:
+                type: object
+            total_arms:
+              type: integer
+            total_observations:
+              type: integer
+
+  # -----------------------------------------------------------------------
+  # Reusable parameters
+  # -----------------------------------------------------------------------
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Resource UUID
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      description: Page number (1-based)
+
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      description: Number of items per page
+
+    SortByParam:
+      name: sortBy
+      in: query
+      schema:
+        type: string
+      description: Column to sort by
+
+    SortOrderParam:
+      name: sortOrder
+      in: query
+      schema:
+        type: string
+        enum: [asc, desc]
+      description: Sort direction
+
+    StartDateParam:
+      name: startDate
+      in: query
+      schema:
+        type: string
+        pattern: '^\d{4}-\d{2}-\d{2}'
+      description: ISO date string (YYYY-MM-DD)
+
+    EndDateParam:
+      name: endDate
+      in: query
+      schema:
+        type: string
+        pattern: '^\d{4}-\d{2}-\d{2}'
+      description: ISO date string (YYYY-MM-DD). Must be after startDate.
+
+# ---------------------------------------------------------------------------
+# Default security -- most endpoints require a Bearer token
+# ---------------------------------------------------------------------------
+security:
+  - BearerAuth: []
+
+# ---------------------------------------------------------------------------
+# Tags
+# ---------------------------------------------------------------------------
+tags:
+  - name: Auth
+    description: Authentication, registration, OAuth, password management
+  - name: Campaigns
+    description: Campaign CRUD, status transitions, metrics, and spend
+  - name: Countries
+    description: Country management and opportunity scoring
+  - name: Dashboard
+    description: Aggregated dashboard views and analytics
+  - name: Settings
+    description: System and user settings management
+  - name: Product Features
+    description: AI product picking, filtering, collections, analytics
+  - name: MFA
+    description: Multi-factor authentication setup and validation
+  - name: Feature Flags
+    description: Feature flag CRUD and enablement checks
+  - name: Workflows
+    description: Sequential workflow creation, execution, and cancellation
+  - name: Learning
+    description: Contextual bandits -- observation, recommendation, convergence
+  - name: Metrics
+    description: Prometheus metrics endpoint
+  - name: Health
+    description: Health check endpoint
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+paths:
+  # =========================================================================
+  # AUTH
+  # =========================================================================
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      description: Create a new user account and return JWT tokens. The role is forced to 'user' on self-registration.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokensResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in
+      description: Authenticate a user with email and password and return JWT tokens.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokensResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/refresh-token:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      description: Exchange a refresh token for a new access/refresh token pair.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Tokens refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshTokenResponse'
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Log out
+      description: Invalidate the current session and access token.
+      responses:
+        '200':
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/profile:
+    get:
+      tags: [Auth]
+      summary: Get current user profile
+      description: Retrieve the authenticated user's profile information.
+      responses:
+        '200':
+          description: Profile retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+                    description: User profile object
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      tags: [Auth]
+      summary: Update current user profile
+      description: Update profile fields such as name, email, and avatar for the authenticated user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+                    description: Updated user profile object
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/change-password:
+    post:
+      tags: [Auth]
+      summary: Change password
+      description: Change the authenticated user's password by providing the current and new passwords.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized or current password incorrect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Request password reset
+      description: >-
+        Request a password reset token for the given email. Always returns 200
+        regardless of whether the email exists to prevent enumeration attacks.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '200':
+          description: Password reset request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Reset password with token
+      description: Reset a user's password using a valid reset token received via email.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password has been reset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/google:
+    get:
+      tags: [Auth]
+      summary: Initiate Google OAuth
+      description: >-
+        Redirect the user to the Google OAuth consent screen. Sets a CSRF state
+        cookie for verification on callback.
+      security: []
+      responses:
+        '302':
+          description: Redirect to Google OAuth consent screen
+
+  /auth/google/callback:
+    get:
+      tags: [Auth]
+      summary: Google OAuth callback
+      description: >-
+        Handle the Google OAuth callback. Verifies CSRF state, exchanges the
+        authorization code for tokens, and returns JWT tokens.
+      security: []
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Authorization code from Google
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+          description: CSRF state parameter
+      responses:
+        '200':
+          description: OAuth authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokensResponse'
+        '400':
+          description: Invalid state or missing code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # =========================================================================
+  # CAMPAIGNS
+  # =========================================================================
+  /campaigns:
+    get:
+      tags: [Campaigns]
+      summary: List campaigns
+      description: List campaigns with optional filtering and offset-based pagination.
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SortByParam'
+        - $ref: '#/components/parameters/SortOrderParam'
+        - name: countryId
+          in: query
+          schema:
+            type: string
+          description: Filter by country UUID
+        - name: platform
+          in: query
+          schema:
+            type: string
+          description: Filter by platform
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Filter by campaign status
+        - name: createdBy
+          in: query
+          schema:
+            type: string
+          description: Filter by creator user ID
+      responses:
+        '200':
+          description: Paginated list of campaigns
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Campaigns]
+      summary: Create a campaign
+      description: >-
+        Create a new campaign. Requires write:campaigns permission. Subject to
+        kill switch governance checks.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCampaignRequest'
+      responses:
+        '201':
+          description: Campaign created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden -- insufficient permissions or kill switch active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /campaigns/cursor:
+    get:
+      tags: [Campaigns]
+      summary: List campaigns with cursor pagination
+      description: >-
+        List campaigns using cursor-based pagination. Omit cursor for the first
+        page; use nextCursor from the response for subsequent pages.
+      parameters:
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: Opaque cursor from a previous response (omit for first page)
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SortByParam'
+        - $ref: '#/components/parameters/SortOrderParam'
+        - name: countryId
+          in: query
+          schema:
+            type: string
+          description: Filter by country UUID
+        - name: platform
+          in: query
+          schema:
+            type: string
+          description: Filter by platform
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Filter by campaign status
+        - name: createdBy
+          in: query
+          schema:
+            type: string
+          description: Filter by creator user ID
+      responses:
+        '200':
+          description: Cursor-paginated list of campaigns
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: '#/components/schemas/CursorMeta'
+
+  /campaigns/spend/summary:
+    get:
+      tags: [Campaigns]
+      summary: Get spend summary
+      description: Retrieve total spend summary broken down by platform and country.
+      parameters:
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Spend summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+
+  /campaigns/country/{countryId}:
+    get:
+      tags: [Campaigns]
+      summary: Get campaigns by country
+      description: Retrieve all campaigns for a given country.
+      parameters:
+        - name: countryId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Country UUID
+      responses:
+        '200':
+          description: Campaigns for the country
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: array
+                    items:
+                      type: object
+
+  /campaigns/{id}:
+    get:
+      tags: [Campaigns]
+      summary: Get a campaign
+      description: Retrieve a single campaign by ID.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Campaign details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Campaigns]
+      summary: Update a campaign
+      description: Update an existing campaign. Requires write:campaigns permission.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCampaignRequest'
+      responses:
+        '200':
+          description: Campaign updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Campaigns]
+      summary: Delete a campaign
+      description: Soft-delete (archive) a campaign. Requires write:campaigns permission.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: Campaign deleted (no content)
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /campaigns/{id}/status:
+    patch:
+      tags: [Campaigns]
+      summary: Update campaign status
+      description: >-
+        Change campaign status with transition validation. Requires
+        write:campaigns permission. Activating a campaign is subject to kill
+        switch governance checks.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCampaignStatusRequest'
+      responses:
+        '200':
+          description: Campaign status updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+        '403':
+          description: Kill switch blocking activation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /campaigns/{id}/metrics:
+    get:
+      tags: [Campaigns]
+      summary: Get campaign metrics
+      description: Retrieve computed performance metrics for a campaign.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Campaign metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+
+  # =========================================================================
+  # COUNTRIES
+  # =========================================================================
+  /countries:
+    get:
+      tags: [Countries]
+      summary: List countries
+      description: List countries with optional filtering and pagination.
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SortByParam'
+        - $ref: '#/components/parameters/SortOrderParam'
+        - name: region
+          in: query
+          schema:
+            type: string
+          description: Filter by region
+        - name: isActive
+          in: query
+          schema:
+            type: string
+            enum: ['true', 'false']
+          description: Filter by active status
+        - name: minScore
+          in: query
+          schema:
+            type: number
+          description: Minimum opportunity score filter
+      responses:
+        '200':
+          description: Paginated list of countries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+    post:
+      tags: [Countries]
+      summary: Create a country
+      description: Create a new country. Requires write:campaigns permission.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCountryRequest'
+      responses:
+        '201':
+          description: Country created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /countries/top:
+    get:
+      tags: [Countries]
+      summary: Get top countries
+      description: Get top N countries by opportunity score.
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Number of top countries to return
+      responses:
+        '200':
+          description: Top countries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: array
+                    items:
+                      type: object
+
+  /countries/{id}:
+    get:
+      tags: [Countries]
+      summary: Get a country
+      description: Retrieve a single country by ID.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Country details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+        '404':
+          description: Country not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Countries]
+      summary: Update a country
+      description: Update an existing country. Requires write:campaigns permission.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCountryRequest'
+      responses:
+        '200':
+          description: Country updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Country not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Countries]
+      summary: Delete a country
+      description: Soft-delete a country (set is_active=false). Requires write:campaigns permission.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: Country deleted (no content)
+        '404':
+          description: Country not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /countries/{id}/score:
+    post:
+      tags: [Countries]
+      summary: Calculate opportunity score
+      description: Calculate the opportunity score for a country.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Opportunity score calculated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+
+  # =========================================================================
+  # DASHBOARD
+  # =========================================================================
+  /dashboard/overview:
+    get:
+      tags: [Dashboard]
+      summary: Get dashboard overview
+      description: >-
+        Full aggregated dashboard including spend, campaigns, integrations, CRM,
+        agents, alerts, and system health. Requires read:campaigns permission.
+      responses:
+        '200':
+          description: Dashboard overview
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+
+  /dashboard/spend:
+    get:
+      tags: [Dashboard]
+      summary: Get spend breakdown
+      description: >-
+        Detailed spend breakdown by platform, country, and day. Requires
+        read:campaigns permission. Accepts optional date range parameters.
+      parameters:
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Spend breakdown
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+
+  /dashboard/campaigns:
+    get:
+      tags: [Dashboard]
+      summary: Get campaign performance
+      description: >-
+        Campaign-level performance metrics with optional filters. Requires
+        read:campaigns permission.
+      parameters:
+        - name: platform
+          in: query
+          schema:
+            type: string
+          description: Filter by platform
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Filter by campaign status
+        - name: countryId
+          in: query
+          schema:
+            type: string
+          description: Filter by country UUID
+      responses:
+        '200':
+          description: Campaign performance metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+
+  /dashboard/integrations:
+    get:
+      tags: [Dashboard]
+      summary: Get integration health
+      description: >-
+        Integration health status and recent sync history. Requires
+        read:integrations permission.
+      responses:
+        '200':
+          description: Integration health data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+
+  /dashboard/activity:
+    get:
+      tags: [Dashboard]
+      summary: Get recent activity
+      description: >-
+        Most recent activity events from the audit log. Requires read:campaigns
+        permission. Accepts an optional limit parameter.
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+          description: Maximum number of activity events to return (default 50)
+      responses:
+        '200':
+          description: Recent activity events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: array
+                    items:
+                      type: object
+
+  # =========================================================================
+  # SETTINGS
+  # =========================================================================
+  /settings:
+    get:
+      tags: [Settings]
+      summary: Get all settings
+      description: Retrieve all system settings. Admin role required.
+      responses:
+        '200':
+          description: All settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+        '403':
+          description: Forbidden -- admin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /settings/api-keys:
+    get:
+      tags: [Settings]
+      summary: Get API key configuration
+      description: Check which API keys and platform integrations are configured. Admin role required.
+      responses:
+        '200':
+          description: API key configuration
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+        '403':
+          description: Forbidden -- admin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /settings/notifications:
+    put:
+      tags: [Settings]
+      summary: Update notification settings
+      description: Update notification preferences. Available to any authenticated user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNotificationsSettingsRequest'
+      responses:
+        '200':
+          description: Notification settings updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /settings/appearance:
+    put:
+      tags: [Settings]
+      summary: Update appearance settings
+      description: Update appearance/theme preferences. Available to any authenticated user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAppearanceSettingsRequest'
+      responses:
+        '200':
+          description: Appearance settings updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /settings/{key}:
+    put:
+      tags: [Settings]
+      summary: Set a single setting
+      description: Set a single system setting by key. Admin role required.
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Setting key name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSettingsRequest'
+      responses:
+        '200':
+          description: Setting updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                      value:
+                        type: object
+        '403':
+          description: Forbidden -- admin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # =========================================================================
+  # PRODUCT FEATURES
+  # =========================================================================
+
+  # -- AI Product Picker --------------------------------------------------
+  /products/ai-pick:
+    post:
+      tags: [Product Features]
+      summary: AI product pick
+      description: Pick products using an AI-powered strategy. Requires write:campaigns permission.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PickProductsRequest'
+      responses:
+        '200':
+          description: AI-picked products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+
+  /products/ai-pick/strategies:
+    get:
+      tags: [Product Features]
+      summary: Get AI picking strategies
+      description: Get available AI picking strategies.
+      responses:
+        '200':
+          description: Available strategies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: array
+                    items:
+                      type: object
+
+  # -- Enhanced Filtering -------------------------------------------------
+  /products/filter:
+    get:
+      tags: [Product Features]
+      summary: Filter products
+      description: Advanced product filtering with multiple filter dimensions and pagination.
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by category
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+            minimum: 0
+          description: Minimum price filter
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+            minimum: 0
+          description: Maximum price filter (must be >= minPrice)
+        - name: tags
+          in: query
+          schema:
+            type: string
+          description: Comma-separated list of tags
+        - name: vendor
+          in: query
+          schema:
+            type: string
+          description: Filter by vendor
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Filter by status
+        - name: inventoryMin
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+          description: Minimum inventory count
+        - name: inventoryMax
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+          description: Maximum inventory count (must be >= inventoryMin)
+        - name: createdAfter
+          in: query
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}-\d{2}'
+          description: Filter products created after this date
+        - name: createdBefore
+          in: query
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}-\d{2}'
+          description: Filter products created before this date (must be after createdAfter)
+        - $ref: '#/components/parameters/SortByParam'
+        - $ref: '#/components/parameters/SortOrderParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Filtered products with pagination
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+  /products/filters/aggregations:
+    get:
+      tags: [Product Features]
+      summary: Get filter aggregations
+      description: Get filter facet counts (e.g. how many products per category/vendor/tag).
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by category
+        - name: vendor
+          in: query
+          schema:
+            type: string
+          description: Filter by vendor
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Filter by status
+      responses:
+        '200':
+          description: Aggregation facets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+
+  /products/search:
+    get:
+      tags: [Product Features]
+      summary: Search products
+      description: Full-text product search.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+          description: Search query string
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Search results with pagination
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+  /products/{id}/similar:
+    get:
+      tags: [Product Features]
+      summary: Get similar products
+      description: Get products similar to the specified product.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+          description: Number of similar products to return (default 10)
+      responses:
+        '200':
+          description: Similar products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: array
+                    items:
+                      type: object
+
+  # -- Collections --------------------------------------------------------
+  /products/collections:
+    get:
+      tags: [Product Features]
+      summary: List collections
+      description: List all product collections with optional pagination.
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SortByParam'
+        - $ref: '#/components/parameters/SortOrderParam'
+      responses:
+        '200':
+          description: Paginated list of collections
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+    post:
+      tags: [Product Features]
+      summary: Create a collection
+      description: Create a new product collection. Requires write:campaigns permission.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCollectionRequest'
+      responses:
+        '201':
+          description: Collection created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+
+  /products/collections/{id}:
+    get:
+      tags: [Product Features]
+      summary: Get a collection
+      description: Get a single collection by ID.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Collection details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+        '404':
+          description: Collection not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Product Features]
+      summary: Update a collection
+      description: Update an existing collection. Requires write:campaigns permission.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCollectionRequest'
+      responses:
+        '200':
+          description: Collection updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+    delete:
+      tags: [Product Features]
+      summary: Delete a collection
+      description: Delete a collection. Requires write:campaigns permission.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: Collection deleted (no content)
+        '404':
+          description: Collection not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /products/collections/{id}/products:
+    get:
+      tags: [Product Features]
+      summary: Get collection products
+      description: Get all products in a collection with pagination.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SortByParam'
+        - $ref: '#/components/parameters/SortOrderParam'
+      responses:
+        '200':
+          description: Paginated list of products in collection
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+    post:
+      tags: [Product Features]
+      summary: Add products to collection
+      description: Add products to a collection by IDs. Requires write:campaigns permission.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionProductsRequest'
+      responses:
+        '201':
+          description: Products added to collection
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+    delete:
+      tags: [Product Features]
+      summary: Remove products from collection
+      description: Remove products from a collection by IDs. Requires write:campaigns permission.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionProductsRequest'
+      responses:
+        '204':
+          description: Products removed from collection (no content)
+
+  /products/collections/{id}/products/reorder:
+    put:
+      tags: [Product Features]
+      summary: Reorder collection products
+      description: Reorder products within a collection. Requires write:campaigns permission.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderCollectionProductsRequest'
+      responses:
+        '200':
+          description: Products reordered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+
+  # -- Analytics ----------------------------------------------------------
+  /products/analytics/view:
+    post:
+      tags: [Product Features]
+      summary: Record product view
+      description: Record a product view event for analytics tracking.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordProductViewRequest'
+      responses:
+        '201':
+          description: View recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+
+  /products/analytics/sale:
+    post:
+      tags: [Product Features]
+      summary: Record product sale
+      description: Record a product sale event for analytics tracking.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordProductSaleRequest'
+      responses:
+        '201':
+          description: Sale recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+
+  /products/analytics/top:
+    get:
+      tags: [Product Features]
+      summary: Get top products
+      description: Get top-performing products by views or sales.
+      parameters:
+        - name: metric
+          in: query
+          schema:
+            type: string
+          description: Metric to rank by (e.g. views, sales)
+        - name: period
+          in: query
+          schema:
+            type: string
+          description: Time period for aggregation
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+          description: Number of top products to return (default 10)
+      responses:
+        '200':
+          description: Top products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: array
+                    items:
+                      type: object
+
+  /products/analytics/summary:
+    get:
+      tags: [Product Features]
+      summary: Get analytics summary
+      description: Get an overall analytics summary for products.
+      parameters:
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Analytics summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+
+  /products/analytics/trends:
+    get:
+      tags: [Product Features]
+      summary: Get analytics trends
+      description: Get product view and sale trends over time.
+      parameters:
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+        - name: granularity
+          in: query
+          schema:
+            type: string
+          description: Time granularity for trend data (e.g. daily, weekly, monthly)
+      responses:
+        '200':
+          description: Analytics trends
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+
+  /products/analytics/collections:
+    get:
+      tags: [Product Features]
+      summary: Get collection analytics
+      description: Get analytics aggregated by collection.
+      parameters:
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Collection-level analytics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+
+  /products/analytics/{id}:
+    get:
+      tags: [Product Features]
+      summary: Get product analytics
+      description: Get analytics for a single product.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Product analytics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # =========================================================================
+  # MFA
+  # =========================================================================
+  /mfa/setup:
+    post:
+      tags: [MFA]
+      summary: Set up MFA
+      description: >-
+        Initiate MFA setup for the authenticated user. Returns the otpauth URI
+        (for QR code rendering) and a set of single-use recovery codes.
+      responses:
+        '201':
+          description: MFA setup initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MfaSetupResponse'
+
+  /mfa/verify:
+    post:
+      tags: [MFA]
+      summary: Verify MFA setup
+      description: >-
+        Verify the initial TOTP token to confirm authenticator app configuration.
+        This enables MFA on the account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MfaVerifyRequest'
+      responses:
+        '200':
+          description: MFA verified and enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /mfa/validate:
+    post:
+      tags: [MFA]
+      summary: Validate MFA token
+      description: >-
+        Validate a TOTP token or recovery code during the login flow. Accepts
+        either { token } for TOTP or { recoveryCode } for backup codes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MfaValidateRequest'
+      responses:
+        '200':
+          description: MFA validation successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Invalid token or recovery code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /mfa:
+    delete:
+      tags: [MFA]
+      summary: Disable MFA
+      description: Disable MFA for the authenticated user.
+      responses:
+        '204':
+          description: MFA disabled (no content)
+
+  # =========================================================================
+  # FEATURE FLAGS
+  # =========================================================================
+  /feature-flags:
+    get:
+      tags: [Feature Flags]
+      summary: List all feature flags
+      description: Retrieve all feature flags. Available to any authenticated user.
+      responses:
+        '200':
+          description: List of feature flags
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: array
+                    items:
+                      type: object
+    post:
+      tags: [Feature Flags]
+      summary: Create a feature flag
+      description: Create a new feature flag. Admin role required.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFeatureFlagRequest'
+      responses:
+        '201':
+          description: Feature flag created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden -- admin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /feature-flags/{name}:
+    get:
+      tags: [Feature Flags]
+      summary: Get a feature flag
+      description: Retrieve a single feature flag by name. Available to any authenticated user.
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Feature flag name
+      responses:
+        '200':
+          description: Feature flag details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+        '404':
+          description: Feature flag not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Feature Flags]
+      summary: Update a feature flag
+      description: Update an existing feature flag. Admin role required.
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Feature flag name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFeatureFlagRequest'
+      responses:
+        '200':
+          description: Feature flag updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+        '403':
+          description: Forbidden -- admin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Feature Flags]
+      summary: Delete a feature flag
+      description: Delete a feature flag. Admin role required.
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Feature flag name
+      responses:
+        '200':
+          description: Feature flag deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '403':
+          description: Forbidden -- admin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /feature-flags/{name}/check:
+    get:
+      tags: [Feature Flags]
+      summary: Check feature flag enablement
+      description: Check whether a feature flag is enabled for the current user.
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Feature flag name
+      responses:
+        '200':
+          description: Flag enablement status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlagCheckResponse'
+
+  # =========================================================================
+  # WORKFLOWS
+  # =========================================================================
+  /workflows:
+    post:
+      tags: [Workflows]
+      summary: Create a workflow
+      description: >-
+        Create a new workflow with steps and dependency declarations. Requires
+        write:infrastructure permission.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkflowRequest'
+      responses:
+        '201':
+          description: Workflow created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /workflows/{id}:
+    get:
+      tags: [Workflows]
+      summary: Get workflow status
+      description: >-
+        Retrieve full workflow status including all steps. Requires
+        read:infrastructure permission.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Workflow status with steps
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+        '404':
+          description: Workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Workflows]
+      summary: Cancel a workflow
+      description: >-
+        Cancel a running or pending workflow. Requires write:infrastructure
+        permission.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Workflow cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+        '404':
+          description: Workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /workflows/{id}/execute:
+    post:
+      tags: [Workflows]
+      summary: Execute a workflow
+      description: >-
+        Start executing a pending workflow. Requires write:infrastructure
+        permission.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Workflow execution started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+        '404':
+          description: Workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # =========================================================================
+  # LEARNING (Contextual Bandits)
+  # =========================================================================
+  /learning/observe:
+    post:
+      tags: [Learning]
+      summary: Record bandit observation
+      description: >-
+        Record a bandit observation and update the posterior. Requires
+        write:agents permission.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordObservationRequest'
+      responses:
+        '201':
+          description: Observation recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObservationResponse'
+
+  /learning/recommend/{contextType}:
+    get:
+      tags: [Learning]
+      summary: Get arm recommendation
+      description: >-
+        Use Thompson Sampling to recommend the best arm for a given context type.
+        Requires read:agents permission.
+      parameters:
+        - name: contextType
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Context type for the bandit
+        - name: context
+          in: query
+          schema:
+            type: string
+          description: JSON-encoded context vector
+        - name: exclude
+          in: query
+          schema:
+            type: string
+          description: Comma-separated list of arm names to exclude
+      responses:
+        '200':
+          description: Recommended arm
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+
+  /learning/arms/{contextType}:
+    get:
+      tags: [Learning]
+      summary: Get arms statistics
+      description: >-
+        Return all arms with statistics and confidence intervals for a given
+        context type. Requires read:agents permission.
+      parameters:
+        - name: contextType
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Context type for the bandit
+      responses:
+        '200':
+          description: Arms statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArmsStatsResponse'
+
+  /learning/convergence/{contextType}:
+    get:
+      tags: [Learning]
+      summary: Check convergence
+      description: >-
+        Check whether the bandit has converged for a given context type.
+        Requires read:agents permission.
+      parameters:
+        - name: contextType
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Context type for the bandit
+        - name: threshold
+          in: query
+          schema:
+            type: number
+          description: Custom convergence threshold
+      responses:
+        '200':
+          description: Convergence status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+
+  /learning/decay:
+    post:
+      tags: [Learning]
+      summary: Trigger observation decay
+      description: >-
+        Trigger observation time decay, usually called by a cron job. Requires
+        write:agents permission.
+      responses:
+        '200':
+          description: Decay applied
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    $ref: '#/components/schemas/SuccessFlag'
+                  data:
+                    type: object
+
+  # =========================================================================
+  # METRICS (mounted at /metrics, not under /api/v1)
+  # =========================================================================
+
+  # NOTE: The /metrics endpoint is mounted at the root level, not under /api/v1.
+  # It is documented here for completeness.
+  # Actual path: GET /metrics
+  /metrics:
+    get:
+      tags: [Metrics]
+      summary: Get Prometheus metrics
+      description: >-
+        Returns all application metrics in the Prometheus text exposition format.
+        This endpoint is intentionally unauthenticated so that Prometheus
+        scrapers can reach it. In production, access should be restricted at the
+        network/ingress level. Returns 503 if metrics collection is disabled.
+        Note: This endpoint is mounted at /metrics (root level), not under /api/v1.
+      security: []
+      responses:
+        '200':
+          description: Prometheus metrics in text format
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: Prometheus text exposition format (text/plain; version=0.0.4)
+        '503':
+          description: Metrics collection is disabled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Metrics collection is disabled
+
+  # =========================================================================
+  # HEALTH (mounted at /health, not under /api/v1)
+  # =========================================================================
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: >-
+        Simple health check endpoint returning server status and timestamp.
+        Note: This endpoint is mounted at /health (root level), not under /api/v1.
+      security: []
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time

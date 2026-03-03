@@ -12,6 +12,7 @@ import { generateId } from '../../utils/helpers';
 import { logger } from '../../utils/logger';
 import { NotFoundError, ValidationError } from '../../utils/errors';
 import { topologicalSort, type GraphNode } from './topological-sort';
+import { AuditService } from '../audit.service';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -204,6 +205,14 @@ export class WorkflowEngine {
 
       logger.info('Workflow created', { workflowId, name, stepCount: savedSteps.length });
 
+      await AuditService.log({
+        userId,
+        action: 'workflow.create',
+        resourceType: 'workflow',
+        resourceId: workflowId,
+        details: { name, description, stepCount: savedSteps.length },
+      });
+
       return rowToWorkflow(wfResult.rows[0], savedSteps);
     } catch (err) {
       await client.query('ROLLBACK');
@@ -375,6 +384,13 @@ export class WorkflowEngine {
 
     logger.info('Workflow execution finished', { workflowId, finalStatus });
 
+    await AuditService.log({
+      action: 'workflow.execute',
+      resourceType: 'workflow',
+      resourceId: workflowId,
+      details: { finalStatus, stepsExecuted: executionOrder.length },
+    });
+
     return WorkflowEngine.getWorkflowStatus(workflowId);
   }
 
@@ -460,6 +476,13 @@ export class WorkflowEngine {
     }
 
     logger.info('Workflow cancelled', { workflowId });
+
+    await AuditService.log({
+      action: 'workflow.cancel',
+      resourceType: 'workflow',
+      resourceId: workflowId,
+      details: { previousStatus: currentStatus },
+    });
 
     return WorkflowEngine.getWorkflowStatus(workflowId);
   }

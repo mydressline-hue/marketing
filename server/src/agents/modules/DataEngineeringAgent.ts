@@ -36,9 +36,6 @@ const DUPLICATE_THRESHOLD_PERCENT = 5;
 /** Minimum data quality score considered acceptable */
 const MIN_QUALITY_SCORE = 70;
 
-/** Maximum staleness in hours before a table is considered stale */
-const _DEFAULT_MAX_STALENESS_HOURS = 24;
-
 /** Anomaly detection z-score threshold */
 const ANOMALY_Z_SCORE_THRESHOLD = 3;
 

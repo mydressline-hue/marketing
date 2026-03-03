@@ -323,7 +323,7 @@ export class SocialPublisherService {
     videoTaskId: string,
   ): Promise<SocialPublishRecord[]> {
     const result = await pool.query(
-      `SELECT * FROM social_publish_records
+      `SELECT id, user_id, video_task_id, platform, status, external_post_id, post_url, caption, hashtags, call_to_action, scheduled_at, published_at, error_message, engagement, metadata, created_at, updated_at FROM social_publish_records
        WHERE video_task_id = $1
        ORDER BY created_at DESC`,
       [videoTaskId],
@@ -337,7 +337,7 @@ export class SocialPublisherService {
 
   static async getById(id: string): Promise<SocialPublishRecord> {
     const result = await pool.query(
-      `SELECT * FROM social_publish_records WHERE id = $1`,
+      `SELECT id, user_id, video_task_id, platform, status, external_post_id, post_url, caption, hashtags, call_to_action, scheduled_at, published_at, error_message, engagement, metadata, created_at, updated_at FROM social_publish_records WHERE id = $1`,
       [id],
     );
     if (result.rows.length === 0) {
@@ -390,7 +390,7 @@ export class SocialPublisherService {
     const total = parseInt(countResult.rows[0].count, 10);
 
     const dataResult = await pool.query(
-      `SELECT * FROM social_publish_records ${whereClause}
+      `SELECT id, user_id, video_task_id, platform, status, external_post_id, post_url, caption, hashtags, call_to_action, scheduled_at, published_at, error_message, engagement, metadata, created_at, updated_at FROM social_publish_records ${whereClause}
        ORDER BY created_at DESC
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, limit, offset],

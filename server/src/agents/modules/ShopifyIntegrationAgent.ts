@@ -506,7 +506,6 @@ export class ShopifyIntegrationAgent extends BaseAgent {
 
       return { synced, failed, skipped, errors, duration };
     } catch (error) {
-      const _duration = Date.now() - startTime;
       const message = error instanceof Error ? error.message : String(error);
       this.log.error('Product sync failed catastrophically', { error: message });
       throw new ExternalServiceError('shopify', `Product sync failed: ${message}`);

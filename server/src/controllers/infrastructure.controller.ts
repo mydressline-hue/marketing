@@ -132,7 +132,6 @@ export const getAlertHistory = asyncHandler(async (req: Request, res: Response) 
  * Update alert configuration (thresholds, recipients, etc.).
  */
 export const updateAlertConfig = asyncHandler(async (req: Request, res: Response) => {
-  const _userId = req.user!.id;
   const configUpdate = req.body;
 
   const result = await MonitoringService.updateAlertConfig(configUpdate);

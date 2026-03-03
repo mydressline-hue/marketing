@@ -15,6 +15,7 @@ import { generateId } from '../utils/helpers';
 import { withTransaction } from '../utils/transaction';
 import { encodeCursor, buildCursorQuery } from '../utils/cursor-pagination';
 import { eventBus } from '../websocket/EventBus';
+import { AuditService } from './audit.service';
 import type { CreateCampaignInput, UpdateCampaignInput } from '../validators/schemas';
 
 // ---------------------------------------------------------------------------
@@ -425,6 +426,15 @@ export class CampaignsService {
     logger.info('Campaign created', { campaignId: id, userId, name: data.name });
 
     const campaign = result.rows[0];
+
+    await AuditService.log({
+      userId,
+      action: 'campaign.create',
+      resourceType: 'campaign',
+      resourceId: id,
+      details: { name: data.name, platform: data.platform, countryId: data.countryId, budget: data.budget },
+    });
+
     eventBus.broadcast('campaigns', {
       action: 'created',
       campaignId: id,

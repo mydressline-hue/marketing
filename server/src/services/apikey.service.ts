@@ -15,6 +15,7 @@ import { withTransaction } from '../utils/transaction';
 import { env } from '../config/env';
 import { logger } from '../utils/logger';
 import { NotFoundError } from '../utils/errors';
+import { AuditService } from './audit.service';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -70,6 +71,14 @@ export class ApiKeyService {
     );
 
     logger.info('API key created', { keyId: id, userId, name });
+
+    await AuditService.log({
+      userId,
+      action: 'apiKey.create',
+      resourceType: 'api_key',
+      resourceId: id,
+      details: { name, scopes },
+    });
 
     return { id, key: rawKey };
   }
@@ -132,6 +141,13 @@ export class ApiKeyService {
     }
 
     logger.info('API key revoked', { keyId, userId });
+
+    await AuditService.log({
+      userId,
+      action: 'apiKey.revoke',
+      resourceType: 'api_key',
+      resourceId: keyId,
+    });
   }
 
   /**
@@ -209,6 +225,14 @@ export class ApiKeyService {
       oldKeyId: keyId,
       newKeyId: newId,
       userId,
+    });
+
+    await AuditService.log({
+      userId,
+      action: 'apiKey.rotate',
+      resourceType: 'api_key',
+      resourceId: newId,
+      details: { oldKeyId: keyId },
     });
 
     return { id: newId, key: rawKey };
