@@ -3,6 +3,7 @@ import { logger } from './utils/logger';
 import { initializeConnections, closeConnections } from './config';
 import { getConfig } from './config/production';
 import app from './app';
+import { MarketingWebSocketServer } from './websocket';
 
 async function main(): Promise<void> {
   try {
@@ -16,6 +17,8 @@ async function main(): Promise<void> {
       logger.info(`Environment: ${env.NODE_ENV}`);
     });
 
+    const wsServer = new MarketingWebSocketServer(server);
+
     // Graceful shutdown
     let isShuttingDown = false;
     const shutdown = async (signal: string) => {
@@ -23,6 +26,7 @@ async function main(): Promise<void> {
       isShuttingDown = true;
 
       logger.info(`Received ${signal}. Starting graceful shutdown...`);
+      wsServer.close();
       server.close(async () => {
         try {
           await closeConnections();

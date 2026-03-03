@@ -475,6 +475,112 @@ export class SalesforceService {
   }
 
   /**
+   * Sync contacts from the real Salesforce REST API.
+   *
+   * Reads the OAuth credentials (access_token, instance_url) from the
+   * crm_connections table, calls the Salesforce SOQL query endpoint to
+   * fetch up to 100 contacts, logs the sync operation, and returns the
+   * parsed records.
+   *
+   * @param integrationId - The ID of the crm_connections row to use.
+   * @returns The parsed Salesforce contact records from the API.
+   */
+  static async syncFromSalesforce(integrationId: string): Promise<Record<string, unknown>> {
+    try {
+      // 1. Read credentials from DB
+      const connResult = await pool.query(
+        `SELECT * FROM crm_connections WHERE id = $1 AND platform_type = $2 LIMIT 1`,
+        [integrationId, PLATFORM_TYPE],
+      );
+      if (connResult.rows.length === 0) {
+        throw new NotFoundError(`Salesforce connection "${integrationId}" not found`);
+      }
+
+      const connection = connResult.rows[0];
+      const credentials = typeof connection.credentials === 'string'
+        ? JSON.parse(connection.credentials)
+        : connection.credentials;
+
+      const accessToken = credentials?.access_token;
+      const instanceUrl = credentials?.instance_url;
+
+      if (!accessToken || !instanceUrl) {
+        throw new ValidationError('Salesforce connection is missing access_token or instance_url');
+      }
+
+      // 2. Call the real Salesforce API
+      const soqlQuery = 'SELECT+Id,Name,Email+FROM+Contact+LIMIT+100';
+      const apiUrl = `${instanceUrl}/services/data/v59.0/query/?q=${soqlQuery}`;
+
+      logger.info('Calling Salesforce API', { integrationId, apiUrl });
+
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        logger.error('Salesforce API request failed', {
+          integrationId,
+          status: response.status,
+          statusText: response.statusText,
+          body: errorBody,
+        });
+        throw new Error(`Salesforce API error: ${response.status} ${response.statusText}`);
+      }
+
+      // 3. Parse response
+      const data = await response.json();
+
+      // 4. Log the sync operation
+      const syncId = generateId();
+      try {
+        await pool.query(
+          `INSERT INTO crm_sync_logs (id, connection_id, platform_type, sync_type, status, records_synced, records_failed, started_at, completed_at)
+           VALUES ($1, $2, $3, 'contacts', 'completed', $4, 0, NOW(), NOW())`,
+          [syncId, integrationId, PLATFORM_TYPE, data.totalSize || 0],
+        );
+      } catch (logErr) {
+        logger.warn('Failed to insert Salesforce sync log', {
+          error: logErr instanceof Error ? logErr.message : String(logErr),
+        });
+      }
+
+      await pool.query(
+        `UPDATE crm_connections SET last_sync_at = NOW() WHERE id = $1`,
+        [integrationId],
+      );
+
+      await AuditService.log({
+        userId: connection.user_id,
+        action: 'salesforce_api_sync',
+        resourceType: 'crm_sync',
+        resourceId: integrationId,
+        details: { totalSize: data.totalSize, recordCount: data.records?.length },
+      });
+
+      logger.info('Salesforce API sync completed', {
+        integrationId,
+        totalSize: data.totalSize,
+        recordCount: data.records?.length,
+      });
+
+      // 5. Return the data
+      return data;
+    } catch (error) {
+      logger.error('Salesforce API sync failed', {
+        integrationId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Remove the Salesforce connection for a user.  Flushes cache and audits.
    */
   static async disconnect(userId: string): Promise<void> {

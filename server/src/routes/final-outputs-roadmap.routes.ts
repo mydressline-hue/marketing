@@ -19,6 +19,19 @@ import {
   getMilestoneStatus,
 } from '../controllers/final-outputs-roadmap.controller';
 import { authenticate } from '../middleware/auth';
+import { validateParams } from '../middleware/validation';
+import { z } from 'zod';
+
+// ---------------------------------------------------------------------------
+// Validation Schemas
+// ---------------------------------------------------------------------------
+
+/** Params schema for the :phase route – must be "1", "2", or "3". */
+const phaseParamsSchema = z.object({
+  phase: z
+    .string()
+    .regex(/^[1-3]$/, 'Phase must be 1, 2, or 3.'),
+});
 
 // ---------------------------------------------------------------------------
 // Router
@@ -45,6 +58,7 @@ router.get(
 router.get(
   '/execution-roadmap/:phase',
   authenticate,
+  validateParams(phaseParamsSchema),
   getExecutionRoadmapPhase,
 );
 

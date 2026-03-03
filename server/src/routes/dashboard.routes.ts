@@ -9,6 +9,8 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
+import { validateQuery } from '../middleware/validation';
+import { z } from 'zod';
 import {
   getOverview,
   getSpendBreakdown,
@@ -16,6 +18,25 @@ import {
   getIntegrationHealth,
   getRecentActivity,
 } from '../controllers/dashboard.controller';
+
+// ---------------------------------------------------------------------------
+// Zod schemas
+// ---------------------------------------------------------------------------
+
+const spendBreakdownQuerySchema = z.object({
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+});
+
+const campaignPerformanceQuerySchema = z.object({
+  platform: z.string().optional(),
+  status: z.string().optional(),
+  countryId: z.string().optional(),
+});
+
+const recentActivityQuerySchema = z.object({
+  limit: z.coerce.number().optional(),
+});
 
 const router = Router();
 
@@ -36,6 +57,7 @@ router.get(
   '/spend',
   authenticate,
   requirePermission('read:campaigns'),
+  validateQuery(spendBreakdownQuerySchema),
   getSpendBreakdown,
 );
 
@@ -44,6 +66,7 @@ router.get(
   '/campaigns',
   authenticate,
   requirePermission('read:campaigns'),
+  validateQuery(campaignPerformanceQuerySchema),
   getCampaignPerformance,
 );
 
@@ -60,6 +83,7 @@ router.get(
   '/activity',
   authenticate,
   requirePermission('read:campaigns'),
+  validateQuery(recentActivityQuerySchema),
   getRecentActivity,
 );
 

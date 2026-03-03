@@ -545,6 +545,108 @@ export class HubSpotService {
   }
 
   /**
+   * Sync contacts from the real HubSpot CRM API.
+   *
+   * Reads the OAuth access_token from the crm_connections table, calls
+   * the HubSpot contacts endpoint to fetch up to 100 contacts, logs the
+   * sync operation, and returns the parsed records.
+   *
+   * @param integrationId - The ID of the crm_connections row to use.
+   * @returns The parsed HubSpot contact records from the API.
+   */
+  static async syncFromHubSpot(integrationId: string): Promise<Record<string, unknown>> {
+    try {
+      // 1. Read credentials from DB
+      const connResult = await pool.query(
+        `SELECT * FROM crm_connections WHERE id = $1 AND platform_type = $2 LIMIT 1`,
+        [integrationId, PLATFORM_TYPE],
+      );
+      if (connResult.rows.length === 0) {
+        throw new NotFoundError(`HubSpot connection "${integrationId}" not found`);
+      }
+
+      const connection = connResult.rows[0];
+      const credentials = typeof connection.credentials === 'string'
+        ? JSON.parse(connection.credentials)
+        : connection.credentials;
+
+      const accessToken = credentials?.access_token;
+
+      if (!accessToken) {
+        throw new ValidationError('HubSpot connection is missing access_token');
+      }
+
+      // 2. Call the real HubSpot API
+      const apiUrl = 'https://api.hubapi.com/crm/v3/objects/contacts?limit=100';
+
+      logger.info('Calling HubSpot API', { integrationId, apiUrl });
+
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        logger.error('HubSpot API request failed', {
+          integrationId,
+          status: response.status,
+          statusText: response.statusText,
+          body: errorBody,
+        });
+        throw new Error(`HubSpot API error: ${response.status} ${response.statusText}`);
+      }
+
+      // 3. Parse response
+      const data = await response.json();
+
+      // 4. Log the sync operation
+      const syncId = generateId();
+      try {
+        await pool.query(
+          `INSERT INTO crm_sync_logs (id, connection_id, platform_type, sync_type, status, records_synced, records_failed, started_at, completed_at)
+           VALUES ($1, $2, $3, 'contacts', 'completed', $4, 0, NOW(), NOW())`,
+          [syncId, integrationId, PLATFORM_TYPE, data.results?.length || 0],
+        );
+      } catch (logErr) {
+        logger.warn('Failed to insert HubSpot sync log', {
+          error: logErr instanceof Error ? logErr.message : String(logErr),
+        });
+      }
+
+      await pool.query(
+        `UPDATE crm_connections SET last_sync_at = NOW() WHERE id = $1`,
+        [integrationId],
+      );
+
+      await AuditService.log({
+        userId: connection.user_id,
+        action: 'hubspot_api_sync',
+        resourceType: 'crm_sync',
+        resourceId: integrationId,
+        details: { recordCount: data.results?.length, hasMore: data.paging?.next ? true : false },
+      });
+
+      logger.info('HubSpot API sync completed', {
+        integrationId,
+        recordCount: data.results?.length,
+      });
+
+      // 5. Return the data
+      return data;
+    } catch (error) {
+      logger.error('HubSpot API sync failed', {
+        integrationId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Remove the HubSpot connection for a user.  Flushes cache and audits.
    */
   static async disconnect(userId: string): Promise<void> {

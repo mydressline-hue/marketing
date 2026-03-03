@@ -17,6 +17,19 @@ import {
   getROIByCountry,
 } from '../controllers/final-outputs-roi.controller';
 import { authenticate } from '../middleware/auth';
+import { validateParams } from '../middleware/validation';
+import { z } from 'zod';
+
+// ---------------------------------------------------------------------------
+// Validation Schemas
+// ---------------------------------------------------------------------------
+
+/** Params schema for the :countryCode route – 2-letter uppercase ISO code. */
+const countryCodeParamsSchema = z.object({
+  countryCode: z
+    .string()
+    .regex(/^[A-Z]{2}$/, 'countryCode must be a 2-letter uppercase ISO country code.'),
+});
 
 // ---------------------------------------------------------------------------
 // Router
@@ -43,6 +56,7 @@ router.get(
 router.get(
   '/roi-projection/:countryCode',
   authenticate,
+  validateParams(countryCodeParamsSchema),
   getROIByCountry,
 );
 
