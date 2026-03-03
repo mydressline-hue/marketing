@@ -345,7 +345,7 @@ export class BanditService {
   /**
    * Upsert a context weight for a given arm and feature.
    */
-  private static async upsertContextWeight(
+  private static async _upsertContextWeight(
     armId: string,
     featureName: string,
     weight: number,

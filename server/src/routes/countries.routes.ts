@@ -37,6 +37,7 @@ const router = Router();
 router.get(
   '/',
   authenticate,
+  requirePermission('read:campaigns'),
   staticCacheHeaders,
   validateQuery(paginationSchema),
   list,
@@ -46,6 +47,7 @@ router.get(
 router.get(
   '/top',
   authenticate,
+  requirePermission('read:campaigns'),
   staticCacheHeaders,
   getTopCountries,
 );
@@ -54,6 +56,7 @@ router.get(
 router.get(
   '/:id',
   authenticate,
+  requirePermission('read:campaigns'),
   staticCacheHeaders,
   validateParams(idParamSchema),
   getById,

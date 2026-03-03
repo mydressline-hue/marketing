@@ -284,8 +284,6 @@ export class SimulationEngineService {
     const currentBudget = Number(campaign.daily_budget) || 100;
     const totalConversions = Number(campaign.total_conversions) || 0;
     const totalSpend = Number(campaign.total_spend) || 1;
-    const _conversionRate = totalConversions / Math.max(totalSpend, 1);
-
     const drFactor = diminishingReturnsFactor(currentBudget, targetBudget);
     const scaleFactor = targetBudget / Math.max(currentBudget, 1);
     const projectedConversions = Math.round(
@@ -712,13 +710,6 @@ export class SimulationEngineService {
 
     // Compute simulated metrics based on strategy parameters
     const budgetParam = Number(strategy.budget) || 10000;
-    const _periodDays = Math.max(
-      1,
-      Math.round(
-        (endDate.getTime() - new Date(historicalPeriod.start).getTime()) /
-          (1000 * 60 * 60 * 24),
-      ),
-    );
 
     const simulatedSpend = round(budgetParam * 0.95, 2);
     const simulatedConversions = Math.round(budgetParam * 0.032);

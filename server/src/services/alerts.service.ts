@@ -12,6 +12,7 @@ import { generateId } from '../utils/helpers';
 import { withTransaction } from '../utils/transaction';
 import { logger } from '../utils/logger';
 import { NotFoundError } from '../utils/errors';
+import { AuditService } from './audit.service';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -190,6 +191,13 @@ export class AlertsService {
     );
 
     logger.info('Fraud alert created', { alertId: id, type: data.type, severity: data.severity });
+
+    await AuditService.log({
+      action: 'alert.create',
+      resourceType: 'fraud_alert',
+      resourceId: id,
+      details: { type: data.type, severity: data.severity, campaignId: data.campaignId },
+    });
 
     return rowToAlert(result.rows[0]);
   }

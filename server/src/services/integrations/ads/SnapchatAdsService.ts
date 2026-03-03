@@ -19,7 +19,6 @@ import { AuditService } from '../../audit.service';
 // Constants
 // ---------------------------------------------------------------------------
 
-const _PLATFORM_TYPE = 'snapchat_ads';
 const CACHE_TTL = 120; // seconds
 
 // ---------------------------------------------------------------------------

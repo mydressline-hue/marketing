@@ -10,7 +10,7 @@
 import crypto from 'crypto';
 import { pool } from '../config/database';
 import { generateId, hashPassword } from '../utils/helpers';
-import { AuthenticationError, NotFoundError } from '../utils/errors';
+import { AuthenticationError } from '../utils/errors';
 import { withTransaction } from '../utils/transaction';
 import { env } from '../config/env';
 import logger from '../utils/logger';
