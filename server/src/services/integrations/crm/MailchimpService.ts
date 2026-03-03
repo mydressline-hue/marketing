@@ -166,7 +166,7 @@ export class MailchimpService {
   static async createAudience(
     userId: string,
     data: { name: string; permission_reminder?: string; from_name?: string; from_email?: string },
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     if (!data.name || data.name.trim().length === 0) {
       throw new ValidationError('Audience name is required', [
         { field: 'name', message: 'Audience name is required' },
@@ -183,8 +183,8 @@ export class MailchimpService {
          VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW()) RETURNING *`,
         [id, userId, PLATFORM_TYPE, data.name.trim(), data.permission_reminder || null, data.from_name || null, data.from_email || null],
       );
-    } catch (err: any) {
-      if (err && err.code === '23505') {
+    } catch (err: unknown) {
+      if (err instanceof Object && 'code' in err && err.code === '23505') {
         throw new ValidationError('An audience with this name already exists', [
           { field: 'name', message: 'Duplicate audience name', value: data.name },
         ]);
@@ -286,7 +286,7 @@ export class MailchimpService {
    * List members of an audience. Paginated, search, filter by status.
    * Defaults: page=1, limit=20.
    */
-  static async listMembers(audienceId: string, filters: MemberFilters = {}): Promise<PaginatedResult<any>> {
+  static async listMembers(audienceId: string, filters: MemberFilters = {}): Promise<PaginatedResult<Record<string, unknown>>> {
     const page = Math.max(1, filters.page || 1);
     const limit = Math.max(1, Math.min(100, filters.limit || 20));
     const offset = (page - 1) * limit;
@@ -358,7 +358,7 @@ export class MailchimpService {
   static async createCampaign(
     userId: string,
     data: { name: string; subject_line?: string; from_name?: string; from_email?: string; audience_id?: string; type?: string },
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     if (!data.name || data.name.trim().length === 0) {
       throw new ValidationError('Campaign name is required', [
         { field: 'name', message: 'Campaign name is required' },
@@ -402,7 +402,7 @@ export class MailchimpService {
    * Send a campaign. Checks connection, checks campaign exists, updates
    * status. Audit-logs. Cache invalidate.
    */
-  static async sendCampaign(userId: string, campaignId: string): Promise<any> {
+  static async sendCampaign(userId: string, campaignId: string): Promise<Record<string, unknown>> {
     await requireConnection(userId);
 
     const campRes = await pool.query(
@@ -460,7 +460,7 @@ export class MailchimpService {
   /**
    * Get overall sync status. Returns last sync time + counts with defaults.
    */
-  static async getSyncStatus(): Promise<any> {
+  static async getSyncStatus(): Promise<Record<string, unknown>> {
     const result = await pool.query(
       `SELECT last_sync_at, audiences_count, members_count, campaigns_count
        FROM crm_sync_status WHERE platform_type = $1 LIMIT 1`,
@@ -483,7 +483,7 @@ export class MailchimpService {
    * Get connection status. Returns active, disconnected, or error
    * based on the connection record status.
    */
-  static async getConnectionStatus(userId: string): Promise<any> {
+  static async getConnectionStatus(userId: string): Promise<Record<string, unknown>> {
     const result = await pool.query(
       `SELECT * FROM crm_connections WHERE user_id = $1 AND platform_type = $2 LIMIT 1`,
       [userId, PLATFORM_TYPE],

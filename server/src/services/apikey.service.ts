@@ -11,6 +11,7 @@
 import crypto from 'crypto';
 import { pool } from '../config/database';
 import { generateId, encrypt } from '../utils/helpers';
+import { withTransaction } from '../utils/transaction';
 import { env } from '../config/env';
 import { logger } from '../utils/logger';
 import { NotFoundError } from '../utils/errors';
@@ -168,32 +169,48 @@ export class ApiKeyService {
     keyId: string,
     userId: string,
   ): Promise<{ id: string; key: string }> {
-    // Fetch the existing key's metadata so we can clone it
-    const existing = await pool.query(
-      `SELECT name, scopes FROM api_keys WHERE id = $1 AND user_id = $2 AND is_active = true`,
-      [keyId, userId],
-    );
+    // Generate the new key material before entering the transaction
+    const newId = generateId();
+    const rawKey = `${API_KEY_PREFIX}${crypto.randomBytes(API_KEY_BYTE_LENGTH).toString('hex')}`;
+    const keyHash = crypto.createHash('sha256').update(rawKey).digest('hex');
+    const encryptionKey = env.ENCRYPTION_KEY as string;
+    const encryptedKey = encrypt(rawKey, encryptionKey);
 
-    if (existing.rows.length === 0) {
-      throw new Error('API key not found or already revoked');
-    }
+    await withTransaction(async (client) => {
+      // Fetch the existing key's metadata so we can clone it
+      const existing = await client.query(
+        `SELECT name, scopes FROM api_keys WHERE id = $1 AND user_id = $2 AND is_active = true`,
+        [keyId, userId],
+      );
 
-    const { name, scopes: rawScopes } = existing.rows[0];
-    const scopes =
-      typeof rawScopes === 'string' ? JSON.parse(rawScopes) : rawScopes;
+      if (existing.rows.length === 0) {
+        throw new Error('API key not found or already revoked');
+      }
 
-    // Revoke the old key
-    await ApiKeyService.revoke(keyId, userId);
+      const { name, scopes: rawScopes } = existing.rows[0];
+      const scopes =
+        typeof rawScopes === 'string' ? JSON.parse(rawScopes) : rawScopes;
 
-    // Create a replacement key with the same name and scopes
-    const newKey = await ApiKeyService.create(userId, name, scopes);
+      // Revoke the old key
+      await client.query(
+        `UPDATE api_keys SET is_active = false WHERE id = $1 AND user_id = $2`,
+        [keyId, userId],
+      );
+
+      // Create a replacement key with the same name and scopes
+      await client.query(
+        `INSERT INTO api_keys (id, user_id, name, key_hash, encrypted_key, scopes, is_active, created_at, last_used_at)
+         VALUES ($1, $2, $3, $4, $5, $6, true, NOW(), NULL)`,
+        [newId, userId, name, keyHash, encryptedKey, JSON.stringify(scopes)],
+      );
+    });
 
     logger.info('API key rotated', {
       oldKeyId: keyId,
-      newKeyId: newKey.id,
+      newKeyId: newId,
       userId,
     });
 
-    return newKey;
+    return { id: newId, key: rawKey };
   }
 }

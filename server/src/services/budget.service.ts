@@ -9,6 +9,7 @@
 import { query } from '../config/database';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { generateId } from '../utils/helpers';
+import { withTransaction } from '../utils/transaction';
 import logger from '../utils/logger';
 
 // ---------------------------------------------------------------------------
@@ -179,39 +180,43 @@ export class BudgetService {
 
     const id = generateId();
 
-    const result = await query<BudgetAllocation>(
-      `INSERT INTO budget_allocations
-         (id, country_id, channel_allocations, period_start, period_end, total_budget, total_spent, risk_guardrails, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, 0, $7, $8)
-       RETURNING *`,
-      [
-        id,
-        data.countryId,
-        JSON.stringify(data.channelAllocations),
-        data.periodStart,
-        data.periodEnd,
-        data.totalBudget,
-        JSON.stringify(data.riskGuardrails ?? {}),
-        userId,
-      ],
-    );
+    const allocation = await withTransaction(async (client) => {
+      const result = await client.query<BudgetAllocation>(
+        `INSERT INTO budget_allocations
+           (id, country_id, channel_allocations, period_start, period_end, total_budget, total_spent, risk_guardrails, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, 0, $7, $8)
+         RETURNING *`,
+        [
+          id,
+          data.countryId,
+          JSON.stringify(data.channelAllocations),
+          data.periodStart,
+          data.periodEnd,
+          data.totalBudget,
+          JSON.stringify(data.riskGuardrails ?? {}),
+          userId,
+        ],
+      );
 
-    // Audit log
-    await query(
-      `INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [
-        generateId(),
-        userId,
-        'budget_allocation.create',
-        'budget_allocation',
-        id,
-        JSON.stringify({ totalBudget: data.totalBudget, countryId: data.countryId }),
-      ],
-    );
+      // Audit log
+      await client.query(
+        `INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          generateId(),
+          userId,
+          'budget_allocation.create',
+          'budget_allocation',
+          id,
+          JSON.stringify({ totalBudget: data.totalBudget, countryId: data.countryId }),
+        ],
+      );
+
+      return result.rows[0];
+    });
 
     logger.info('Budget allocation created', { allocationId: id, userId });
-    return result.rows[0];
+    return allocation;
   }
 
   /**
@@ -277,28 +282,32 @@ export class BudgetService {
     fields.push('updated_at = NOW()');
     params.push(id);
 
-    const result = await query<BudgetAllocation>(
-      `UPDATE budget_allocations SET ${fields.join(', ')} WHERE id = $${paramIndex}
-       RETURNING *`,
-      params,
-    );
+    const allocation = await withTransaction(async (client) => {
+      const result = await client.query<BudgetAllocation>(
+        `UPDATE budget_allocations SET ${fields.join(', ')} WHERE id = $${paramIndex}
+         RETURNING *`,
+        params,
+      );
 
-    // Audit log
-    await query(
-      `INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [
-        generateId(),
-        userId,
-        'budget_allocation.update',
-        'budget_allocation',
-        id,
-        JSON.stringify({ updatedFields: Object.keys(data).filter((k) => (data as Record<string, unknown>)[k] !== undefined) }),
-      ],
-    );
+      // Audit log
+      await client.query(
+        `INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          generateId(),
+          userId,
+          'budget_allocation.update',
+          'budget_allocation',
+          id,
+          JSON.stringify({ updatedFields: Object.keys(data).filter((k) => (data as Record<string, unknown>)[k] !== undefined) }),
+        ],
+      );
+
+      return result.rows[0];
+    });
 
     logger.info('Budget allocation updated', { allocationId: id, userId });
-    return result.rows[0];
+    return allocation;
   }
 
   /**
@@ -333,27 +342,29 @@ export class BudgetService {
       throw new ValidationError('Spend amount must be positive');
     }
 
-    // Increment total_spent
-    await query(
-      `UPDATE budget_allocations
-       SET total_spent = total_spent + $1
-       WHERE id = $2`,
-      [amount, allocationId],
-    );
+    await withTransaction(async (client) => {
+      // Increment total_spent
+      await client.query(
+        `UPDATE budget_allocations
+         SET total_spent = total_spent + $1
+         WHERE id = $2`,
+        [amount, allocationId],
+      );
 
-    // Audit log for the spend
-    await query(
-      `INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [
-        generateId(),
-        allocation.created_by,
-        'budget_allocation.spend',
-        'budget_allocation',
-        allocationId,
-        JSON.stringify({ amount, channel, previousSpent: allocation.total_spent }),
-      ],
-    );
+      // Audit log for the spend
+      await client.query(
+        `INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          generateId(),
+          allocation.created_by,
+          'budget_allocation.spend',
+          'budget_allocation',
+          allocationId,
+          JSON.stringify({ amount, channel, previousSpent: allocation.total_spent }),
+        ],
+      );
+    });
 
     logger.info('Budget spend recorded', { allocationId, amount, channel });
   }

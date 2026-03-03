@@ -1,4 +1,4 @@
-import { Server as HttpServer } from 'http';
+import { Server as HttpServer, IncomingMessage as HttpIncomingMessage } from 'http';
 import WebSocket, { WebSocketServer as WSServer } from 'ws';
 import { URL } from 'url';
 import jwt from 'jsonwebtoken';
@@ -6,6 +6,10 @@ import { env } from '../config/env';
 import { logger } from '../utils/logger';
 import { eventBus } from './EventBus';
 import type { AuthenticatedClient, IncomingMessage, OutgoingMessage } from './types';
+
+interface AuthenticatedRequest extends HttpIncomingMessage {
+  user?: { id: string; email: string; role: string };
+}
 
 export class MarketingWebSocketServer {
   private wss: WSServer;
@@ -22,7 +26,7 @@ export class MarketingWebSocketServer {
           const token = url.searchParams.get('token');
           if (!token) { cb(false, 401, 'Missing token'); return; }
           const decoded = jwt.verify(token, env.JWT_SECRET!) as { id: string; email: string; role: string };
-          (info.req as any).user = decoded;
+          (info.req as AuthenticatedRequest).user = decoded;
           cb(true);
         } catch {
           cb(false, 401, 'Invalid token');
@@ -31,7 +35,7 @@ export class MarketingWebSocketServer {
     });
 
     this.wss.on('connection', (ws, req) => {
-      const user = (req as any).user;
+      const user = (req as AuthenticatedRequest).user!;
       const client: AuthenticatedClient = {
         ws, userId: user.id, email: user.email, role: user.role,
         channels: new Set(), isAlive: true,

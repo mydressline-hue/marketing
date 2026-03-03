@@ -228,8 +228,8 @@ export class SalesforceService {
           data.title?.trim() || null,
         ],
       );
-    } catch (err: any) {
-      if (err?.code === '23505') {
+    } catch (err: unknown) {
+      if (err instanceof Object && 'code' in err && err.code === '23505') {
         throw new ValidationError('A contact with this email already exists');
       }
       throw err;

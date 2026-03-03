@@ -11,6 +11,7 @@ import { asyncHandler } from '../middleware/errorHandler';
 import { VideoGenerationService } from '../services/video/VideoGenerationService';
 import { TextEnhancementService } from '../services/video/TextEnhancementService';
 import { SocialPublisherService } from '../services/video/SocialPublisherService';
+import type { SocialPlatform } from '../services/video/TextEnhancementService';
 
 // ---------------------------------------------------------------------------
 // Video Tasks
@@ -272,7 +273,7 @@ export const listPublishRecords = asyncHandler(async (req: Request, res: Respons
   const { platform, status, page, limit } = req.query;
 
   const result = await SocialPublisherService.list({
-    platform: platform as string | undefined,
+    platform: platform as SocialPlatform | undefined,
     status: status as string | undefined,
     page: page ? parseInt(page as string, 10) : 1,
     limit: limit ? parseInt(limit as string, 10) : 20,

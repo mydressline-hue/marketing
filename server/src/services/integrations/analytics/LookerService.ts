@@ -11,7 +11,7 @@ import { pool } from '../../../config/database';
 import { cacheGet, cacheSet, cacheDel, cacheFlush } from '../../../config/redis';
 import { logger } from '../../../utils/logger';
 import { generateId } from '../../../utils/helpers';
-import { NotFoundError, ValidationError } from '../../../utils/errors';
+import { NotFoundError } from '../../../utils/errors';
 import { AuditService } from '../../audit.service';
 
 // ---------------------------------------------------------------------------

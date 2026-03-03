@@ -9,6 +9,7 @@
 
 import { pool } from '../config/database';
 import { generateId } from '../utils/helpers';
+import { withTransaction } from '../utils/transaction';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
@@ -280,25 +281,29 @@ export class ContentService {
       throw new ValidationError('Content is already published');
     }
 
-    const result = await pool.query(
-      `UPDATE content
-       SET status = 'published', published_at = NOW(), updated_at = NOW()
-       WHERE id = $1
-       RETURNING *`,
-      [id],
-    );
+    const row = await withTransaction(async (client) => {
+      const result = await client.query(
+        `UPDATE content
+         SET status = 'published', published_at = NOW(), updated_at = NOW()
+         WHERE id = $1
+         RETURNING *`,
+        [id],
+      );
 
-    // Log in audit table
-    const auditId = generateId();
-    await pool.query(
-      `INSERT INTO audit_logs (id, entity_type, entity_id, action, user_id, created_at)
-       VALUES ($1, 'content', $2, 'publish', $3, NOW())`,
-      [auditId, id, userId],
-    );
+      // Log in audit table
+      const auditId = generateId();
+      await client.query(
+        `INSERT INTO audit_logs (id, entity_type, entity_id, action, user_id, created_at)
+         VALUES ($1, 'content', $2, 'publish', $3, NOW())`,
+        [auditId, id, userId],
+      );
+
+      return result.rows[0];
+    });
 
     logger.info('Content published', { contentId: id, userId });
 
-    return mapRow(result.rows[0]);
+    return mapRow(row);
   }
 
   /**

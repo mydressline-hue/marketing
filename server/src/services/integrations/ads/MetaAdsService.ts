@@ -229,7 +229,7 @@ export class MetaAdsService {
   static async getCampaign(campaignId: string): Promise<Record<string, unknown>> {
     // Check cache
     const cacheKey = campaignCacheKey(campaignId);
-    const cached = await cacheGet(cacheKey);
+    const cached = await cacheGet<Record<string, unknown>>(cacheKey);
 
     if (cached) {
       logger.debug('Meta Ads campaign cache hit', { campaignId });

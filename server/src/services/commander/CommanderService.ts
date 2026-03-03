@@ -184,7 +184,7 @@ export class CommanderService {
       params.totalBudget,
       { ...params.constraints, channels: params.channels, countries: params.countries },
     );
-    return StrategicCommanderService.optimizeBudgetDistribution((sim as any).id);
+    return StrategicCommanderService.optimizeBudgetDistribution(sim.id as string);
   }
 
   // ---------------------------------------------------------------------------

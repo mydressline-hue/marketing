@@ -506,6 +506,8 @@ export class IntegrationsService {
     if (conn.rows.length === 0) throw new NotFoundError(`CRM platform ${platformType} is not connected`);
 
     const _connectionId = conn.rows[0].id;
+    // Decrypt credentials for use by platform-specific services
+    const _credentials = conn.rows[0].credentials ? decryptCredentials(conn.rows[0].credentials) : null;
     const syncId = generateId();
     const startedAt = new Date();
 
@@ -586,6 +588,8 @@ export class IntegrationsService {
     if (conn.rows.length === 0) throw new NotFoundError(`Analytics platform ${platformType} is not connected`);
 
     const _connectionId = conn.rows[0].id;
+    // Decrypt credentials for use by platform-specific services
+    const _credentials = conn.rows[0].credentials ? decryptCredentials(conn.rows[0].credentials) : null;
     const exportId = generateId();
     const requestedAt = new Date().toISOString();
 

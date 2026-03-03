@@ -228,7 +228,7 @@ export class TikTokAdsService {
   static async getCampaign(campaignId: string): Promise<Record<string, unknown>> {
     // Check cache
     const cacheKey = campaignCacheKey(campaignId);
-    const cached = await cacheGet(cacheKey);
+    const cached = await cacheGet<Record<string, unknown>>(cacheKey);
 
     if (cached) {
       logger.debug('TikTok Ads campaign cache hit', { campaignId });
@@ -262,7 +262,7 @@ export class TikTokAdsService {
   static async listCampaigns(
     userId: string,
     filters: { status?: string; page?: number; limit?: number } = {},
-  ): Promise<{ data: any[]; total: number; page: number }> {
+  ): Promise<{ data: Record<string, unknown>[]; total: number; page: number }> {
     const page = filters.page ?? 1;
     const limit = filters.limit ?? 20;
     const offset = (page - 1) * limit;

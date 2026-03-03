@@ -8,7 +8,6 @@ import { BaseAgent } from '../base/BaseAgent';
 import type {
   AgentInput,
   AgentOutput,
-  AgentConfidenceScore,
   AgentConfig,
 } from '../base/types';
 import type {
@@ -16,7 +15,6 @@ import type {
   Product,
   ProductVariant,
   InventoryLevel,
-  Content,
   BlogPost,
 } from '../../types';
 import { pool } from '../../config/database';
@@ -508,7 +506,7 @@ export class ShopifyIntegrationAgent extends BaseAgent {
 
       return { synced, failed, skipped, errors, duration };
     } catch (error) {
-      const duration = Date.now() - startTime;
+      const _duration = Date.now() - startTime;
       const message = error instanceof Error ? error.message : String(error);
       this.log.error('Product sync failed catastrophically', { error: message });
       throw new ExternalServiceError('shopify', `Product sync failed: ${message}`);
@@ -1276,7 +1274,7 @@ export class ShopifyIntegrationAgent extends BaseAgent {
       };
 
       // Store the intended API payload for the Shopify API call
-      const result = await pool.query<{ shopify_id: string }>(
+      await pool.query<{ shopify_id: string }>(
         `INSERT INTO agent_decisions
            (id, agent_type, decision_type, input_data, output_data,
             confidence_score, reasoning, is_approved, created_at)

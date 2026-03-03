@@ -264,7 +264,7 @@ export class StrategicCommanderService {
    */
   static async generateScenarios(
     userId: string,
-    params: any,
+    params: Record<string, unknown>,
   ): Promise<Record<string, unknown>[]> {
     const id = generateId();
 
@@ -596,8 +596,8 @@ export class StrategicCommanderService {
    */
   static async compareStrategies(
     userId: string,
-    strategyA: any,
-    strategyB: any,
+    strategyA: Record<string, unknown>,
+    strategyB: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     const id = generateId();
 
@@ -678,7 +678,7 @@ export class StrategicCommanderService {
   static async runPreBudgetSimulation(
     userId: string,
     totalBudget: number,
-    constraints: any,
+    constraints: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     const id = generateId();
 

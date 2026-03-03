@@ -23,6 +23,7 @@ import {
   generateToken,
   generateRefreshToken,
 } from '../middleware/auth';
+import { withTransaction } from '../utils/transaction';
 import logger from '../utils/logger';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
@@ -68,27 +69,29 @@ export class AuthService {
     name: string,
     role: string = 'user',
   ): Promise<{ user: User; token: string; refreshToken: string }> {
-    // Check for existing user
-    const existing = await pool.query(
-      'SELECT id FROM users WHERE email = $1',
-      [email.toLowerCase()],
-    );
-
-    if (existing.rows.length > 0) {
-      throw new ConflictError('A user with this email already exists');
-    }
-
     const id = generateId();
     const passwordHash = await hashPassword(password);
 
-    const result = await pool.query(
-      `INSERT INTO users (id, email, password_hash, name, role, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-       RETURNING id, email, name, role, created_at, updated_at`,
-      [id, email.toLowerCase(), passwordHash, name, role],
-    );
+    const user = await withTransaction(async (client) => {
+      // Check for existing user inside the transaction to prevent race conditions
+      const existing = await client.query(
+        'SELECT id FROM users WHERE email = $1',
+        [email.toLowerCase()],
+      );
 
-    const user: User = result.rows[0];
+      if (existing.rows.length > 0) {
+        throw new ConflictError('A user with this email already exists');
+      }
+
+      const result = await client.query(
+        `INSERT INTO users (id, email, password_hash, name, role, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+         RETURNING id, email, name, role, created_at, updated_at`,
+        [id, email.toLowerCase(), passwordHash, name, role],
+      );
+
+      return result.rows[0] as User;
+    });
 
     const token = generateToken({
       id: user.id,
@@ -164,25 +167,26 @@ export class AuthService {
     });
     const refreshTkn = generateRefreshToken({ id: row.id });
 
-    // Run independent post-login queries in parallel
+    // Run post-login writes inside a transaction for atomicity
     const sessionId = generateId();
-    await Promise.all([
-      pool.query(
+    await withTransaction(async (client) => {
+      await client.query(
         'UPDATE users SET last_login_at = NOW() WHERE id = $1',
         [row.id],
-      ),
-      pool.query(
+      );
+      await client.query(
         `INSERT INTO sessions (id, user_id, token_hash, created_at, expires_at)
          VALUES ($1, $2, $3, NOW(), NOW() + INTERVAL '24 hours')`,
         [sessionId, row.id, hashToken(token)],
-      ),
-      pool.query(
+      );
+      await client.query(
         `INSERT INTO audit_logs (id, user_id, action, details, created_at)
          VALUES ($1, $2, $3, $4, NOW())`,
         [generateId(), row.id, 'LOGIN', JSON.stringify({ email: row.email })],
-      ),
-      AccountLockoutService.resetAttempts(row.id),
-    ]);
+      );
+    });
+    // Reset lockout attempts outside the transaction (non-critical)
+    await AccountLockoutService.resetAttempts(row.id);
 
     const user: User = {
       id: row.id,
@@ -206,17 +210,17 @@ export class AuthService {
    * Removes the user's session and logs an audit event.
    */
   static async logout(userId: string, token: string): Promise<void> {
-    await Promise.all([
-      pool.query(
+    await withTransaction(async (client) => {
+      await client.query(
         'DELETE FROM sessions WHERE user_id = $1 AND token_hash = $2',
         [userId, hashToken(token)],
-      ),
-      pool.query(
+      );
+      await client.query(
         `INSERT INTO audit_logs (id, user_id, action, details, created_at)
          VALUES ($1, $2, $3, $4, NOW())`,
         [generateId(), userId, 'LOGOUT', JSON.stringify({})],
-      ),
-    ]);
+      );
+    });
 
     logger.info('User logged out', { userId });
   }

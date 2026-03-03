@@ -1406,7 +1406,7 @@ export class ContinuousLearningService {
       `SELECT * FROM creative_performance WHERE campaign_id = $1 AND fatigue_score < 0.3 ORDER BY fatigue_score ASC`,
       [campaignId],
     );
-    const rotations = fatigued.map((f: any, i: number) => ({
+    const rotations = fatigued.map((f: Record<string, unknown>, i: number) => ({
       current_creative_id: f.creative_id,
       suggested_replacement_id: fresh[i]?.creative_id || null,
       current_fatigue_score: f.fatigue_score,
@@ -1452,7 +1452,7 @@ export class ContinuousLearningService {
 
   static async getSeasonalAdjustments(countryCode: string, channel: string) {
     const key = ck(`seasonal:${countryCode}:${channel}`);
-    const cached = await cacheGet<any>(key);
+    const cached = await cacheGet<Record<string, unknown>>(key);
     if (cached) return cached;
     const { rows } = await pool.query(
       `SELECT * FROM seasonal_adjustments WHERE country_code = $1 AND channel = $2 ORDER BY created_at DESC LIMIT 1`,
@@ -1541,7 +1541,7 @@ export class ContinuousLearningService {
 
   static async getSystemStatus() {
     const key = ck('system_status');
-    const cached = await cacheGet<any>(key);
+    const cached = await cacheGet<Record<string, unknown>>(key);
     if (cached) return cached;
     const { rows } = await pool.query(
       `SELECT * FROM learning_system_status ORDER BY updated_at DESC LIMIT 1`,

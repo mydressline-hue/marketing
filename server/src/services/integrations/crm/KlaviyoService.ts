@@ -136,7 +136,7 @@ export class KlaviyoService {
     const synced = parseInt(cnt.rows[0].count as string, 10);
 
     // Upsert profiles from Klaviyo API
-    const upserted = await pool.query(
+    await pool.query(
       `INSERT INTO crm_contact_mappings (user_id, platform_type)
        VALUES ($1, $2)
        ON CONFLICT DO NOTHING RETURNING *`,
@@ -177,7 +177,7 @@ export class KlaviyoService {
       organization?: string;
       title?: string;
     },
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     if (!data.email || data.email.trim().length === 0) {
       throw new ValidationError('Email is required to create a Klaviyo profile', [
         { field: 'email', message: 'Email is required' },
@@ -202,8 +202,8 @@ export class KlaviyoService {
           data.title || null,
         ],
       );
-    } catch (err: any) {
-      if (err && err.code === '23505') {
+    } catch (err: unknown) {
+      if (err instanceof Object && 'code' in err && err.code === '23505') {
         throw new ValidationError('A profile with this email already exists', [
           { field: 'email', message: 'Duplicate email address', value: data.email },
         ]);
@@ -232,7 +232,7 @@ export class KlaviyoService {
     userId: string,
     profileId: string,
     data: Record<string, unknown>,
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     await requireConnection(userId);
 
     const result = await pool.query(
@@ -255,12 +255,12 @@ export class KlaviyoService {
   /**
    * Get a single profile by ID. Cache first, then DB, returns null if absent.
    */
-  static async getProfile(profileId: string): Promise<any | null> {
+  static async getProfile(profileId: string): Promise<Record<string, unknown> | null> {
     const cacheKey = `klaviyo:profile:${profileId}`;
-    const cached = await cacheGet(cacheKey);
+    const cached = await cacheGet<Record<string, unknown>>(cacheKey);
     if (cached) {
       logger.debug('Klaviyo profile cache hit', { profileId });
-      return typeof cached === 'string' ? JSON.parse(cached) : cached;
+      return typeof cached === 'string' ? JSON.parse(cached as unknown as string) : cached;
     }
 
     const result = await pool.query(
@@ -279,7 +279,7 @@ export class KlaviyoService {
    * List profiles with pagination and optional search / organization filter.
    * Defaults: page=1, limit=20.
    */
-  static async listProfiles(filters: ProfileFilters = {}): Promise<PaginatedResult<any>> {
+  static async listProfiles(filters: ProfileFilters = {}): Promise<PaginatedResult<Record<string, unknown>>> {
     const page = Math.max(1, filters.page || 1);
     const limit = Math.max(1, Math.min(100, filters.limit || 20));
     const offset = (page - 1) * limit;
@@ -333,7 +333,7 @@ export class KlaviyoService {
       profile_id?: string;
       timestamp?: string;
     },
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     if (!eventData.event_name || eventData.event_name.trim().length === 0) {
       throw new ValidationError('Event name is required', [
         { field: 'event_name', message: 'Event name is required' },
@@ -420,7 +420,7 @@ export class KlaviyoService {
   static async createList(
     userId: string,
     data: { name: string; description?: string },
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     if (!data.name || data.name.trim().length === 0) {
       throw new ValidationError('List name is required', [
         { field: 'name', message: 'List name is required' },
@@ -602,7 +602,7 @@ export class KlaviyoService {
    * Get sync status. Returns last sync time and record counts.
    * Returns defaults when no sync has occurred.
    */
-  static async getSyncStatus(): Promise<any> {
+  static async getSyncStatus(): Promise<Record<string, unknown>> {
     const result = await pool.query(
       `SELECT last_sync_at, profiles_count, campaigns_count, lists_count
        FROM crm_sync_status WHERE platform_type = $1 LIMIT 1`,
@@ -625,7 +625,7 @@ export class KlaviyoService {
    * Get connection status. Returns active, disconnected, or error
    * based on the connection record status.
    */
-  static async getConnectionStatus(userId: string): Promise<any> {
+  static async getConnectionStatus(userId: string): Promise<Record<string, unknown>> {
     const result = await pool.query(
       `SELECT * FROM crm_connections WHERE user_id = $1 AND platform_type = $2 LIMIT 1`,
       [userId, PLATFORM_TYPE],

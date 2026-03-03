@@ -227,7 +227,7 @@ export class SnapchatAdsService {
   static async getCampaign(campaignId: string): Promise<Record<string, unknown>> {
     // Check cache
     const cacheKey = campaignCacheKey(campaignId);
-    const cached = await cacheGet(cacheKey);
+    const cached = await cacheGet<Record<string, unknown>>(cacheKey);
 
     if (cached) {
       logger.debug('Snapchat Ads campaign cache hit', { campaignId });
