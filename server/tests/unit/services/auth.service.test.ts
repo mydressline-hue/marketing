@@ -15,6 +15,24 @@ jest.mock('../../../src/config/database', () => ({
   getClient: jest.fn(),
 }));
 
+jest.mock('../../../src/utils/transaction', () => ({
+  withTransaction: jest.fn(),
+}));
+
+jest.mock('../../../src/services/account-lockout.service', () => ({
+  AccountLockoutService: {
+    isLocked: jest.fn().mockResolvedValue(false),
+    recordFailedAttempt: jest.fn().mockResolvedValue(undefined),
+    resetAttempts: jest.fn().mockResolvedValue(undefined),
+    getLockoutStatus: jest.fn().mockResolvedValue({
+      attemptCount: 0,
+      isLocked: false,
+      timeRemainingMs: 0,
+      lockedUntil: null,
+    }),
+  },
+}));
+
 jest.mock('../../../src/config/redis', () => ({
   redis: { get: jest.fn(), set: jest.fn(), del: jest.fn() },
   cacheGet: jest.fn(),
@@ -30,6 +48,9 @@ jest.mock('../../../src/config/env', () => ({
     JWT_REFRESH_EXPIRES_IN: '7d',
     NODE_ENV: 'test',
     ENCRYPTION_KEY: 'test-encryption-key-32-chars-!!',
+    SESSION_MAX_LIFETIME_HOURS: 24,
+    LOCKOUT_THRESHOLD: 5,
+    LOCKOUT_DURATION_MINUTES: 15,
   },
 }));
 
@@ -54,8 +75,10 @@ jest.mock('../../../src/utils/logger', () => ({
 // Imports (after mocks)
 // ---------------------------------------------------------------------------
 
+import crypto from 'crypto';
 import { AuthService } from '../../../src/services/auth.service';
 import { pool } from '../../../src/config/database';
+import { withTransaction } from '../../../src/utils/transaction';
 import { generateId, hashPassword, comparePassword } from '../../../src/utils/helpers';
 import { generateToken, generateRefreshToken } from '../../../src/middleware/auth';
 import { AuthenticationError, ConflictError } from '../../../src/utils/errors';
@@ -64,6 +87,12 @@ import jwt from 'jsonwebtoken';
 // Typed mocks for convenience
 const mockQuery = pool.query as jest.Mock;
 const mockComparePassword = comparePassword as jest.Mock;
+const mockWithTransaction = withTransaction as jest.Mock;
+
+/** Mirrors the private hashToken() helper inside auth.service.ts */
+function hashToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
 
 // ---------------------------------------------------------------------------
 // Test data
@@ -93,11 +122,12 @@ describe('AuthService', () => {
 
   describe('register', () => {
     it('creates a user and returns tokens', async () => {
-      // First query: check for existing user → no rows
-      mockQuery.mockResolvedValueOnce({ rows: [] });
-
-      // Second query: INSERT → return the new user
-      mockQuery.mockResolvedValueOnce({ rows: [TEST_USER] });
+      // withTransaction receives a callback; execute it with a mock client
+      const mockClient = { query: jest.fn() };
+      mockClient.query
+        .mockResolvedValueOnce({ rows: [] })              // check existing user
+        .mockResolvedValueOnce({ rows: [TEST_USER] });     // INSERT new user
+      mockWithTransaction.mockImplementation(async (fn: Function) => fn(mockClient));
 
       const result = await AuthService.register(
         'alice@example.com',
@@ -110,8 +140,8 @@ describe('AuthService', () => {
       expect(hashPassword).toHaveBeenCalledWith('SecurePass1');
 
       // Verify INSERT was called with hashed password and lowercased email
-      expect(mockQuery).toHaveBeenCalledTimes(2);
-      expect(mockQuery.mock.calls[1][1]).toEqual(
+      expect(mockClient.query).toHaveBeenCalledTimes(2);
+      expect(mockClient.query.mock.calls[1][1]).toEqual(
         expect.arrayContaining(['test-uuid-1234', 'alice@example.com', 'hashed-password', 'Alice', 'user']),
       );
 
@@ -132,7 +162,9 @@ describe('AuthService', () => {
     });
 
     it('throws ConflictError when email already exists', async () => {
-      mockQuery.mockResolvedValueOnce({ rows: [{ id: 'existing-user' }] });
+      const mockClient = { query: jest.fn() };
+      mockClient.query.mockResolvedValueOnce({ rows: [{ id: 'existing-user' }] });
+      mockWithTransaction.mockImplementation(async (fn: Function) => fn(mockClient));
 
       await expect(
         AuthService.register('alice@example.com', 'SecurePass1', 'Alice'),
@@ -151,16 +183,14 @@ describe('AuthService', () => {
         password_hash: 'hashed-password',
       };
 
-      // SELECT user
+      // pool.query: SELECT user
       mockQuery.mockResolvedValueOnce({ rows: [dbRow] });
-      // UPDATE last_login_at
-      mockQuery.mockResolvedValueOnce({ rows: [] });
-      // INSERT session
-      mockQuery.mockResolvedValueOnce({ rows: [] });
-      // INSERT audit_log
-      mockQuery.mockResolvedValueOnce({ rows: [] });
 
       mockComparePassword.mockResolvedValueOnce(true);
+
+      // Post-login writes run inside withTransaction
+      const mockClient = { query: jest.fn().mockResolvedValue({ rows: [] }) };
+      mockWithTransaction.mockImplementation(async (fn: Function) => fn(mockClient));
 
       const result = await AuthService.login('alice@example.com', 'SecurePass1');
 
@@ -208,20 +238,21 @@ describe('AuthService', () => {
 
   describe('logout', () => {
     it('removes session and logs audit event', async () => {
-      // DELETE session
-      mockQuery.mockResolvedValueOnce({ rows: [] });
-      // INSERT audit_log
-      mockQuery.mockResolvedValueOnce({ rows: [] });
+      const mockClient = { query: jest.fn().mockResolvedValue({ rows: [] }) };
+      mockWithTransaction.mockImplementation(async (fn: Function) => fn(mockClient));
 
       await AuthService.logout('user-123', 'some-token');
 
-      // First call: DELETE FROM sessions
-      expect(mockQuery.mock.calls[0][0]).toContain('DELETE FROM sessions');
-      expect(mockQuery.mock.calls[0][1]).toEqual(['user-123', 'some-token']);
+      // First call: DELETE FROM sessions (with hashed token)
+      expect(mockClient.query.mock.calls[0][0]).toContain('DELETE FROM sessions');
+      expect(mockClient.query.mock.calls[0][1]).toEqual([
+        'user-123',
+        hashToken('some-token'),
+      ]);
 
       // Second call: INSERT audit_logs
-      expect(mockQuery.mock.calls[1][0]).toContain('INSERT INTO audit_logs');
-      expect(mockQuery).toHaveBeenCalledTimes(2);
+      expect(mockClient.query.mock.calls[1][0]).toContain('INSERT INTO audit_logs');
+      expect(mockClient.query).toHaveBeenCalledTimes(2);
     });
   });
 

@@ -47,6 +47,7 @@ import {
   generateRefreshToken,
 } from '../../../src/middleware/auth';
 import { AuthenticationError } from '../../../src/utils/errors';
+import { pool } from '../../../src/config/database';
 
 // ---------------------------------------------------------------------------
 // Helpers to build mock Express objects
@@ -79,9 +80,11 @@ describe('Auth Middleware', () => {
   // -----------------------------------------------------------------------
 
   describe('authenticate', () => {
-    it('sets req.user when a valid token is provided', () => {
+    it('sets req.user when a valid token is provided', async () => {
       const payload = { id: 'user-1', email: 'alice@example.com', role: 'admin' };
       const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+
+      (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
       const req = mockRequest({
         headers: { authorization: `Bearer ${token}` },
@@ -89,36 +92,38 @@ describe('Auth Middleware', () => {
       const res = mockResponse();
       const next = mockNext();
 
-      authenticate(req, res, next);
+      await authenticate(req, res, next);
 
       expect(req.user).toBeDefined();
       expect(req.user!.id).toBe('user-1');
       expect(req.user!.email).toBe('alice@example.com');
       expect(req.user!.role).toBe('admin');
-      expect(next).toHaveBeenCalledTimes(1);
+      expect(next).toHaveBeenCalledWith();
     });
 
-    it('throws AuthenticationError when no authorization header is present', () => {
+    it('calls next with AuthenticationError when no authorization header is present', async () => {
       const req = mockRequest({ headers: {} });
       const res = mockResponse();
       const next = mockNext();
 
-      expect(() => authenticate(req, res, next)).toThrow(AuthenticationError);
-      expect(next).not.toHaveBeenCalled();
+      await authenticate(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(expect.any(AuthenticationError));
     });
 
-    it('throws AuthenticationError when token is malformed', () => {
+    it('calls next with AuthenticationError when token is malformed', async () => {
       const req = mockRequest({
         headers: { authorization: 'Bearer not-a-valid-jwt' },
       });
       const res = mockResponse();
       const next = mockNext();
 
-      expect(() => authenticate(req, res, next)).toThrow(AuthenticationError);
-      expect(next).not.toHaveBeenCalled();
+      await authenticate(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(expect.any(AuthenticationError));
     });
 
-    it('throws AuthenticationError when token is signed with wrong secret', () => {
+    it('calls next with AuthenticationError when token is signed with wrong secret', async () => {
       const token = jwt.sign(
         { id: 'user-1', email: 'a@b.com', role: 'user' },
         'completely-different-secret',
@@ -131,10 +136,12 @@ describe('Auth Middleware', () => {
       const res = mockResponse();
       const next = mockNext();
 
-      expect(() => authenticate(req, res, next)).toThrow(AuthenticationError);
+      await authenticate(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(expect.any(AuthenticationError));
     });
 
-    it('throws AuthenticationError when token is expired', () => {
+    it('calls next with AuthenticationError when token is expired', async () => {
       // Create a token that expired 1 hour ago
       const token = jwt.sign(
         { id: 'user-1', email: 'a@b.com', role: 'user' },
@@ -148,7 +155,9 @@ describe('Auth Middleware', () => {
       const res = mockResponse();
       const next = mockNext();
 
-      expect(() => authenticate(req, res, next)).toThrow(AuthenticationError);
+      await authenticate(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(expect.any(AuthenticationError));
     });
   });
 
