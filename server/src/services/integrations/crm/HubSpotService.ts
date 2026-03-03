@@ -181,7 +181,7 @@ export class HubSpotService {
 
     // Query 2: fetch deals
     const dealsResult = await pool.query(
-      `SELECT * FROM crm_deals
+      `SELECT id, user_id, platform_type, external_id, name, amount, stage, close_date, created_at, updated_at FROM crm_deals
        WHERE user_id = $1 AND platform_type = $2`,
       [userId, PLATFORM_TYPE],
     );

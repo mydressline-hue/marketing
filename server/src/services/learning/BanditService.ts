@@ -269,7 +269,7 @@ export class BanditService {
   ): Promise<BanditArm> {
     // Try to find existing arm
     const { rows: existing } = await pool.query<BanditArm>(
-      `SELECT * FROM bandit_arms WHERE context_type = $1 AND arm_name = $2`,
+      `SELECT id, context_type, arm_name, alpha, beta, mu, lambda, a, b, observation_count, last_updated_at, created_at FROM bandit_arms WHERE context_type = $1 AND arm_name = $2`,
       [contextType, armName],
     );
 
@@ -279,7 +279,7 @@ export class BanditService {
 
     // Cold start: inherit priors from best-observed arm in this context_type
     const { rows: similar } = await pool.query<BanditArm>(
-      `SELECT * FROM bandit_arms
+      `SELECT id, context_type, arm_name, alpha, beta, mu, lambda, a, b, observation_count, last_updated_at, created_at FROM bandit_arms
        WHERE context_type = $1
        ORDER BY observation_count DESC
        LIMIT 1`,
@@ -325,7 +325,7 @@ export class BanditService {
    */
   private static async getArms(contextType: string): Promise<BanditArm[]> {
     const { rows } = await pool.query<BanditArm>(
-      `SELECT * FROM bandit_arms WHERE context_type = $1 ORDER BY observation_count DESC`,
+      `SELECT id, context_type, arm_name, alpha, beta, mu, lambda, a, b, observation_count, last_updated_at, created_at FROM bandit_arms WHERE context_type = $1 ORDER BY observation_count DESC`,
       [contextType],
     );
     return rows;
@@ -336,7 +336,7 @@ export class BanditService {
    */
   private static async getContextWeights(armId: string): Promise<ContextWeight[]> {
     const { rows } = await pool.query<ContextWeight>(
-      `SELECT * FROM bandit_context_weights WHERE arm_id = $1`,
+      `SELECT id, arm_id, feature_name, weight FROM bandit_context_weights WHERE arm_id = $1`,
       [armId],
     );
     return rows;
@@ -457,7 +457,7 @@ export class BanditService {
   ): Promise<void> {
     // Get current weights
     const { rows: weights } = await client.query<ContextWeight>(
-      `SELECT * FROM bandit_context_weights WHERE arm_id = $1`,
+      `SELECT id, arm_id, feature_name, weight FROM bandit_context_weights WHERE arm_id = $1`,
       [arm.id],
     );
 
@@ -800,14 +800,14 @@ export class BanditService {
 
     // Rebuild posterior for each arm from decayed observations
     const { rows: allArms } = await pool.query<BanditArm>(
-      `SELECT * FROM bandit_arms`,
+      `SELECT id, context_type, arm_name, alpha, beta, mu, lambda, a, b, observation_count, last_updated_at, created_at FROM bandit_arms`,
     );
 
     let armsUpdated = 0;
 
     for (const arm of allArms) {
       const { rows: observations } = await pool.query<BanditObservation>(
-        `SELECT * FROM bandit_observations WHERE arm_id = $1 ORDER BY observed_at`,
+        `SELECT id, arm_id, context_vector, reward, reward_type, decayed_weight, observed_at FROM bandit_observations WHERE arm_id = $1 ORDER BY observed_at`,
         [arm.id],
       );
 

@@ -217,7 +217,7 @@ export class MailchimpService {
     await requireConnection(userId);
 
     const audRes = await pool.query(
-      `SELECT * FROM crm_audiences WHERE id = $1 AND platform_type = $2`,
+      `SELECT id, user_id, platform_type, name, member_count, created_at, updated_at FROM crm_audiences WHERE id = $1 AND platform_type = $2`,
       [audienceId, PLATFORM_TYPE],
     );
     if (audRes.rows.length === 0) {
@@ -256,7 +256,7 @@ export class MailchimpService {
     await requireConnection(userId);
 
     const memRes = await pool.query(
-      `SELECT * FROM crm_audience_members WHERE id = $1 AND audience_id = $2 AND platform_type = $3`,
+      `SELECT id, user_id, audience_id, platform_type, email, name, status, metadata, created_at, updated_at FROM crm_audience_members WHERE id = $1 AND audience_id = $2 AND platform_type = $3`,
       [memberId, audienceId, PLATFORM_TYPE],
     );
     if (memRes.rows.length === 0) {
@@ -310,7 +310,7 @@ export class MailchimpService {
     const where = `WHERE ${conditions.join(' AND ')}`;
 
     const dataRes = await pool.query(
-      `SELECT * FROM crm_audience_members ${where} ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
+      `SELECT id, user_id, audience_id, platform_type, email, name, status, metadata, created_at, updated_at FROM crm_audience_members ${where} ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
       [...params, limit, offset],
     );
 
@@ -370,7 +370,7 @@ export class MailchimpService {
     // Verify audience exists if provided
     if (data.audience_id) {
       const audRes = await pool.query(
-        `SELECT * FROM crm_audiences WHERE id = $1 AND platform_type = $2`,
+        `SELECT id, user_id, platform_type, name, member_count, created_at, updated_at FROM crm_audiences WHERE id = $1 AND platform_type = $2`,
         [data.audience_id, PLATFORM_TYPE],
       );
       if (audRes.rows.length === 0) {
