@@ -39,7 +39,7 @@ jobs:
         run: npx tsc --noEmit --project server/tsconfig.json
 
       - name: Typecheck UI
-        run: npx tsc -b --noEmit --project ui/tsconfig.json
+        run: npx tsc -b --noEmit ui/tsconfig.json
 
   # ===========================================================================
   # Server tests (requires Postgres + Redis services)
