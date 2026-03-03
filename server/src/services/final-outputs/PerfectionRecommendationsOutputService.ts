@@ -364,7 +364,7 @@ export class PerfectionRecommendationsOutputService {
   static async fetchCrossChallengeFindings(): Promise<Array<Record<string, unknown>>> {
     try {
       const result = await pool.query(
-        `SELECT * FROM cross_challenge_results ORDER BY created_at DESC LIMIT 100`,
+        `SELECT id, challenger, challenged, finding, severity, confidence, resolved, created_at FROM cross_challenge_results ORDER BY created_at DESC LIMIT 100`,
       );
       return result.rows.map((row: Record<string, unknown>) => ({
         id: row.id,
@@ -390,7 +390,7 @@ export class PerfectionRecommendationsOutputService {
   static async fetchBenchmarkData(): Promise<Record<string, unknown> | null> {
     try {
       const result = await pool.query(
-        `SELECT * FROM enterprise_benchmarks ORDER BY created_at DESC LIMIT 1`,
+        `SELECT id, industry_average_score, top_performer_score, sample_size, created_at FROM enterprise_benchmarks ORDER BY created_at DESC LIMIT 1`,
       );
       if (result.rows.length === 0) {
         return null;

@@ -388,7 +388,7 @@ export class ContinuousLearningService {
     }
 
     const existing = await pool.query(
-      `SELECT * FROM strategy_memory
+      `SELECT id, strategy_key, country, channel, success_count, failure_count, average_reward, best_reward, worst_reward, total_applications, last_applied, confidence, status, parameters, created_at, updated_at FROM strategy_memory
        WHERE strategy_key = $1 AND country = $2 AND channel = $3`,
       [strategyKey, country, channel],
     );
@@ -466,10 +466,10 @@ export class ContinuousLearningService {
 
     const result = channel
       ? await pool.query(
-          `SELECT * FROM strategy_memory WHERE country = $1 AND channel = $2
+          `SELECT id, strategy_key, country, channel, success_count, failure_count, average_reward, best_reward, worst_reward, total_applications, last_applied, confidence, status, parameters, created_at, updated_at FROM strategy_memory WHERE country = $1 AND channel = $2
            ORDER BY average_reward DESC, confidence DESC`, [country, channel])
       : await pool.query(
-          `SELECT * FROM strategy_memory WHERE country = $1
+          `SELECT id, strategy_key, country, channel, success_count, failure_count, average_reward, best_reward, worst_reward, total_applications, last_applied, confidence, status, parameters, created_at, updated_at FROM strategy_memory WHERE country = $1
            ORDER BY average_reward DESC, confidence DESC`, [country]);
 
     const memories = result.rows.map(mapStrategy);
@@ -484,7 +484,7 @@ export class ContinuousLearningService {
     if (cached !== null) return cached;
 
     const result = await pool.query(
-      `SELECT * FROM strategy_memory
+      `SELECT id, strategy_key, country, channel, success_count, failure_count, average_reward, best_reward, worst_reward, total_applications, last_applied, confidence, status, parameters, created_at, updated_at FROM strategy_memory
        WHERE country = $1 AND channel = $2 AND status = 'active' AND total_applications >= 5
        ORDER BY (average_reward * confidence) DESC LIMIT 1`,
       [country, channel],
@@ -506,7 +506,7 @@ export class ContinuousLearningService {
     if (cached) return cached;
 
     const result = await pool.query(
-      `SELECT * FROM country_performance_memory WHERE country = $1`, [country],
+      `SELECT country, total_campaigns, total_spend, total_revenue, overall_roas, best_channel, worst_channel, best_strategy, avg_cac, avg_conversion_rate, seasonal_patterns, trend_direction, last_updated FROM country_performance_memory WHERE country = $1`, [country],
     );
 
     if (result.rows.length === 0) {
@@ -731,10 +731,10 @@ export class ContinuousLearningService {
 
     const result = status
       ? await pool.query(
-          `SELECT * FROM creative_fatigue_alerts WHERE status = $1
+          `SELECT id, creative_id, creative_name, campaign_id, fatigue_score, days_running, ctr_decline_pct, conversion_decline_pct, frequency, recommended_action, replacement_suggestions, detected_at, status FROM creative_fatigue_alerts WHERE status = $1
            ORDER BY fatigue_score DESC`, [status])
       : await pool.query(
-          `SELECT * FROM creative_fatigue_alerts ORDER BY fatigue_score DESC`);
+          `SELECT id, creative_id, creative_name, campaign_id, fatigue_score, days_running, ctr_decline_pct, conversion_decline_pct, frequency, recommended_action, replacement_suggestions, detected_at, status FROM creative_fatigue_alerts ORDER BY fatigue_score DESC`);
 
     const alerts = result.rows.map(mapFatigue);
     await cacheSet(key, alerts, CACHE_TTL);
@@ -992,7 +992,7 @@ export class ContinuousLearningService {
   /** Generate an optimization plan for a specific detected trend. */
   static async optimizeForTrend(trendId: string): Promise<TrendOptimization> {
     const row = (await pool.query(
-      `SELECT * FROM market_trends WHERE id = $1`, [trendId],
+      `SELECT id, trend_type, category, description, impact_score, affected_channels, affected_countries, recommended_actions, detected_at, confidence FROM market_trends WHERE id = $1`, [trendId],
     )).rows[0];
 
     if (!row) throw new NotFoundError(`Market trend not found: ${trendId}`);
