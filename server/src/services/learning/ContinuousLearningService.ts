@@ -18,6 +18,7 @@ import { pool } from '../../config/database';
 import { cacheGet, cacheSet, cacheDel } from '../../config/redis';
 import { logger } from '../../utils/logger';
 import { generateId } from '../../utils/helpers';
+import { withTransaction } from '../../utils/transaction';
 import { NotFoundError, ValidationError } from '../../utils/errors';
 import { AuditService } from '../audit.service';
 
@@ -1552,9 +1553,17 @@ export class ContinuousLearningService {
   }
 
   static async resetLearningData(userId: string, opts: { scope: string }) {
-    const r1 = await pool.query(`DELETE FROM strategy_memory_v2 RETURNING COUNT(*) AS deleted_count`);
-    const r2 = await pool.query(`DELETE FROM strategy_outcomes RETURNING COUNT(*) AS deleted_count`);
-    const r3 = await pool.query(`DELETE FROM market_signals_v2 RETURNING COUNT(*) AS deleted_count`);
+    const deleted = await withTransaction(async (client) => {
+      const r1 = await client.query(`DELETE FROM strategy_memory_v2 RETURNING COUNT(*) AS deleted_count`);
+      const r2 = await client.query(`DELETE FROM strategy_outcomes RETURNING COUNT(*) AS deleted_count`);
+      const r3 = await client.query(`DELETE FROM market_signals_v2 RETURNING COUNT(*) AS deleted_count`);
+      return {
+        strategies: Number(r1.rows[0]?.deleted_count || 0),
+        outcomes: Number(r2.rows[0]?.deleted_count || 0),
+        signals: Number(r3.rows[0]?.deleted_count || 0),
+      };
+    });
+
     await cacheDel(ck('*'));
     await AuditService.log({
       userId,
@@ -1562,12 +1571,6 @@ export class ContinuousLearningService {
       resourceType: 'learning_system',
       details: { scope: opts.scope },
     });
-    return {
-      deleted: {
-        strategies: Number(r1.rows[0]?.deleted_count || 0),
-        outcomes: Number(r2.rows[0]?.deleted_count || 0),
-        signals: Number(r3.rows[0]?.deleted_count || 0),
-      },
-    };
+    return { deleted };
   }
 }

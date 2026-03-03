@@ -11,6 +11,8 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
+import { validateBody } from '../middleware/validation';
+import { updateRateLimitsSchema } from '../validators/schemas';
 import {
   getRateLimitStatus,
   getAllRateLimits,
@@ -41,6 +43,7 @@ router.get(
 router.put(
   '/:platformType',
   requirePermission('write:infrastructure'),
+  validateBody(updateRateLimitsSchema),
   updateLimits,
 );
 

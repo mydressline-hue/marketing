@@ -9,7 +9,11 @@ import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/rbac';
 import { validateBody } from '../middleware/validation';
-import { updateSettingsSchema } from '../validators/schemas';
+import {
+  updateSettingsSchema,
+  updateNotificationsSettingsSchema,
+  updateAppearanceSettingsSchema,
+} from '../validators/schemas';
 import {
   getAllSettings,
   getApiKeyConfig,
@@ -25,10 +29,10 @@ const router = Router();
 // ---------------------------------------------------------------------------
 
 // PUT /settings/notifications – update notification preferences (any authenticated user)
-router.put('/notifications', authenticate, updateNotifications);
+router.put('/notifications', authenticate, validateBody(updateNotificationsSettingsSchema), updateNotifications);
 
 // PUT /settings/appearance – update appearance preferences (any authenticated user)
-router.put('/appearance', authenticate, updateAppearance);
+router.put('/appearance', authenticate, validateBody(updateAppearanceSettingsSchema), updateAppearance);
 
 // GET /settings – retrieve all settings (admin only)
 router.get('/', authenticate, requireRole('admin'), getAllSettings);

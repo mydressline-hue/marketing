@@ -9,10 +9,12 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
-import { validateBody } from '../middleware/validation';
+import { validateBody, validateQuery, validateParams } from '../middleware/validation';
 import {
   sendNotificationSchema,
   updateNotificationPreferencesSchema,
+  listNotificationsQuerySchema,
+  idParamSchema,
 } from '../validators/schemas';
 import {
   sendNotification,
@@ -35,7 +37,7 @@ const router = Router();
 router.post('/send', authenticate, requirePermission('write:infrastructure'), validateBody(sendNotificationSchema), sendNotification);
 
 // GET /notifications – get user's notifications (paginated, filterable)
-router.get('/', authenticate, requirePermission('read:campaigns'), getNotifications);
+router.get('/', authenticate, requirePermission('read:campaigns'), validateQuery(listNotificationsQuerySchema), getNotifications);
 
 // GET /notifications/unread-count – get unread notification count
 router.get('/unread-count', authenticate, requirePermission('read:campaigns'), getUnreadCount);
@@ -50,9 +52,9 @@ router.put('/preferences', authenticate, requirePermission('read:campaigns'), va
 router.post('/read-all', authenticate, requirePermission('read:campaigns'), markAllAsRead);
 
 // POST /notifications/:id/read – mark a single notification as read
-router.post('/:id/read', authenticate, requirePermission('read:campaigns'), markAsRead);
+router.post('/:id/read', authenticate, requirePermission('read:campaigns'), validateParams(idParamSchema), markAsRead);
 
 // DELETE /notifications/:id – soft-delete a notification
-router.delete('/:id', authenticate, requirePermission('read:campaigns'), deleteNotification);
+router.delete('/:id', authenticate, requirePermission('read:campaigns'), validateParams(idParamSchema), deleteNotification);
 
 export default router;

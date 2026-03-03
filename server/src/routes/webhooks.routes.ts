@@ -11,8 +11,12 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/rbac';
-import { validateBody } from '../middleware/validation';
-import { registerWebhookSchema } from '../validators/schemas';
+import { validateBody, validateQuery } from '../middleware/validation';
+import {
+  registerWebhookSchema,
+  listWebhookRegistrationsQuerySchema,
+  listWebhookEventsQuerySchema,
+} from '../validators/schemas';
 import {
   receiveWebhook,
   registerWebhook,
@@ -37,9 +41,9 @@ router.post('/:platform/inbound', receiveWebhook);
 router.post('/register', authenticate, requireRole('admin'), validateBody(registerWebhookSchema), registerWebhook);
 
 // GET /webhooks/registrations -- list active webhook registrations
-router.get('/registrations', authenticate, listRegistrations);
+router.get('/registrations', authenticate, validateQuery(listWebhookRegistrationsQuerySchema), listRegistrations);
 
 // GET /webhooks/events -- list webhook events with pagination and filtering
-router.get('/events', authenticate, listEvents);
+router.get('/events', authenticate, validateQuery(listWebhookEventsQuerySchema), listEvents);
 
 export default router;

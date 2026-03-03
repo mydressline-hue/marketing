@@ -16,6 +16,7 @@ import { pool } from '../../config/database';
 import { cacheGet, cacheSet, cacheDel, cacheFlush } from '../../config/redis';
 import { logger } from '../../utils/logger';
 import { generateId, encrypt, decrypt } from '../../utils/helpers';
+import { withTransaction } from '../../utils/transaction';
 import { NotFoundError, ValidationError } from '../../utils/errors';
 import { AuditService } from '../audit.service';
 import { env } from '../../config/env';
@@ -374,14 +375,16 @@ export class IntegrationsService {
       const completedAt = new Date().toISOString();
       const durationMs = new Date(completedAt).getTime() - new Date(startedAt).getTime();
 
-      await pool.query(
-        `UPDATE sync_logs SET status = 'completed', completed_at = $1, records_synced = $2,
-             records_created = $3, records_updated = $4, records_failed = $5, duration_ms = $6
-         WHERE id = $7`,
-        [completedAt, result.records_synced || 0, result.records_created || 0, result.records_updated || 0, result.records_failed || 0, durationMs, syncId],
-      );
+      await withTransaction(async (client) => {
+        await client.query(
+          `UPDATE sync_logs SET status = 'completed', completed_at = $1, records_synced = $2,
+               records_created = $3, records_updated = $4, records_failed = $5, duration_ms = $6
+           WHERE id = $7`,
+          [completedAt, result.records_synced || 0, result.records_created || 0, result.records_updated || 0, result.records_failed || 0, durationMs, syncId],
+        );
 
-      await pool.query(`UPDATE ${table} SET last_synced_at = $1, updated_at = $1 WHERE id = $2`, [completedAt, connectionId]);
+        await client.query(`UPDATE ${table} SET last_synced_at = $1, updated_at = $1 WHERE id = $2`, [completedAt, connectionId]);
+      });
       await cacheDel(`${CACHE_PREFIX}:status:${userId}`);
       await cacheDel(`${CACHE_PREFIX}:status:${userId}:${platformType}`);
 

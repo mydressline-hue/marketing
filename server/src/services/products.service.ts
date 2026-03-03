@@ -9,6 +9,7 @@
 import { query } from '../config/database';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { generateId } from '../utils/helpers';
+import { withTransaction } from '../utils/transaction';
 import logger from '../utils/logger';
 
 // ---------------------------------------------------------------------------
@@ -306,59 +307,63 @@ export class ProductsService {
    * rows.
    */
   static async bulkSync(products: BulkSyncItem[]): Promise<BulkSyncResult> {
-    let created = 0;
-    let updated = 0;
+    const result = await withTransaction(async (client) => {
+      let created = 0;
+      let updated = 0;
 
-    for (const item of products) {
-      const existing = await query<Product>(
-        'SELECT id FROM products WHERE shopify_id = $1',
-        [item.shopifyId],
-      );
+      for (const item of products) {
+        const existing = await client.query<Product>(
+          'SELECT id FROM products WHERE shopify_id = $1',
+          [item.shopifyId],
+        );
 
-      if (existing.rows.length > 0) {
-        // Update existing product
-        await query(
-          `UPDATE products
-           SET title = $1,
-               description = $2,
-               variants = $3,
-               images = $4,
-               inventory_level = $5,
-               synced_at = $6
-           WHERE shopify_id = $7`,
-          [
-            item.title,
-            item.description ?? null,
-            JSON.stringify(item.variants ?? []),
-            JSON.stringify(item.images ?? []),
-            item.inventoryLevel ?? 0,
-            new Date().toISOString(),
-            item.shopifyId,
-          ],
-        );
-        updated++;
-      } else {
-        // Insert new product
-        const id = generateId();
-        await query(
-          `INSERT INTO products (id, title, description, shopify_id, variants, images, inventory_level, synced_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-          [
-            id,
-            item.title,
-            item.description ?? null,
-            item.shopifyId,
-            JSON.stringify(item.variants ?? []),
-            JSON.stringify(item.images ?? []),
-            item.inventoryLevel ?? 0,
-            new Date().toISOString(),
-          ],
-        );
-        created++;
+        if (existing.rows.length > 0) {
+          // Update existing product
+          await client.query(
+            `UPDATE products
+             SET title = $1,
+                 description = $2,
+                 variants = $3,
+                 images = $4,
+                 inventory_level = $5,
+                 synced_at = $6
+             WHERE shopify_id = $7`,
+            [
+              item.title,
+              item.description ?? null,
+              JSON.stringify(item.variants ?? []),
+              JSON.stringify(item.images ?? []),
+              item.inventoryLevel ?? 0,
+              new Date().toISOString(),
+              item.shopifyId,
+            ],
+          );
+          updated++;
+        } else {
+          // Insert new product
+          const id = generateId();
+          await client.query(
+            `INSERT INTO products (id, title, description, shopify_id, variants, images, inventory_level, synced_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [
+              id,
+              item.title,
+              item.description ?? null,
+              item.shopifyId,
+              JSON.stringify(item.variants ?? []),
+              JSON.stringify(item.images ?? []),
+              item.inventoryLevel ?? 0,
+              new Date().toISOString(),
+            ],
+          );
+          created++;
+        }
       }
-    }
 
-    logger.info('Bulk product sync completed', { created, updated });
-    return { created, updated };
+      return { created, updated };
+    });
+
+    logger.info('Bulk product sync completed', { created: result.created, updated: result.updated });
+    return result;
   }
 }

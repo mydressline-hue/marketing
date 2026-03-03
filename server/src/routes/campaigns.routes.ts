@@ -12,6 +12,7 @@ import { validateBody, validateQuery, validateParams } from '../middleware/valid
 import {
   createCampaignSchema,
   updateCampaignSchema,
+  updateCampaignStatusSchema,
   paginationSchema,
   idParamSchema,
 } from '../validators/schemas';
@@ -100,6 +101,7 @@ router.patch(
   authenticate,
   requirePermission('write:campaigns'),
   validateParams(idParamSchema),
+  validateBody(updateCampaignStatusSchema),
   updateCampaignStatus,
 );
 

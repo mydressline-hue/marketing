@@ -10,6 +10,28 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
+import { validateBody, validateQuery, validateParams } from '../middleware/validation';
+import {
+  pickProductsBodySchema,
+  filterProductsRefinedQuerySchema,
+  filterAggregationsQuerySchema,
+  searchProductsQuerySchema,
+  similarProductsQuerySchema,
+  listCollectionsQuerySchema,
+  createCollectionBodySchema,
+  updateCollectionBodySchema,
+  collectionProductsBodySchema,
+  collectionProductsQuerySchema,
+  recordProductViewBodySchema,
+  recordProductSaleBodySchema,
+  topProductsQuerySchema,
+  analyticsSummaryQuerySchema,
+  analyticsTrendsQuerySchema,
+  collectionAnalyticsQuerySchema,
+  productAnalyticsQuerySchema,
+  reorderCollectionProductsBodySchema,
+  idParamSchema,
+} from '../validators/schemas';
 import {
   // AI Product Picker
   pickProducts,
@@ -45,33 +67,33 @@ const router = Router();
 router.use(authenticate);
 
 // ── AI Product Picker ────────────────────────────────────────────────────
-router.post('/ai-pick', requirePermission('write:campaigns'), pickProducts);
+router.post('/ai-pick', requirePermission('write:campaigns'), validateBody(pickProductsBodySchema), pickProducts);
 router.get('/ai-pick/strategies', getStrategies);
 
 // ── Enhanced Filtering ───────────────────────────────────────────────────
-router.get('/filter', filterProducts);
-router.get('/filters/aggregations', getFilterAggregations);
-router.get('/search', searchProducts);
-router.get('/:id/similar', getSimilarProducts);
+router.get('/filter', validateQuery(filterProductsRefinedQuerySchema), filterProducts);
+router.get('/filters/aggregations', validateQuery(filterAggregationsQuerySchema), getFilterAggregations);
+router.get('/search', validateQuery(searchProductsQuerySchema), searchProducts);
+router.get('/:id/similar', validateParams(idParamSchema), validateQuery(similarProductsQuerySchema), getSimilarProducts);
 
 // ── Collections ──────────────────────────────────────────────────────────
-router.get('/collections', listCollections);
-router.get('/collections/:id', getCollection);
-router.post('/collections', requirePermission('write:campaigns'), createCollection);
-router.put('/collections/:id', requirePermission('write:campaigns'), updateCollection);
-router.delete('/collections/:id', requirePermission('write:campaigns'), deleteCollection);
-router.post('/collections/:id/products', requirePermission('write:campaigns'), addCollectionProducts);
-router.delete('/collections/:id/products', requirePermission('write:campaigns'), removeCollectionProducts);
-router.get('/collections/:id/products', getCollectionProducts);
-router.put('/collections/:id/products/reorder', requirePermission('write:campaigns'), reorderCollectionProducts);
+router.get('/collections', validateQuery(listCollectionsQuerySchema), listCollections);
+router.get('/collections/:id', validateParams(idParamSchema), getCollection);
+router.post('/collections', requirePermission('write:campaigns'), validateBody(createCollectionBodySchema), createCollection);
+router.put('/collections/:id', requirePermission('write:campaigns'), validateParams(idParamSchema), validateBody(updateCollectionBodySchema), updateCollection);
+router.delete('/collections/:id', requirePermission('write:campaigns'), validateParams(idParamSchema), deleteCollection);
+router.post('/collections/:id/products', requirePermission('write:campaigns'), validateParams(idParamSchema), validateBody(collectionProductsBodySchema), addCollectionProducts);
+router.delete('/collections/:id/products', requirePermission('write:campaigns'), validateParams(idParamSchema), validateBody(collectionProductsBodySchema), removeCollectionProducts);
+router.get('/collections/:id/products', validateParams(idParamSchema), validateQuery(collectionProductsQuerySchema), getCollectionProducts);
+router.put('/collections/:id/products/reorder', requirePermission('write:campaigns'), validateParams(idParamSchema), validateBody(reorderCollectionProductsBodySchema), reorderCollectionProducts);
 
 // ── Analytics ────────────────────────────────────────────────────────────
-router.post('/analytics/view', recordProductView);
-router.post('/analytics/sale', recordProductSale);
-router.get('/analytics/top', getTopProducts);
-router.get('/analytics/summary', getAnalyticsSummary);
-router.get('/analytics/trends', getAnalyticsTrends);
-router.get('/analytics/collections', getCollectionAnalytics);
-router.get('/analytics/:id', getProductAnalytics);
+router.post('/analytics/view', validateBody(recordProductViewBodySchema), recordProductView);
+router.post('/analytics/sale', validateBody(recordProductSaleBodySchema), recordProductSale);
+router.get('/analytics/top', validateQuery(topProductsQuerySchema), getTopProducts);
+router.get('/analytics/summary', validateQuery(analyticsSummaryQuerySchema), getAnalyticsSummary);
+router.get('/analytics/trends', validateQuery(analyticsTrendsQuerySchema), getAnalyticsTrends);
+router.get('/analytics/collections', validateQuery(collectionAnalyticsQuerySchema), getCollectionAnalytics);
+router.get('/analytics/:id', validateParams(idParamSchema), validateQuery(productAnalyticsQuerySchema), getProductAnalytics);
 
 export default router;
