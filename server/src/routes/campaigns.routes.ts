@@ -9,6 +9,7 @@ import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
 import { validateBody, validateQuery, validateParams } from '../middleware/validation';
+import { dynamicCacheHeaders } from '../middleware/cacheHeaders';
 import {
   createCampaignSchema,
   updateCampaignSchema,
@@ -18,6 +19,7 @@ import {
 } from '../validators/schemas';
 import {
   listCampaigns,
+  listCampaignsWithCursor,
   getCampaign,
   getCampaignMetrics,
   getCampaignsByCountry,
@@ -34,18 +36,28 @@ const router = Router();
 // Read routes (authentication required)
 // ---------------------------------------------------------------------------
 
-// GET /campaigns -- list with pagination and filter query validation
+// GET /campaigns -- list with offset-based pagination and filter query validation
 router.get(
   '/',
   authenticate,
+  dynamicCacheHeaders,
   validateQuery(paginationSchema),
   listCampaigns,
+);
+
+// GET /campaigns/cursor -- list with cursor-based pagination
+router.get(
+  '/cursor',
+  authenticate,
+  dynamicCacheHeaders,
+  listCampaignsWithCursor,
 );
 
 // GET /campaigns/spend/summary -- spend summary (must be before /:id)
 router.get(
   '/spend/summary',
   authenticate,
+  dynamicCacheHeaders,
   getSpendSummary,
 );
 
@@ -53,6 +65,7 @@ router.get(
 router.get(
   '/country/:countryId',
   authenticate,
+  dynamicCacheHeaders,
   getCampaignsByCountry,
 );
 
@@ -60,6 +73,7 @@ router.get(
 router.get(
   '/:id',
   authenticate,
+  dynamicCacheHeaders,
   validateParams(idParamSchema),
   getCampaign,
 );
@@ -68,6 +82,7 @@ router.get(
 router.get(
   '/:id/metrics',
   authenticate,
+  dynamicCacheHeaders,
   validateParams(idParamSchema),
   getCampaignMetrics,
 );

@@ -7,6 +7,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
+    "start:cluster": "CLUSTER_ENABLED=true node dist/cluster.js",
     "test": "jest --forceExit --detectOpenHandles",
     "test:unit": "jest --testPathPattern=tests/unit --forceExit",
     "test:integration": "jest --testPathPattern=tests/integration --forceExit",

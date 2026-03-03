@@ -124,7 +124,7 @@ export class CreativesService {
         params,
       ),
       pool.query(
-        `SELECT * FROM creatives ${whereClause}
+        `SELECT id, name, type, campaign_id, content, performance, fatigue_score, is_active, created_by, created_at, updated_at FROM creatives ${whereClause}
          ORDER BY ${sortBy} ${sortOrder}
          LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
         [...params, pagination.limit, offset],
@@ -145,7 +145,7 @@ export class CreativesService {
    */
   static async getById(id: string): Promise<Creative> {
     const result = await pool.query(
-      'SELECT * FROM creatives WHERE id = $1',
+      'SELECT id, name, type, campaign_id, content, performance, fatigue_score, is_active, created_by, created_at, updated_at FROM creatives WHERE id = $1',
       [id],
     );
 
@@ -290,7 +290,7 @@ export class CreativesService {
    */
   static async getByFatigueScore(threshold: number): Promise<Creative[]> {
     const result = await pool.query(
-      'SELECT * FROM creatives WHERE fatigue_score >= $1 AND is_active = true ORDER BY fatigue_score DESC',
+      'SELECT id, name, type, campaign_id, content, performance, fatigue_score, is_active, created_by, created_at, updated_at FROM creatives WHERE fatigue_score >= $1 AND is_active = true ORDER BY fatigue_score DESC',
       [threshold],
     );
 

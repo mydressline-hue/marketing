@@ -80,8 +80,5 @@ export const disableMfa = asyncHandler(async (req: Request, res: Response) => {
 
   await MfaService.disable(userId);
 
-  res.json({
-    success: true,
-    data: { message: 'MFA has been disabled' },
-  });
+  res.status(204).send();
 });

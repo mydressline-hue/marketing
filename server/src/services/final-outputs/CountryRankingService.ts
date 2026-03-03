@@ -304,7 +304,7 @@ export class CountryRankingService {
    */
   static async fetchActiveCountries(): Promise<CountryRow[]> {
     const result = await pool.query<CountryRow>(
-      `SELECT * FROM countries WHERE is_active = true ORDER BY name ASC`,
+      `SELECT id, name, code, region, language, currency, timezone, gdp, internet_penetration, ecommerce_adoption, social_platforms, ad_costs, cultural_behavior, opportunity_score, entry_strategy, is_active, created_at, updated_at FROM countries WHERE is_active = true ORDER BY name ASC`,
     );
     return result.rows;
   }

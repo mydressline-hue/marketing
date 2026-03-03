@@ -10,6 +10,7 @@ import { query } from '../config/database';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { generateId } from '../utils/helpers';
 import { withTransaction } from '../utils/transaction';
+import { eventBus } from '../websocket/EventBus';
 import logger from '../utils/logger';
 
 // ---------------------------------------------------------------------------
@@ -117,7 +118,7 @@ export class BudgetService {
         params,
       ),
       query<BudgetAllocation>(
-        `SELECT * FROM budget_allocations ${whereClause}
+        `SELECT id, country_id, channel_allocations, period_start, period_end, total_budget, total_spent, risk_guardrails, created_by, created_at, updated_at FROM budget_allocations ${whereClause}
          ORDER BY ${sortColumn} ${sortDirection}
          LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
         [...params, pagination.limit, offset],
@@ -138,7 +139,7 @@ export class BudgetService {
    */
   static async getById(id: string): Promise<BudgetAllocation> {
     const result = await query<BudgetAllocation>(
-      'SELECT * FROM budget_allocations WHERE id = $1',
+      'SELECT id, country_id, channel_allocations, period_start, period_end, total_budget, total_spent, risk_guardrails, created_by, created_at, updated_at FROM budget_allocations WHERE id = $1',
       [id],
     );
 
@@ -216,6 +217,15 @@ export class BudgetService {
     });
 
     logger.info('Budget allocation created', { allocationId: id, userId });
+
+    eventBus.broadcast('budgets', {
+      action: 'created',
+      allocationId: id,
+      countryId: data.countryId,
+      totalBudget: data.totalBudget,
+      userId,
+    });
+
     return allocation;
   }
 
@@ -307,6 +317,16 @@ export class BudgetService {
     });
 
     logger.info('Budget allocation updated', { allocationId: id, userId });
+
+    eventBus.broadcast('budgets', {
+      action: 'updated',
+      allocationId: id,
+      updatedFields: Object.keys(data).filter(
+        (k) => (data as Record<string, unknown>)[k] !== undefined,
+      ),
+      userId,
+    });
+
     return allocation;
   }
 
@@ -324,6 +344,11 @@ export class BudgetService {
     }
 
     logger.info('Budget allocation deleted', { allocationId: id });
+
+    eventBus.broadcast('budgets', {
+      action: 'deleted',
+      allocationId: id,
+    });
   }
 
   /**
@@ -367,6 +392,13 @@ export class BudgetService {
     });
 
     logger.info('Budget spend recorded', { allocationId, amount, channel });
+
+    eventBus.broadcast('budgets', {
+      action: 'spend_recorded',
+      allocationId,
+      amount,
+      channel,
+    });
   }
 
   /**

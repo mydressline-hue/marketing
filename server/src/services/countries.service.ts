@@ -154,7 +154,7 @@ export class CountriesService {
 
     // Fetch the page
     const dataResult = await pool.query<Country>(
-      `SELECT * FROM countries ${whereClause}
+      `SELECT id, name, code, region, language, currency, timezone, gdp, internet_penetration, ecommerce_adoption, social_platforms, ad_costs, cultural_behavior, opportunity_score, entry_strategy, is_active, created_at, updated_at FROM countries ${whereClause}
        ORDER BY ${sortColumn} ${sortOrder}
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, limit, offset],
@@ -188,7 +188,7 @@ export class CountriesService {
     }
 
     const result = await pool.query<Country>(
-      'SELECT * FROM countries WHERE id = $1',
+      'SELECT id, name, code, region, language, currency, timezone, gdp, internet_penetration, ecommerce_adoption, social_platforms, ad_costs, cultural_behavior, opportunity_score, entry_strategy, is_active, created_at, updated_at FROM countries WHERE id = $1',
       [id],
     );
 
@@ -216,7 +216,7 @@ export class CountriesService {
     }
 
     const result = await pool.query<Country>(
-      'SELECT * FROM countries WHERE code = $1',
+      'SELECT id, name, code, region, language, currency, timezone, gdp, internet_penetration, ecommerce_adoption, social_platforms, ad_costs, cultural_behavior, opportunity_score, entry_strategy, is_active, created_at, updated_at FROM countries WHERE code = $1',
       [normalizedCode],
     );
 
@@ -403,7 +403,7 @@ export class CountriesService {
     }
 
     const result = await pool.query<Country>(
-      `SELECT * FROM countries
+      `SELECT id, name, code, region, language, currency, timezone, gdp, internet_penetration, ecommerce_adoption, social_platforms, ad_costs, cultural_behavior, opportunity_score, entry_strategy, is_active, created_at, updated_at FROM countries
        WHERE is_active = true AND opportunity_score IS NOT NULL
        ORDER BY opportunity_score DESC
        LIMIT $1`,

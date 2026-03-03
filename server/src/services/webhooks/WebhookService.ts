@@ -366,7 +366,7 @@ export class WebhookService {
     const totalPages = Math.ceil(total / limit);
 
     const dataResult = await pool.query(
-      `SELECT * FROM webhook_events ${whereClause}
+      `SELECT id, platform_type, event_type, payload, status, user_id, registration_id, processed_at, error_message, created_at FROM webhook_events ${whereClause}
        ORDER BY created_at DESC
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, limit, offset],
@@ -398,7 +398,7 @@ export class WebhookService {
     }
 
     const result = await pool.query(
-      `SELECT * FROM webhook_registrations
+      `SELECT id, user_id, platform_type, webhook_url, secret, events, is_active, created_at, updated_at FROM webhook_registrations
        WHERE user_id = $1 AND is_active = true
        ORDER BY created_at DESC`,
       [userId],
@@ -423,7 +423,7 @@ export class WebhookService {
     platformType: string,
   ): Promise<WebhookRegistration | null> {
     const result = await pool.query(
-      `SELECT * FROM webhook_registrations
+      `SELECT id, user_id, platform_type, webhook_url, secret, events, is_active, created_at, updated_at FROM webhook_registrations
        WHERE platform_type = $1 AND is_active = true
        ORDER BY created_at DESC
        LIMIT 1`,

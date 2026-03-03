@@ -68,8 +68,9 @@ export class MarketingWebSocketServer {
     });
 
     // Subscribe to EventBus broadcasts
-    eventBus.on('broadcast', (msg: OutgoingMessage) => {
-      this.broadcastToChannel(msg.channel, msg.data);
+    eventBus.on('broadcast', (msg: unknown) => {
+      const outgoing = msg as OutgoingMessage;
+      this.broadcastToChannel(outgoing.channel, outgoing.data);
     });
 
     this.startHeartbeat();

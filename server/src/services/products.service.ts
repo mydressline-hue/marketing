@@ -114,7 +114,7 @@ export class ProductsService {
 
     // Data page
     const dataResult = await query<Product>(
-      `SELECT * FROM products ${whereClause}
+      `SELECT id, title, description, shopify_id, images, variants, inventory_level, is_active, synced_at, created_at, updated_at FROM products ${whereClause}
        ORDER BY ${sortColumn} ${sortDirection}
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, pagination.limit, offset],
@@ -133,7 +133,7 @@ export class ProductsService {
    */
   static async getById(id: string): Promise<Product> {
     const result = await query<Product>(
-      'SELECT * FROM products WHERE id = $1',
+      'SELECT id, title, description, shopify_id, images, variants, inventory_level, is_active, synced_at, created_at, updated_at FROM products WHERE id = $1',
       [id],
     );
 
@@ -149,7 +149,7 @@ export class ProductsService {
    */
   static async getByShopifyId(shopifyId: string): Promise<Product> {
     const result = await query<Product>(
-      'SELECT * FROM products WHERE shopify_id = $1',
+      'SELECT id, title, description, shopify_id, images, variants, inventory_level, is_active, synced_at, created_at, updated_at FROM products WHERE shopify_id = $1',
       [shopifyId],
     );
 

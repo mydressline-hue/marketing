@@ -1,6 +1,10 @@
 import winston from 'winston';
 import { env } from '../config/env';
 import type { Request, Response, NextFunction } from 'express';
+import {
+  recordHttpRequest,
+  recordHttpDuration,
+} from '../services/observability/metrics';
 
 // ---------------------------------------------------------------------------
 // Service metadata
@@ -74,9 +78,26 @@ export const logger = winston.createLogger({
  * agentLog.info('Starting content generation');
  */
 export function createChildLogger(
-  context: Record<string, string>,
+  context: Record<string, unknown>,
 ): winston.Logger {
   return logger.child(context);
+}
+
+/**
+ * Creates a child logger bound to a specific HTTP request. Automatically
+ * includes the request ID and other request context in every log line,
+ * making it straightforward to correlate logs for a single request.
+ *
+ * @example
+ * const reqLog = createRequestLogger(req);
+ * reqLog.info('Processing campaign creation');
+ */
+export function createRequestLogger(req: Request): winston.Logger {
+  return logger.child({
+    requestId: req.requestId,
+    method: req.method,
+    url: req.originalUrl || req.url,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -85,7 +106,8 @@ export function createChildLogger(
 
 /**
  * Express middleware that logs every HTTP request with method, url, status
- * code, and response time in milliseconds.
+ * code, response time, and request ID. Also records metrics for HTTP
+ * request counts and durations.
  */
 export function requestLogger(
   req: Request,
@@ -100,10 +122,17 @@ export function requestLogger(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (res as any).end = function (this: Response, ...args: any[]): any {
     const responseTime = Date.now() - start;
+    const durationSeconds = responseTime / 1000;
+    const path = req.originalUrl || req.url;
+
+    // Record Prometheus metrics
+    recordHttpRequest(req.method, path, res.statusCode);
+    recordHttpDuration(req.method, path, durationSeconds);
 
     logger.info('HTTP Request', {
+      requestId: req.requestId,
       method: req.method,
-      url: req.originalUrl || req.url,
+      url: path,
       status: res.statusCode,
       responseTime: `${responseTime}ms`,
       contentLength: res.get('Content-Length') || '-',

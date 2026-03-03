@@ -107,10 +107,7 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
 export const remove = asyncHandler(async (req: Request, res: Response) => {
   await CountriesService.delete(req.params.id);
 
-  res.json({
-    success: true,
-    data: { message: 'Country deleted successfully' },
-  });
+  res.status(204).send();
 });
 
 /**

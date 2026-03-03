@@ -19,6 +19,7 @@ import {
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
 import { validateBody, validateQuery, validateParams } from '../middleware/validation';
+import { staticCacheHeaders } from '../middleware/cacheHeaders';
 import {
   createCountrySchema,
   updateCountrySchema,
@@ -36,6 +37,7 @@ const router = Router();
 router.get(
   '/',
   authenticate,
+  staticCacheHeaders,
   validateQuery(paginationSchema),
   list,
 );
@@ -44,6 +46,7 @@ router.get(
 router.get(
   '/top',
   authenticate,
+  staticCacheHeaders,
   getTopCountries,
 );
 
@@ -51,6 +54,7 @@ router.get(
 router.get(
   '/:id',
   authenticate,
+  staticCacheHeaders,
   validateParams(idParamSchema),
   getById,
 );

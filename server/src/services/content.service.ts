@@ -132,7 +132,7 @@ export class ContentService {
 
     // Data query
     const dataResult = await pool.query(
-      `SELECT * FROM content ${whereClause}
+      `SELECT id, title, body, status, seo_keywords, country_id, language, published_at, created_by, created_at, updated_at FROM content ${whereClause}
        ORDER BY ${sortBy} ${sortOrder}
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, pagination.limit, offset],
@@ -151,7 +151,7 @@ export class ContentService {
    */
   static async getById(id: string): Promise<Content> {
     const result = await pool.query(
-      'SELECT * FROM content WHERE id = $1',
+      'SELECT id, title, body, status, seo_keywords, country_id, language, published_at, created_by, created_at, updated_at FROM content WHERE id = $1',
       [id],
     );
 
@@ -335,7 +335,7 @@ export class ContentService {
    */
   static async getByStatus(status: string): Promise<Content[]> {
     const result = await pool.query(
-      'SELECT * FROM content WHERE status = $1 ORDER BY updated_at DESC',
+      'SELECT id, title, body, status, seo_keywords, country_id, language, published_at, created_by, created_at, updated_at FROM content WHERE status = $1 ORDER BY updated_at DESC',
       [status],
     );
 
@@ -364,7 +364,7 @@ export class ContentService {
 
     // Data query with relevance ordering
     const dataResult = await pool.query(
-      `SELECT *,
+      `SELECT id, title, body, status, seo_keywords, country_id, language, published_at, created_by, created_at, updated_at,
          ts_rank(
            to_tsvector('english', coalesce(title, '') || ' ' || coalesce(body, '')),
            plainto_tsquery('english', $1)

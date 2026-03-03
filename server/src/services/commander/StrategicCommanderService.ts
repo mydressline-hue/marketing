@@ -186,7 +186,7 @@ export class StrategicCommanderService {
     projectionId: string,
   ): Promise<ProjectionComparison> {
     const projResult = await pool.query(
-      'SELECT * FROM projections WHERE id = $1',
+      'SELECT id, horizon_days, projected_spend, projected_revenue, projected_roas, status, created_by, created_at FROM projections WHERE id = $1',
       [projectionId],
     );
 
@@ -236,7 +236,7 @@ export class StrategicCommanderService {
     const total = parseInt(countResult.rows[0].total, 10);
 
     const dataResult = await pool.query(
-      'SELECT * FROM projections WHERE created_by = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3',
+      'SELECT id, horizon_days, projected_spend, projected_revenue, projected_roas, status, created_by, created_at FROM projections WHERE created_by = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3',
       [userId, limit, offset],
     );
 
@@ -295,7 +295,7 @@ export class StrategicCommanderService {
     scenarioId: string,
   ): Promise<ScenarioRiskResult> {
     const result = await pool.query(
-      'SELECT * FROM scenarios WHERE id = $1',
+      'SELECT id, scenario_name, params, risk_score, risk_adjusted_return, probability_of_success, created_by, created_at FROM scenarios WHERE id = $1',
       [scenarioId],
     );
 
@@ -324,7 +324,7 @@ export class StrategicCommanderService {
     scenarioIds: string[],
   ): Promise<Record<string, unknown>> {
     const result = await pool.query(
-      'SELECT * FROM scenarios WHERE id = ANY($1) ORDER BY risk_adjusted_return DESC LIMIT 1',
+      'SELECT id, scenario_name, params, risk_score, risk_adjusted_return, probability_of_success, created_by, created_at FROM scenarios WHERE id = ANY($1) ORDER BY risk_adjusted_return DESC LIMIT 1',
       [scenarioIds],
     );
 
@@ -408,7 +408,7 @@ export class StrategicCommanderService {
     challengeId: string,
   ): Promise<Record<string, unknown>> {
     const result = await pool.query(
-      'SELECT * FROM strategy_challenges WHERE id = $1',
+      'SELECT id, original_strategy, challenge_type, status, initiated_by, counter_arguments, risk_assessment, resolution, created_at FROM strategy_challenges WHERE id = $1',
       [challengeId],
     );
 
@@ -468,7 +468,7 @@ export class StrategicCommanderService {
     userId: string,
   ): Promise<Record<string, unknown>[]> {
     const result = await pool.query(
-      'SELECT * FROM strategy_challenges WHERE initiated_by = $1 ORDER BY created_at DESC',
+      'SELECT id, original_strategy, challenge_type, status, initiated_by, counter_arguments, risk_assessment, resolution, created_at FROM strategy_challenges WHERE initiated_by = $1 ORDER BY created_at DESC',
       [userId],
     );
 
@@ -494,7 +494,7 @@ export class StrategicCommanderService {
     entityId: string,
   ): Promise<Record<string, unknown>> {
     const result = await pool.query(
-      'SELECT * FROM exposure_assessments WHERE entity_type = $1 AND entity_id = $2 ORDER BY created_at DESC LIMIT 1',
+      'SELECT id, entity_type, entity_id, max_loss, probability_of_loss, current_exposure, created_at FROM exposure_assessments WHERE entity_type = $1 AND entity_id = $2 ORDER BY created_at DESC LIMIT 1',
       [entityType, entityId],
     );
 
@@ -549,7 +549,7 @@ export class StrategicCommanderService {
     countryId: string,
   ): Promise<Record<string, unknown>[]> {
     const result = await pool.query(
-      'SELECT * FROM exposure_assessments WHERE entity_type = $1 AND entity_id = $2',
+      'SELECT id, entity_type, entity_id, max_loss, probability_of_loss, current_exposure, created_at FROM exposure_assessments WHERE entity_type = $1 AND entity_id = $2',
       ['country', countryId],
     );
 
@@ -628,7 +628,7 @@ export class StrategicCommanderService {
     comparisonId: string,
   ): Promise<StrategyRecommendation> {
     const result = await pool.query(
-      'SELECT * FROM strategy_comparisons WHERE id = $1',
+      'SELECT id, strategy_a, strategy_b, recommendation, confidence, created_by, created_at FROM strategy_comparisons WHERE id = $1',
       [comparisonId],
     );
 
@@ -653,7 +653,7 @@ export class StrategicCommanderService {
     userId: string,
   ): Promise<Record<string, unknown>[]> {
     const result = await pool.query(
-      'SELECT * FROM strategy_comparisons WHERE created_by = $1 ORDER BY created_at DESC',
+      'SELECT id, strategy_a, strategy_b, recommendation, confidence, created_by, created_at FROM strategy_comparisons WHERE created_by = $1 ORDER BY created_at DESC',
       [userId],
     );
 
@@ -713,7 +713,7 @@ export class StrategicCommanderService {
     simulationId: string,
   ): Promise<Record<string, unknown>> {
     const result = await pool.query(
-      'SELECT * FROM budget_simulations WHERE id = $1',
+      'SELECT id, total_budget, constraints, allocations, optimization_score, status, created_by, created_at FROM budget_simulations WHERE id = $1',
       [simulationId],
     );
 
@@ -744,7 +744,7 @@ export class StrategicCommanderService {
     allocationIds: string[],
   ): Promise<Record<string, unknown>[]> {
     const result = await pool.query(
-      'SELECT * FROM budget_simulations WHERE id = ANY($1)',
+      'SELECT id, total_budget, constraints, allocations, optimization_score, status, created_by, created_at FROM budget_simulations WHERE id = ANY($1)',
       [allocationIds],
     );
 
@@ -811,12 +811,12 @@ export class StrategicCommanderService {
     if (cached) return cached;
 
     const projectionsResult = await pool.query(
-      'SELECT * FROM projections WHERE created_by = $1 ORDER BY created_at DESC LIMIT 5',
+      'SELECT id, horizon_days, projected_spend, projected_revenue, projected_roas, status, created_by, created_at FROM projections WHERE created_by = $1 ORDER BY created_at DESC LIMIT 5',
       [userId],
     );
 
     const scenariosResult = await pool.query(
-      'SELECT * FROM scenarios WHERE created_by = $1 ORDER BY created_at DESC LIMIT 5',
+      'SELECT id, scenario_name, params, risk_score, risk_adjusted_return, probability_of_success, created_by, created_at FROM scenarios WHERE created_by = $1 ORDER BY created_at DESC LIMIT 5',
       [userId],
     );
 
@@ -848,7 +848,7 @@ export class StrategicCommanderService {
     userId: string,
   ): Promise<Record<string, unknown>[]> {
     const result = await pool.query(
-      'SELECT * FROM strategic_recommendations WHERE target_user = $1 AND status = $2 ORDER BY priority ASC',
+      'SELECT id, target_user, status, priority, country, channel, recommendation, confidence, created_at FROM strategic_recommendations WHERE target_user = $1 AND status = $2 ORDER BY priority ASC',
       [userId, 'active'],
     );
 

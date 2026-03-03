@@ -111,10 +111,7 @@ export const updateCreative = asyncHandler(async (req: Request, res: Response) =
 export const deleteCreative = asyncHandler(async (req: Request, res: Response) => {
   await CreativesService.delete(req.params.id);
 
-  res.json({
-    success: true,
-    data: { message: 'Creative deleted successfully' },
-  });
+  res.status(204).send();
 });
 
 /**

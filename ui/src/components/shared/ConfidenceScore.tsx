@@ -20,8 +20,8 @@ export default function ConfidenceScore({ score, size = 'md', showLabel = true }
 
   return (
     <div className="flex items-center gap-2">
-      <div className={`relative ${dimensions} flex items-center justify-center`}>
-        <svg className="w-full h-full -rotate-90" viewBox="0 0 40 40">
+      <div className={`relative ${dimensions} flex items-center justify-center`} role="meter" aria-valuenow={score} aria-valuemin={0} aria-valuemax={100} aria-label={`Confidence score: ${score} out of 100`}>
+        <svg className="w-full h-full -rotate-90" viewBox="0 0 40 40" aria-hidden="true">
           <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" strokeWidth="3"
             className="text-surface-200 dark:text-surface-700" />
           <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" strokeWidth="3"
@@ -29,7 +29,7 @@ export default function ConfidenceScore({ score, size = 'md', showLabel = true }
             strokeDasharray={circumference} strokeDashoffset={offset}
             strokeLinecap="round" />
         </svg>
-        <span className={`absolute ${textSize} font-bold ${colors.text}`}>{score}</span>
+        <span className={`absolute ${textSize} font-bold ${colors.text}`} aria-hidden="true">{score}</span>
       </div>
       {showLabel && (
         <span className={`text-xs font-medium ${colors.text} ${colors.bg} px-2 py-0.5 rounded-full`}>

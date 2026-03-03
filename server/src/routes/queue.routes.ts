@@ -18,6 +18,8 @@ import {
   getQueueStats,
   getWorkerStatus,
   cleanupJobs,
+  listDeadLetterJobs,
+  retryDeadLetterJob,
 } from '../controllers/queue.controller';
 
 const router = Router();
@@ -46,5 +48,11 @@ router.post('/jobs/:jobId/retry', authenticate, requirePermission('write:infrast
 
 // POST /queue/cleanup – cleanup old jobs (requires write:infrastructure)
 router.post('/cleanup', authenticate, requirePermission('write:infrastructure'), cleanupJobs);
+
+// GET /queue/dead-letter – list dead letter jobs
+router.get('/dead-letter', authenticate, requirePermission('read:infrastructure'), listDeadLetterJobs);
+
+// POST /queue/dead-letter/:id/retry – retry a dead letter job (requires write:infrastructure)
+router.post('/dead-letter/:id/retry', authenticate, requirePermission('write:infrastructure'), retryDeadLetterJob);
 
 export default router;

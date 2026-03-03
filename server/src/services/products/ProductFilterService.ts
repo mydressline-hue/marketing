@@ -389,7 +389,7 @@ export class ProductFilterService {
     const orderParam = uniqueIds.length + 1;
 
     const result = await query<Product>(
-      `SELECT * FROM products
+      `SELECT id, title, description, shopify_id, images, variants, inventory_level, is_active, synced_at, created_at, updated_at FROM products
        WHERE id IN (${placeholders})
        ORDER BY array_position($${orderParam}::text[], id::text)`,
       [...uniqueIds, uniqueIds],
@@ -447,7 +447,7 @@ export class ProductFilterService {
 
       if (tsTotal > 0) {
         const tsResult = await query<Record<string, unknown>>(
-          `SELECT p.*,
+          `SELECT p.id, p.title, p.description, p.shopify_id, p.images, p.variants, p.inventory_level, p.is_active, p.synced_at, p.created_at, p.updated_at,
                   ts_rank(
                     setweight(to_tsvector('english', COALESCE(p.title, '')), 'A') ||
                     setweight(to_tsvector('english', COALESCE(p.description, '')), 'B'),
@@ -502,7 +502,7 @@ export class ProductFilterService {
     const total = parseInt(countResult.rows[0].count, 10);
 
     const dataResult = await query<Record<string, unknown>>(
-      `SELECT *,
+      `SELECT id, title, description, shopify_id, images, variants, inventory_level, is_active, synced_at, created_at, updated_at,
               CASE
                 WHEN title ILIKE $1 THEN 3
                 WHEN title ILIKE $2 THEN 2
@@ -564,7 +564,7 @@ export class ProductFilterService {
 
     // Fetch the source product
     const src = await query<Record<string, unknown>>(
-      'SELECT * FROM products WHERE id = $1',
+      'SELECT id, title, description, shopify_id, images, variants, inventory_level, is_active, synced_at, created_at, updated_at FROM products WHERE id = $1',
       [productId],
     );
     if (src.rows.length === 0) {

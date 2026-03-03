@@ -70,6 +70,9 @@ export const envSchema = z
     // ── Kling AI Video ──────────────────────────────────────────────────
     KLING_API_KEY: z.string().optional(),
 
+    // ── Password Reset ──────────────────────────────────────────────────
+    PASSWORD_RESET_EXPIRY_MINUTES: coerceNumber(60),
+
     // ── Account Lockout ────────────────────────────────────────────────
     LOCKOUT_THRESHOLD: coerceNumber(5),
     LOCKOUT_DURATION_MINUTES: coerceNumber(15),
@@ -82,15 +85,39 @@ export const envSchema = z
     USER_RATE_LIMIT_MAX: coerceNumber(100),
     USER_RATE_LIMIT_WINDOW_SECONDS: coerceNumber(60),
 
+    // ── Job Queue ─────────────────────────────────────────────────────
+    MAX_JOB_RETRIES: coerceNumber(3),
+
+    // ── Clustering ──────────────────────────────────────────────────────
+    CLUSTER_ENABLED: coerceBoolean(false),
+    CLUSTER_WORKERS: coerceNumber(0), // 0 = use os.cpus().length at runtime
+
     // ── Logging ────────────────────────────────────────────────────────
     LOG_LEVEL: z.string().default('info'),
     LOG_FORMAT: z.string().default('json'),
 
+    // ── Database Query Logging ──────────────────────────────────────────
+    SLOW_QUERY_THRESHOLD_MS: coerceNumber(100),
+
+    // ── APM / Observability ─────────────────────────────────────────────
+    SENTRY_DSN: z.string().optional(),
+    APM_ENABLED: coerceBoolean(false),
+    METRICS_ENABLED: coerceBoolean(true),
+
     // ── CORS ───────────────────────────────────────────────────────────
     CORS_ORIGINS: z.string().default('http://localhost:5173'),
 
+    // ── Google OAuth ──────────────────────────────────────────────────
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
+    GOOGLE_CALLBACK_URL: z.string().default('/api/auth/google/callback'),
+
     // ── MFA ────────────────────────────────────────────────────────────
     MFA_ISSUER: z.string().default('AIGrowthEngine'),
+
+    // ── Bandit / Contextual Bandits ─────────────────────────────────────
+    BANDIT_DECAY_HALF_LIFE_DAYS: coerceNumber(30),
+    BANDIT_EXPLORATION_BONUS: coerceNumber(0.1),
 
     // ── Derived ─────────────────────────────────────────────────────────
     AI_ENABLED: coerceBoolean(false), // Will be overridden after parse

@@ -331,12 +331,9 @@ export const removeFromIpWhitelist = asyncHandler(async (req: Request, res: Resp
   const { id } = req.params;
   const userId = req.user!.id;
 
-  const result = await SecurityHardeningService.removeFromWhitelist(id, userId);
+  await SecurityHardeningService.removeFromWhitelist(id, userId);
 
-  res.json({
-    success: true,
-    data: result,
-  });
+  res.status(204).send();
 });
 
 /**

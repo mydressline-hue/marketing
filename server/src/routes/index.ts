@@ -27,6 +27,10 @@ import finalOutputsWeaknessRoutes from './final-outputs-weakness.routes';
 import finalOutputsRoadmapRoutes from './final-outputs-roadmap.routes';
 import finalOutputsValidationRoutes from './final-outputs-validation.routes';
 import mfaRoutes from './mfa.routes';
+import metricsRoutes from './metrics.routes';
+import featureFlagsRoutes from './feature-flags.routes';
+import workflowRoutes from './workflow.routes';
+import learningRoutes from './learning.routes';
 
 const router = Router();
 
@@ -58,6 +62,12 @@ router.use('/final-outputs/weakness-report', finalOutputsWeaknessRoutes);
 router.use('/final-outputs', finalOutputsRoadmapRoutes);
 router.use('/final-outputs', finalOutputsValidationRoutes);
 router.use('/mfa', mfaRoutes);
+router.use('/feature-flags', featureFlagsRoutes);
+router.use('/workflows', workflowRoutes);
+router.use('/learning', learningRoutes);
+
+// Metrics
+router.use('/metrics', metricsRoutes);
 
 // Health check
 router.get('/health', (_req, res) => {

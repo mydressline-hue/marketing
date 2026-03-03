@@ -114,14 +114,14 @@ export class ShopifyCollectionsService {
     const total = parseInt(countResult.rows[0].count as string, 10);
 
     const dataResult = await pool.query(
-      `SELECT * FROM shopify_collections WHERE is_active = true ORDER BY ${sortCol} ${sortDir} LIMIT $1 OFFSET $2`,
+      `SELECT id, title, description, handle, collection_type, rules, image_url, sort_order, is_active, product_count, created_at, updated_at FROM shopify_collections WHERE is_active = true ORDER BY ${sortCol} ${sortDir} LIMIT $1 OFFSET $2`,
       [pagination.limit, offset]);
 
     return { data: dataResult.rows as Collection[], total, page: pagination.page, totalPages: Math.ceil(total / pagination.limit) };
   }
 
   static async getCollection(id: string): Promise<Collection> {
-    const result = await pool.query('SELECT * FROM shopify_collections WHERE id = $1 AND is_active = true', [id]);
+    const result = await pool.query('SELECT id, title, description, handle, collection_type, rules, image_url, sort_order, is_active, product_count, created_at, updated_at FROM shopify_collections WHERE id = $1 AND is_active = true', [id]);
     if (result.rows.length === 0) throw new NotFoundError(`Collection not found: ${id}`);
     return result.rows[0] as Collection;
   }

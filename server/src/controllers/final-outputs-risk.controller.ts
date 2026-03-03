@@ -83,7 +83,6 @@ export const getRisksByCategory = asyncHandler(
       success: true,
       data: risks,
       meta: {
-        category,
         total: risks.length,
       },
     });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   AlertTriangle,
   Shield,
@@ -211,32 +211,35 @@ export default function FraudDetection() {
   const resolutionLog = alertsData?.resolutionLog ?? [];
   const kpis = alertsData?.kpis;
 
-  const rules = (rulesData?.rules ?? []).map((r) => ({
-    ...r,
-    enabled: localRuleOverrides[r.id] !== undefined ? localRuleOverrides[r.id] : r.enabled,
-  }));
+  const rules = useMemo(
+    () => (rulesData?.rules ?? []).map((r) => ({
+      ...r,
+      enabled: localRuleOverrides[r.id] !== undefined ? localRuleOverrides[r.id] : r.enabled,
+    })),
+    [rulesData, localRuleOverrides],
+  );
 
-  const activeAlerts = fraudAlerts.filter((a) => a.status === 'active').length;
-  const resolvedAlerts = fraudAlerts.filter((a) => a.status === 'resolved').length;
+  const activeAlerts = useMemo(() => fraudAlerts.filter((a) => a.status === 'active').length, [fraudAlerts]);
+  const resolvedAlerts = useMemo(() => fraudAlerts.filter((a) => a.status === 'resolved').length, [fraudAlerts]);
 
   // ------ Handlers ------
-  const handleRunAgent = async () => {
+  const handleRunAgent = useCallback(async () => {
     await runAgent();
     refetchAlerts();
     refetchRules();
-  };
+  }, [runAgent, refetchAlerts, refetchRules]);
 
-  const handleResolveAlert = async (alertId: string) => {
+  const handleResolveAlert = useCallback(async (alertId: string) => {
     await resolveAlert({ alertId, action: 'resolve' });
     refetchAlerts();
-  };
+  }, [resolveAlert, refetchAlerts]);
 
-  const handleBlockSource = async (alertId: string) => {
+  const handleBlockSource = useCallback(async (alertId: string) => {
     await resolveAlert({ alertId, action: 'block_source' });
     refetchAlerts();
-  };
+  }, [resolveAlert, refetchAlerts]);
 
-  const toggleRule = async (ruleId: string) => {
+  const toggleRule = useCallback(async (ruleId: string) => {
     const currentRule = rules.find((r) => r.id === ruleId);
     if (!currentRule) return;
     const newEnabled = !currentRule.enabled;
@@ -244,7 +247,7 @@ export default function FraudDetection() {
     setLocalRuleOverrides((prev) => ({ ...prev, [ruleId]: newEnabled }));
     await toggleRuleApi({ ruleId, enabled: newEnabled });
     refetchRules();
-  };
+  }, [rules, toggleRuleApi, refetchRules]);
 
   return (
     <div className="space-y-6">

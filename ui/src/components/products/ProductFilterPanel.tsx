@@ -31,7 +31,7 @@ function Accordion({ title, children, defaultOpen = false }: { title: string; ch
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="border-b border-surface-100 dark:border-surface-700 last:border-b-0">
-      <button onClick={() => setOpen(!open)} className="flex items-center justify-between w-full py-2.5 text-sm font-medium text-surface-700 dark:text-surface-200">
+      <button onClick={() => setOpen(!open)} className="flex items-center justify-between w-full py-2.5 text-sm font-medium text-surface-700 dark:text-surface-200" aria-expanded={open} aria-label={`${open ? 'Collapse' : 'Expand'} ${title} filter`}>
         {title}
         <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -89,7 +89,7 @@ export default function ProductFilterPanel({ onFilterChange, initialFilters = {}
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
         <input value={searchInput} onChange={e => setSearchInput(e.target.value)} placeholder="Search products..."
           className="w-full pl-9 pr-8 py-2 text-sm border border-surface-200 dark:border-surface-700 rounded-lg bg-white dark:bg-surface-900 text-surface-900 dark:text-surface-100 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500" />
-        {searchInput && <button onClick={() => setSearchInput('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-600"><X className="w-3.5 h-3.5" /></button>}
+        {searchInput && <button onClick={() => setSearchInput('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-600" aria-label="Clear search"><X className="w-3.5 h-3.5" /></button>}
       </div>
 
       {resultCount !== undefined && <p className="text-xs text-surface-500 dark:text-surface-400 mb-3">{resultCount} products found</p>}

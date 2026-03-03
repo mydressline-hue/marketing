@@ -5,7 +5,13 @@ import { getConfig } from './config/production';
 import app from './app';
 import { MarketingWebSocketServer } from './websocket';
 
-async function main(): Promise<void> {
+/**
+ * Start the HTTP server, WebSocket server, and wire up graceful shutdown.
+ *
+ * Extracted into a named export so the cluster primary can import and invoke
+ * it inside each worker process without duplicating the bootstrap logic.
+ */
+export async function startServer(): Promise<void> {
   try {
     // Initialize database and Redis connections
     await initializeConnections();
@@ -63,4 +69,9 @@ process.on('uncaughtException', (error: Error) => {
   process.exit(1);
 });
 
-main();
+// Auto-start when this file is the direct entry point (e.g. `node dist/index.js`).
+// When imported by cluster.ts workers, the caller is responsible for invoking
+// startServer() explicitly, so we guard with a require.main check.
+if (require.main === module) {
+  startServer();
+}

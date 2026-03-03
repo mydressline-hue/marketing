@@ -60,7 +60,7 @@ export class CommanderService {
     const total = parseInt(countResult.rows[0].total, 10);
 
     const dataResult = await pool.query(
-      `SELECT * FROM strategic_projections ${where} ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx}`,
+      `SELECT id, projected_spend, projected_revenue, projected_roas, horizon_days, status, created_by, created_at FROM strategic_projections ${where} ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx}`,
       [...params, limit, offset],
     );
 
@@ -197,10 +197,10 @@ export class CommanderService {
     if (cached) return cached;
 
     const projectionsResult = await pool.query(
-      `SELECT * FROM strategic_projections ORDER BY created_at DESC LIMIT 5`,
+      `SELECT id, projected_spend, projected_revenue, projected_roas, horizon_days, status, created_by, created_at FROM strategic_projections ORDER BY created_at DESC LIMIT 5`,
     );
     const scenariosResult = await pool.query(
-      `SELECT * FROM risk_weighted_scenarios ORDER BY created_at DESC LIMIT 5`,
+      `SELECT id, scenario_name, risk_score, risk_adjusted_return, probability_of_success, params, selected, created_by, created_at FROM risk_weighted_scenarios ORDER BY created_at DESC LIMIT 5`,
     );
     const exposureResult = await pool.query(
       `SELECT SUM(max_loss) as total_max_loss, SUM(current_exposure) as total_exposure
@@ -240,7 +240,7 @@ export class CommanderService {
     }
 
     const { rows } = await pool.query(
-      `SELECT * FROM strategic_recommendations
+      `SELECT id, target_user, status, priority, country, channel, recommendation, confidence, created_at FROM strategic_recommendations
        WHERE ${conditions.join(' AND ')}
        ORDER BY priority ASC`,
       params,

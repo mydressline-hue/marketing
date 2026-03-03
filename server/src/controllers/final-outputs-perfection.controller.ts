@@ -8,6 +8,7 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
 import { PerfectionRecommendationsOutputService } from '../services/final-outputs';
+import { ValidationError } from '../utils/errors';
 import type { RecommendationCategory } from '../services/final-outputs';
 
 // ---------------------------------------------------------------------------
@@ -68,15 +69,10 @@ export const getRecommendationsByCategory = asyncHandler(
     const { category } = req.params;
 
     if (!VALID_CATEGORIES.has(category)) {
-      res.status(400).json({
-        success: false,
-        error: {
-          code: 'INVALID_CATEGORY',
-          message: `Invalid category "${category}". Valid categories: ${Array.from(VALID_CATEGORIES).join(', ')}`,
-          statusCode: 400,
-        },
-      });
-      return;
+      throw new ValidationError(
+        `Invalid category "${category}". Valid categories: ${Array.from(VALID_CATEGORIES).join(', ')}`,
+        [{ field: 'category', message: `Must be one of: ${Array.from(VALID_CATEGORIES).join(', ')}` }],
+      );
     }
 
     const recommendations =

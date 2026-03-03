@@ -80,11 +80,30 @@ pool.on('error', (err: Error) => {
   logger.error('Unexpected error on idle database client:', err);
 });
 
+// ---------------------------------------------------------------------------
+// Slow-query logging threshold (configurable via SLOW_QUERY_THRESHOLD_MS)
+// ---------------------------------------------------------------------------
+const slowQueryThresholdMs: number = env.SLOW_QUERY_THRESHOLD_MS;
+
 async function query<T extends QueryResultRow = QueryResultRow>(
   text: string,
   params?: unknown[],
 ): Promise<QueryResult<T>> {
-  return pool.query<T>(text, params);
+  const start = Date.now();
+  const result = await pool.query<T>(text, params);
+  const durationMs = Date.now() - start;
+
+  if (durationMs >= slowQueryThresholdMs) {
+    const truncatedQuery =
+      text.length > 200 ? text.substring(0, 200) + '...' : text;
+    logger.warn('Slow query detected', {
+      query: truncatedQuery,
+      duration_ms: durationMs,
+      rows: result.rowCount,
+    });
+  }
+
+  return result;
 }
 
 async function getClient(): Promise<PoolClient> {

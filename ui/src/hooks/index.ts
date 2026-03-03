@@ -1,2 +1,10 @@
 export { useApiQuery, useApiMutation } from './useApi';
+export type { UseApiQueryOptions, UseApiQueryResult, MutationMethod, UseApiMutationOptions, UseApiMutationResult } from './useApi';
 export { useWebSocket } from './useWebSocket';
+export type { WebSocketChannel, WebSocketMessage } from './useWebSocket';
+export { useMediaQuery, useIsMobile, useIsTablet, useIsDesktop } from './useMediaQuery';
+export { useTheme } from './useTheme';
+export { useThemeCustomization } from './useThemeCustomization';
+export type { AccentColor, Density } from './useThemeCustomization';
+export { useVirtualList } from './useVirtualList';
+export type { VirtualItem, UseVirtualListOptions, UseVirtualListResult } from './useVirtualList';

@@ -122,9 +122,9 @@ export default function AIProductPicker() {
             subtitle={`Strategy: ${result.strategy} | Candidates: ${result.totalCandidates}`}
             actions={
               <div className="flex items-center gap-2">
-                <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-primary-100 dark:bg-primary-500/20 text-primary-600' : 'text-surface-400'}`}><Grid3X3 className="w-4 h-4" /></button>
-                <button onClick={() => setViewMode('list')} className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-primary-100 dark:bg-primary-500/20 text-primary-600' : 'text-surface-400'}`}><List className="w-4 h-4" /></button>
-                <button onClick={handleExport} className="flex items-center gap-1 text-xs text-surface-600 dark:text-surface-300 hover:text-surface-800 font-medium">
+                <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-primary-100 dark:bg-primary-500/20 text-primary-600' : 'text-surface-400'}`} aria-label="Grid view" aria-pressed={viewMode === 'grid'}><Grid3X3 className="w-4 h-4" /></button>
+                <button onClick={() => setViewMode('list')} className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-primary-100 dark:bg-primary-500/20 text-primary-600' : 'text-surface-400'}`} aria-label="List view" aria-pressed={viewMode === 'list'}><List className="w-4 h-4" /></button>
+                <button onClick={handleExport} className="flex items-center gap-1 text-xs text-surface-600 dark:text-surface-300 hover:text-surface-800 font-medium" aria-label="Export results as CSV">
                   <Download className="w-3.5 h-3.5" /> Export
                 </button>
               </div>
@@ -163,7 +163,7 @@ export default function AIProductPicker() {
 
           {/* Insights */}
           <Card title="Performance Insights" actions={
-            <button onClick={() => setShowInsights(!showInsights)} className="text-surface-400 hover:text-surface-600">
+            <button onClick={() => setShowInsights(!showInsights)} className="text-surface-400 hover:text-surface-600" aria-expanded={showInsights} aria-label={showInsights ? 'Hide insights' : 'Show insights'}>
               {showInsights ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
           }>

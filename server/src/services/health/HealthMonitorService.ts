@@ -97,7 +97,7 @@ export class HealthMonitorService {
     const total = parseInt(countResult.rows[0].total, 10);
 
     const dataResult = await pool.query(
-      `SELECT * FROM health_alerts ${where} ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx}`,
+      `SELECT id, campaign_id, alert_type, severity, title, description, metric_name, current_value, threshold_value, recommended_action, auto_action_taken, acknowledged, acknowledged_by, created_at, resolved_at FROM health_alerts ${where} ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx}`,
       [...params, limit, offset],
     );
 
@@ -160,7 +160,7 @@ export class HealthMonitorService {
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const { rows } = await pool.query(
-      `SELECT * FROM campaign_health_scores ${where} ORDER BY checked_at ASC`,
+      `SELECT id, campaign_id, overall_health, health_grade, cpa_health, spend_health, creative_health, ctr_health, pixel_health, checked_at FROM campaign_health_scores ${where} ORDER BY checked_at ASC`,
       params,
     );
 

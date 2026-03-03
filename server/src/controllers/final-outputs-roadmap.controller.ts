@@ -8,6 +8,7 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
 import { ExecutionRoadmapOutputService } from '../services/final-outputs';
+import { ValidationError } from '../utils/errors';
 
 // ---------------------------------------------------------------------------
 // Handlers
@@ -38,15 +39,9 @@ export const getExecutionRoadmapPhase = asyncHandler(
     const phaseParam = parseInt(req.params.phase, 10);
 
     if (isNaN(phaseParam) || phaseParam < 1 || phaseParam > 3) {
-      res.status(400).json({
-        success: false,
-        error: {
-          code: 'INVALID_PHASE',
-          message: 'Phase must be 1, 2, or 3.',
-          statusCode: 400,
-        },
-      });
-      return;
+      throw new ValidationError('Phase must be 1, 2, or 3.', [
+        { field: 'phase', message: 'Must be 1, 2, or 3' },
+      ]);
     }
 
     const phase = await ExecutionRoadmapOutputService.getRoadmapByPhase(phaseParam);

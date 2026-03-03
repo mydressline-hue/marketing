@@ -43,12 +43,9 @@ export const disconnectPlatform = asyncHandler(async (req: Request, res: Respons
   const { platformType } = req.params;
   const userId = req.user!.id;
 
-  const result = await IntegrationsService.disconnectPlatform(platformType, userId);
+  await IntegrationsService.disconnectPlatform(platformType, userId);
 
-  res.json({
-    success: true,
-    data: result,
-  });
+  res.status(204).send();
 });
 
 // ===========================================================================

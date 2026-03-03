@@ -91,10 +91,7 @@ export const updateProduct = asyncHandler(async (req: Request, res: Response) =>
 export const deleteProduct = asyncHandler(async (req: Request, res: Response) => {
   await ProductsService.delete(req.params.id);
 
-  res.json({
-    success: true,
-    data: { message: 'Product deleted successfully' },
-  });
+  res.status(204).send();
 });
 
 /**
@@ -122,9 +119,5 @@ export const bulkSync = asyncHandler(async (req: Request, res: Response) => {
   res.json({
     success: true,
     data: result,
-    meta: {
-      created: result.created,
-      updated: result.updated,
-    },
   });
 });

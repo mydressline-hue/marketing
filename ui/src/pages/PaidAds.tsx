@@ -410,10 +410,10 @@ export default function PaidAds() {
   }, []);
 
   // -----------------------------------------------------------------------
-  // Table columns
+  // Table columns (memoized to avoid re-creating render functions on every render)
   // -----------------------------------------------------------------------
 
-  const columns = [
+  const columns = useMemo(() => [
     {
       key: 'name',
       label: 'Campaign Name',
@@ -545,7 +545,7 @@ export default function PaidAds() {
         );
       },
     },
-  ];
+  ], [openEditModal, handleToggleStatus]);
 
   // -----------------------------------------------------------------------
   // Render

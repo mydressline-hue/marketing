@@ -908,8 +908,24 @@ export const changePasswordSchema = z.object({
     .regex(/[0-9]/, 'New password must contain at least one number'),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('Must be a valid email address'),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Reset token is required'),
+  newPassword: z
+    .string()
+    .min(8, 'New password must be at least 8 characters')
+    .regex(/[A-Z]/, 'New password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'New password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'New password must contain at least one number'),
+});
+
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
 // ---------------------------------------------------------------------------
 // List/filter query schemas for routes missing them

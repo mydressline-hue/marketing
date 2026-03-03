@@ -16,6 +16,10 @@ import {
   getProfile,
   updateProfile,
   changePassword,
+  forgotPassword,
+  resetPassword,
+  googleAuth,
+  googleCallback,
 } from '../controllers/auth.controller';
 import { authenticate } from '../middleware/auth';
 import { validateBody } from '../middleware/validation';
@@ -24,6 +28,8 @@ import {
   loginSchema,
   updateProfileSchema,
   changePasswordSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 } from '../validators/schemas';
 
 // ---------------------------------------------------------------------------
@@ -36,6 +42,12 @@ const router = Router();
 router.post('/register', validateBody(createUserSchema), register);
 router.post('/login', validateBody(loginSchema), login);
 router.post('/refresh-token', refreshToken);
+router.post('/forgot-password', validateBody(forgotPasswordSchema), forgotPassword);
+router.post('/reset-password', validateBody(resetPasswordSchema), resetPassword);
+
+// ── Google OAuth routes (no authentication required) ──────────────────────
+router.get('/google', googleAuth);
+router.get('/google/callback', googleCallback);
 
 // ── Authenticated routes ───────────────────────────────────────────────────
 router.post('/logout', authenticate, logout);

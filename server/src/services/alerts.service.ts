@@ -128,7 +128,7 @@ export class AlertsService {
     const totalPages = Math.ceil(total / limit);
 
     const dataResult = await pool.query(
-      `SELECT * FROM fraud_alerts ${whereClause}
+      `SELECT id, type, campaign_id, severity, confidence_score, status, details, created_at, acknowledged_by, acknowledged_at, resolved_by, resolved_at, resolution FROM fraud_alerts ${whereClause}
        ORDER BY created_at DESC
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, limit, offset],
@@ -149,7 +149,7 @@ export class AlertsService {
    */
   static async getById(id: string): Promise<FraudAlert> {
     const result = await pool.query(
-      `SELECT * FROM fraud_alerts WHERE id = $1`,
+      `SELECT id, type, campaign_id, severity, confidence_score, status, details, created_at, acknowledged_by, acknowledged_at, resolved_by, resolved_at, resolution FROM fraud_alerts WHERE id = $1`,
       [id],
     );
 
@@ -311,7 +311,7 @@ export class AlertsService {
    */
   static async getActiveAlerts(): Promise<FraudAlert[]> {
     const result = await pool.query(
-      `SELECT * FROM fraud_alerts
+      `SELECT id, type, campaign_id, severity, confidence_score, status, details, created_at, acknowledged_by, acknowledged_at, resolved_by, resolved_at, resolution FROM fraud_alerts
        WHERE status NOT IN ('resolved', 'dismissed')
        ORDER BY
          CASE severity

@@ -289,7 +289,7 @@ export class PerfectionRecommendationsOutputService {
   static async fetchLatestOrchestration(): Promise<Record<string, unknown> | null> {
     try {
       const result = await pool.query(
-        `SELECT * FROM orchestrator_results ORDER BY created_at DESC LIMIT 1`,
+        `SELECT id, overall_confidence, confidence_score, contradictions_count, resolved_count, agent_coverage, reasoning, actions_count, output_data, created_at FROM orchestrator_results ORDER BY created_at DESC LIMIT 1`,
       );
       if (result.rows.length === 0) {
         return null;

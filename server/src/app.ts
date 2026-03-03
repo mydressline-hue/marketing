@@ -53,6 +53,7 @@ import finalOutputsChannelsRoutes from './routes/final-outputs-channels.routes';
 import finalOutputsRoadmapRoutes from './routes/final-outputs-roadmap.routes';
 import finalOutputsValidationRoutes from './routes/final-outputs-validation.routes';
 import videoRoutes from './routes/video.routes';
+import metricsRoutes from './routes/metrics.routes';
 
 // ---------------------------------------------------------------------------
 // App
@@ -86,6 +87,9 @@ app.use(perUserRateLimit);
 
 // ── Health check ──────────────────────────────────────────────────────────
 app.use('/health', healthcheckRoutes);
+
+// ── Prometheus metrics ───────────────────────────────────────────────────
+app.use('/metrics', metricsRoutes);
 
 // ── API routes ────────────────────────────────────────────────────────────
 const prefix = env.API_PREFIX;
