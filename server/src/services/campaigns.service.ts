@@ -514,6 +514,14 @@ export class CampaignsService {
     logger.info('Campaign updated', { campaignId: id });
 
     const campaign = result.rows[0];
+
+    await AuditService.log({
+      action: 'campaign.update',
+      resourceType: 'campaign',
+      resourceId: id,
+      details: { updatedFields: Object.keys(data).filter((k) => (data as Record<string, unknown>)[k] !== undefined) },
+    });
+
     eventBus.broadcast('campaigns', {
       action: 'updated',
       campaignId: id,
@@ -583,6 +591,14 @@ export class CampaignsService {
       userId,
     });
 
+    await AuditService.log({
+      userId,
+      action: 'campaign.updateStatus',
+      resourceType: 'campaign',
+      resourceId: id,
+      details: { previousStatus: currentStatus, newStatus: status },
+    });
+
     eventBus.broadcast('campaigns', {
       action: 'status_changed',
       campaignId: id,
@@ -610,6 +626,13 @@ export class CampaignsService {
     // Invalidate caches
     await cacheFlush(`${CACHE_PREFIX}:*`);
     logger.info('Campaign soft-deleted (archived)', { campaignId: id });
+
+    await AuditService.log({
+      action: 'campaign.delete',
+      resourceType: 'campaign',
+      resourceId: id,
+      details: { status: 'archived' },
+    });
 
     eventBus.broadcast('campaigns', {
       action: 'deleted',

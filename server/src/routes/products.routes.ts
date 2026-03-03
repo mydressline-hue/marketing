@@ -33,8 +33,8 @@ const router = Router();
 router.use(authenticate);
 
 // ---- Read operations ----
-router.get('/', validateQuery(listProductsQuerySchema), listProducts);
-router.get('/:id', validateParams(idParamSchema), getProduct);
+router.get('/', requirePermission('read:campaigns'), validateQuery(listProductsQuerySchema), listProducts);
+router.get('/:id', requirePermission('read:campaigns'), validateParams(idParamSchema), getProduct);
 
 // ---- Write operations (require write:campaigns permission) ----
 router.post('/', requirePermission('write:campaigns'), validateBody(createProductSchema), createProduct);

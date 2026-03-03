@@ -113,11 +113,6 @@ function getAdService(pt: AdPlatform) {
   return map[pt];
 }
 
-function _getCrmService(pt: CrmPlatform) {
-  const map = { salesforce: SalesforceService, hubspot: HubSpotService, klaviyo: KlaviyoService, mailchimp: MailchimpService, iterable: IterableService };
-  return map[pt];
-}
-
 function getAnalyticsService(pt: AnalyticsPlatform) {
   const map = { looker: LookerService, tableau: TableauService, powerbi: PowerBIService };
   return map[pt];
@@ -342,8 +337,6 @@ export class IntegrationsService {
     if (conn.rows.length === 0) throw new NotFoundError(`Platform ${platformType} is not connected`);
 
     const connectionId = conn.rows[0].id;
-    // Decrypt credentials for use by platform-specific services
-    const _credentials = conn.rows[0].credentials ? decryptCredentials(conn.rows[0].credentials) : null;
     const syncId = generateId();
     const startedAt = new Date().toISOString();
 
@@ -508,9 +501,6 @@ export class IntegrationsService {
     );
     if (conn.rows.length === 0) throw new NotFoundError(`CRM platform ${platformType} is not connected`);
 
-    const _connectionId = conn.rows[0].id;
-    // Decrypt credentials for use by platform-specific services
-    const _credentials = conn.rows[0].credentials ? decryptCredentials(conn.rows[0].credentials) : null;
     const syncId = generateId();
     const startedAt = new Date();
 
@@ -590,9 +580,6 @@ export class IntegrationsService {
     );
     if (conn.rows.length === 0) throw new NotFoundError(`Analytics platform ${platformType} is not connected`);
 
-    const _connectionId = conn.rows[0].id;
-    // Decrypt credentials for use by platform-specific services
-    const _credentials = conn.rows[0].credentials ? decryptCredentials(conn.rows[0].credentials) : null;
     const exportId = generateId();
     const requestedAt = new Date().toISOString();
 

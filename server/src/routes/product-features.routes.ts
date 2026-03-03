@@ -68,32 +68,32 @@ router.use(authenticate);
 
 // ── AI Product Picker ────────────────────────────────────────────────────
 router.post('/ai-pick', requirePermission('write:campaigns'), validateBody(pickProductsBodySchema), pickProducts);
-router.get('/ai-pick/strategies', getStrategies);
+router.get('/ai-pick/strategies', requirePermission('read:campaigns'), getStrategies);
 
 // ── Enhanced Filtering ───────────────────────────────────────────────────
-router.get('/filter', validateQuery(filterProductsRefinedQuerySchema), filterProducts);
-router.get('/filters/aggregations', validateQuery(filterAggregationsQuerySchema), getFilterAggregations);
-router.get('/search', validateQuery(searchProductsQuerySchema), searchProducts);
-router.get('/:id/similar', validateParams(idParamSchema), validateQuery(similarProductsQuerySchema), getSimilarProducts);
+router.get('/filter', requirePermission('read:campaigns'), validateQuery(filterProductsRefinedQuerySchema), filterProducts);
+router.get('/filters/aggregations', requirePermission('read:campaigns'), validateQuery(filterAggregationsQuerySchema), getFilterAggregations);
+router.get('/search', requirePermission('read:campaigns'), validateQuery(searchProductsQuerySchema), searchProducts);
+router.get('/:id/similar', requirePermission('read:campaigns'), validateParams(idParamSchema), validateQuery(similarProductsQuerySchema), getSimilarProducts);
 
 // ── Collections ──────────────────────────────────────────────────────────
-router.get('/collections', validateQuery(listCollectionsQuerySchema), listCollections);
-router.get('/collections/:id', validateParams(idParamSchema), getCollection);
+router.get('/collections', requirePermission('read:campaigns'), validateQuery(listCollectionsQuerySchema), listCollections);
+router.get('/collections/:id', requirePermission('read:campaigns'), validateParams(idParamSchema), getCollection);
 router.post('/collections', requirePermission('write:campaigns'), validateBody(createCollectionBodySchema), createCollection);
 router.put('/collections/:id', requirePermission('write:campaigns'), validateParams(idParamSchema), validateBody(updateCollectionBodySchema), updateCollection);
 router.delete('/collections/:id', requirePermission('write:campaigns'), validateParams(idParamSchema), deleteCollection);
 router.post('/collections/:id/products', requirePermission('write:campaigns'), validateParams(idParamSchema), validateBody(collectionProductsBodySchema), addCollectionProducts);
 router.delete('/collections/:id/products', requirePermission('write:campaigns'), validateParams(idParamSchema), validateBody(collectionProductsBodySchema), removeCollectionProducts);
-router.get('/collections/:id/products', validateParams(idParamSchema), validateQuery(collectionProductsQuerySchema), getCollectionProducts);
+router.get('/collections/:id/products', requirePermission('read:campaigns'), validateParams(idParamSchema), validateQuery(collectionProductsQuerySchema), getCollectionProducts);
 router.put('/collections/:id/products/reorder', requirePermission('write:campaigns'), validateParams(idParamSchema), validateBody(reorderCollectionProductsBodySchema), reorderCollectionProducts);
 
 // ── Analytics ────────────────────────────────────────────────────────────
 router.post('/analytics/view', requirePermission('write:campaigns'), validateBody(recordProductViewBodySchema), recordProductView);
 router.post('/analytics/sale', requirePermission('write:campaigns'), validateBody(recordProductSaleBodySchema), recordProductSale);
-router.get('/analytics/top', validateQuery(topProductsQuerySchema), getTopProducts);
-router.get('/analytics/summary', validateQuery(analyticsSummaryQuerySchema), getAnalyticsSummary);
-router.get('/analytics/trends', validateQuery(analyticsTrendsQuerySchema), getAnalyticsTrends);
-router.get('/analytics/collections', validateQuery(collectionAnalyticsQuerySchema), getCollectionAnalytics);
-router.get('/analytics/:id', validateParams(idParamSchema), validateQuery(productAnalyticsQuerySchema), getProductAnalytics);
+router.get('/analytics/top', requirePermission('read:campaigns'), validateQuery(topProductsQuerySchema), getTopProducts);
+router.get('/analytics/summary', requirePermission('read:campaigns'), validateQuery(analyticsSummaryQuerySchema), getAnalyticsSummary);
+router.get('/analytics/trends', requirePermission('read:campaigns'), validateQuery(analyticsTrendsQuerySchema), getAnalyticsTrends);
+router.get('/analytics/collections', requirePermission('read:campaigns'), validateQuery(collectionAnalyticsQuerySchema), getCollectionAnalytics);
+router.get('/analytics/:id', requirePermission('read:campaigns'), validateParams(idParamSchema), validateQuery(productAnalyticsQuerySchema), getProductAnalytics);
 
 export default router;

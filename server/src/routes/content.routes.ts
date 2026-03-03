@@ -38,9 +38,9 @@ const router = Router();
 router.use(authenticate);
 
 // ── Read routes ───────────────────────────────────────────────────────────
-router.get('/', validateQuery(listContentQuerySchema), listContent);
-router.get('/search', validateQuery(searchContentQuerySchema), searchContent);
-router.get('/:id', validateParams(idParamSchema), getContentById);
+router.get('/', requirePermission('read:campaigns'), validateQuery(listContentQuerySchema), listContent);
+router.get('/search', requirePermission('read:campaigns'), validateQuery(searchContentQuerySchema), searchContent);
+router.get('/:id', requirePermission('read:campaigns'), validateParams(idParamSchema), getContentById);
 
 // ── Write routes ──────────────────────────────────────────────────────────
 router.post('/', requirePermission('write:content'), validateBody(createContentSchema), createContent);

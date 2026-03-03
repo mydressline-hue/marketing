@@ -776,7 +776,7 @@ export class MonitoringService {
    */
   static async evaluateEscalationRules(): Promise<Alert[]> {
     const rulesResult = await pool.query(
-      `SELECT * FROM escalation_rules WHERE is_enabled = true`
+      `SELECT id, name, condition, alert_count, time_window_minutes, escalation_action, is_enabled FROM escalation_rules WHERE is_enabled = true`
     );
 
     const escalatedAlerts: Alert[] = [];

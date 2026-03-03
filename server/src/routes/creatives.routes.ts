@@ -37,9 +37,9 @@ const router = Router();
 router.use(authenticate);
 
 // ── Read routes ───────────────────────────────────────────────────────────
-router.get('/', validateQuery(listCreativesQuerySchema), listCreatives);
-router.get('/fatigued', validateQuery(listCreativesQuerySchema), getFatiguedCreatives);
-router.get('/:id', validateParams(idParamSchema), getCreativeById);
+router.get('/', requirePermission('read:campaigns'), validateQuery(listCreativesQuerySchema), listCreatives);
+router.get('/fatigued', requirePermission('read:campaigns'), validateQuery(listCreativesQuerySchema), getFatiguedCreatives);
+router.get('/:id', requirePermission('read:campaigns'), validateParams(idParamSchema), getCreativeById);
 
 // ── Write routes ──────────────────────────────────────────────────────────
 router.post('/', requirePermission('write:creatives'), validateBody(createCreativeSchema), createCreative);

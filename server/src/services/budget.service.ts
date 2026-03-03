@@ -12,6 +12,7 @@ import { generateId } from '../utils/helpers';
 import { withTransaction } from '../utils/transaction';
 import { eventBus } from '../websocket/EventBus';
 import logger from '../utils/logger';
+import { AuditService } from './audit.service';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -344,6 +345,12 @@ export class BudgetService {
     }
 
     logger.info('Budget allocation deleted', { allocationId: id });
+
+    await AuditService.log({
+      action: 'budget_allocation.delete',
+      resourceType: 'budget_allocation',
+      resourceId: id,
+    });
 
     eventBus.broadcast('budgets', {
       action: 'deleted',

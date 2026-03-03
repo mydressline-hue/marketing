@@ -558,8 +558,6 @@ export class ROIProjectionOutputService {
       const rev60 = rev30 + avgMonthlyRevenue * Math.pow(1 + scenarioGrowthRate, 2);
       const rev90 = rev60 + avgMonthlyRevenue * Math.pow(1 + scenarioGrowthRate, 3);
 
-      const _spend30 = avgMonthlySpend;
-      const _spend60 = avgMonthlySpend * 2;
       const spend90 = avgMonthlySpend * 3;
 
       const roi = spend90 > 0
