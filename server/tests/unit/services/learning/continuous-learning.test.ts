@@ -15,6 +15,13 @@ jest.mock('../../../../src/config/database', () => ({
   pool: { query: jest.fn() },
 }));
 
+jest.mock('../../../../src/utils/transaction', () => ({
+  withTransaction: jest.fn(async (fn: (client: { query: jest.Mock }) => Promise<unknown>) => {
+    const { pool: mockPool } = require('../../../../src/config/database');
+    return fn({ query: mockPool.query });
+  }),
+}));
+
 jest.mock('../../../../src/config/redis', () => ({
   cacheGet: jest.fn(),
   cacheSet: jest.fn(),

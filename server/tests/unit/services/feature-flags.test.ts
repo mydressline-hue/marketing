@@ -90,19 +90,21 @@ describe('FeatureFlagsService', () => {
       mockPoolQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
       // Insert
       mockPoolQuery.mockResolvedValueOnce({ rows: [flag], rowCount: 1 });
+      // Audit log insert
+      mockPoolQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 });
 
       const result = await FeatureFlagsService.create('new-feature', 'A new feature');
 
       expect(result.name).toBe('new-feature');
       expect(result.is_enabled).toBe(true);
 
-      // Verify queries were called (check for existing + insert)
-      expect(mockPoolQuery).toHaveBeenCalledTimes(2);
+      // Verify queries were called (check for existing + insert + audit log)
+      expect(mockPoolQuery).toHaveBeenCalledTimes(3);
 
       // Verify the flag is now cached -- no additional DB call needed
       const cached = await FeatureFlagsService.get('new-feature');
       expect(cached.name).toBe('new-feature');
-      expect(mockPoolQuery).toHaveBeenCalledTimes(2); // still 2, cache hit
+      expect(mockPoolQuery).toHaveBeenCalledTimes(3); // still 3, cache hit
     });
 
     it('should throw ConflictError when flag name already exists', async () => {
@@ -423,14 +425,16 @@ describe('FeatureFlagsService', () => {
 
       // Delete
       mockPoolQuery.mockResolvedValueOnce({ rows: [{ id: 'flag-1' }], rowCount: 1 });
+      // Audit log insert
+      mockPoolQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 });
       await FeatureFlagsService.delete('test-flag');
 
       // Cache should be invalidated -- next get should hit DB
       mockPoolQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
       await expect(FeatureFlagsService.get('test-flag')).rejects.toThrow(NotFoundError);
 
-      // 3 queries total: initial get, delete, second get attempt
-      expect(mockPoolQuery).toHaveBeenCalledTimes(3);
+      // 4 queries total: initial get, delete, audit log, second get attempt
+      expect(mockPoolQuery).toHaveBeenCalledTimes(4);
     });
 
     it('should throw NotFoundError when deleting nonexistent flag', async () => {

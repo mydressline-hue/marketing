@@ -34,6 +34,21 @@ jest.mock('../../../src/config/env', () => ({
   },
 }));
 
+jest.mock('../../../src/utils/transaction', () => ({
+  withTransaction: jest.fn(async (fn: Function) => {
+    const { pool: mockPool } = require('../../../src/config/database');
+    return fn({ query: mockPool.query });
+  }),
+}));
+
+jest.mock('../../../src/services/audit.service', () => ({
+  AuditService: { log: jest.fn().mockResolvedValue(undefined) },
+}));
+
+jest.mock('../../../src/websocket/EventBus', () => ({
+  eventBus: { broadcast: jest.fn(), emit: jest.fn(), on: jest.fn(), off: jest.fn() },
+}));
+
 jest.mock('../../../src/utils/helpers', () => ({
   generateId: jest.fn().mockReturnValue('campaign-uuid-new'),
 }));

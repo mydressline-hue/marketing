@@ -140,7 +140,7 @@ describe('CountriesService', () => {
 
       expect(country).toEqual(COUNTRY_ROW);
       expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('SELECT * FROM countries WHERE id = $1'),
+        expect.stringContaining('FROM countries WHERE id = $1'),
         ['country-uuid-1'],
       );
       // Should cache the fetched country

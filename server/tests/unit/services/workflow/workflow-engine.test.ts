@@ -455,7 +455,10 @@ describe('WorkflowEngine', () => {
       // 10. Mark workflow completed
       mockPoolQuery.mockResolvedValueOnce({ rowCount: 1 });
 
-      // 11-12. getWorkflowStatus calls (workflow query + steps query)
+      // 11. AuditService.log (INSERT INTO audit_logs)
+      mockPoolQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 });
+
+      // 12-13. getWorkflowStatus calls (workflow query + steps query)
       mockPoolQuery.mockResolvedValueOnce({
         rows: [{
           id: 'wf-1', name: 'Test', status: 'completed', created_by: 'user-1',
@@ -583,7 +586,10 @@ describe('WorkflowEngine', () => {
         .mockResolvedValueOnce({ rowCount: 1 }) // Update workflow to failed
         .mockResolvedValueOnce({ rows: [], rowCount: 0 }); // COMMIT
 
-      // 2-3. getWorkflowStatus (pool.query): workflow + steps
+      // 2. AuditService.log (INSERT INTO audit_logs)
+      mockPoolQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 });
+
+      // 3-4. getWorkflowStatus (pool.query): workflow + steps
       mockPoolQuery.mockResolvedValueOnce({
         rows: [{
           id: 'wf-1', name: 'Test', description: null, status: 'failed',
@@ -623,7 +629,10 @@ describe('WorkflowEngine', () => {
         .mockResolvedValueOnce({ rowCount: 1 }) // Update workflow
         .mockResolvedValueOnce({ rows: [], rowCount: 0 }); // COMMIT
 
-      // 2-3. getWorkflowStatus
+      // 2. AuditService.log (INSERT INTO audit_logs)
+      mockPoolQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 });
+
+      // 3-4. getWorkflowStatus
       mockPoolQuery.mockResolvedValueOnce({
         rows: [{
           id: 'wf-1', name: 'Test', description: null, status: 'failed',
