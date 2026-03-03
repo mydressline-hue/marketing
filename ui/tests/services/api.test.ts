@@ -164,7 +164,7 @@ describe('ApiService', () => {
     mockFetch.mockResolvedValue(errorResponse(404, 'Not Found'));
 
     await expect(api.get('/v1/missing')).rejects.toThrow(
-      'API Error: 404 Not Found',
+      'API Error: Not Found',
     );
   });
 
@@ -172,7 +172,7 @@ describe('ApiService', () => {
     mockFetch.mockResolvedValue(errorResponse(500, 'Internal Server Error'));
 
     await expect(api.post('/v1/test', {})).rejects.toThrow(
-      'API Error: 500 Internal Server Error',
+      'API Error: Internal Server Error',
     );
   });
 

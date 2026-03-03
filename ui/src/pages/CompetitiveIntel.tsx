@@ -210,7 +210,6 @@ export default function CompetitiveIntel() {
   } = useApiMutation<{ status: string }>('/v1/agents/competitive-intel/run', { method: 'POST' });
 
   // ------ Derived data ------
-  const competitors = competitorData?.competitors ?? [];
   const marketShareData = competitorData?.marketShareData ?? [];
   const activityTimeline = competitorData?.activityTimeline ?? [];
   const radarData = competitorData?.radarData ?? [];
@@ -221,10 +220,10 @@ export default function CompetitiveIntel() {
   const trendAlerts = trendsData?.trendAlerts ?? [];
 
   const filteredCompetitors = useMemo(
-    () => competitors.filter((c) =>
+    () => (competitorData?.competitors ?? []).filter((c) =>
       c.name.toLowerCase().includes(searchQuery.toLowerCase()),
     ),
-    [competitors, searchQuery],
+    [competitorData?.competitors, searchQuery],
   );
 
   // ------ Handlers ------
