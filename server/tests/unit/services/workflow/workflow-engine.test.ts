@@ -236,11 +236,14 @@ describe('topologicalSort', () => {
 describe('WorkflowEngine', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Re-setup the connect mock since clearAllMocks resets it
-    (pool.connect as jest.Mock).mockResolvedValue({
-      query: mockClientQuery,
-      release: mockClientRelease,
-    });
+    // Re-setup the connect mock since clearAllMocks resets it.
+    // Return a fresh object each time that references the shared mock fns.
+    (pool.connect as jest.Mock).mockImplementation(() =>
+      Promise.resolve({
+        query: mockClientQuery,
+        release: mockClientRelease,
+      }),
+    );
   });
 
   // =========================================================================

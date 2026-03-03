@@ -341,7 +341,7 @@ export class HubSpotService {
     }
 
     const result = await pool.query<HubSpotContact>(
-      `SELECT * FROM crm_contact_mappings WHERE id = $1 AND platform_type = $2`,
+      `SELECT id, user_id, platform_type, email, external_id, local_id, metadata, created_at, updated_at FROM crm_contact_mappings WHERE id = $1 AND platform_type = $2`,
       [contactId, PLATFORM_TYPE],
     );
     if (result.rows.length === 0) return null;
@@ -384,7 +384,7 @@ export class HubSpotService {
 
     // Query 1: data
     const dataResult = await pool.query<HubSpotContact>(
-      `SELECT * FROM crm_contact_mappings ${where}
+      `SELECT id, user_id, platform_type, email, external_id, local_id, metadata, created_at, updated_at FROM crm_contact_mappings ${where}
        ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
       [...params, limit, offset],
     );
@@ -461,7 +461,7 @@ export class HubSpotService {
 
     // Query 2: verify list exists
     const listResult = await pool.query(
-      `SELECT * FROM email_campaign_syncs WHERE id = $1 AND platform_type = $2`,
+      `SELECT id, user_id, platform_type, campaign_id, name, status, sent_at, created_at FROM email_campaign_syncs WHERE id = $1 AND platform_type = $2`,
       [listId, PLATFORM_TYPE],
     );
     if (listResult.rows.length === 0) {
@@ -523,7 +523,7 @@ export class HubSpotService {
    */
   static async getConnectionStatus(userId: string): Promise<ConnectionStatus> {
     const result = await pool.query(
-      `SELECT * FROM crm_connections
+      `SELECT id, user_id, platform_type, status, api_key, last_sync_at, created_at, updated_at FROM crm_connections
        WHERE user_id = $1 AND platform_type = $2
        ORDER BY created_at DESC LIMIT 1`,
       [userId, PLATFORM_TYPE],
@@ -558,7 +558,7 @@ export class HubSpotService {
     try {
       // 1. Read credentials from DB
       const connResult = await pool.query(
-        `SELECT * FROM crm_connections WHERE id = $1 AND platform_type = $2 LIMIT 1`,
+        `SELECT id, user_id, platform_type, status, api_key, last_sync_at, created_at, updated_at FROM crm_connections WHERE id = $1 AND platform_type = $2 LIMIT 1`,
         [integrationId, PLATFORM_TYPE],
       );
       if (connResult.rows.length === 0) {

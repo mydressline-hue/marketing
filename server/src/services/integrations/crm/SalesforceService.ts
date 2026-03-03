@@ -104,7 +104,7 @@ export class SalesforceService {
   static async syncContacts(userId: string): Promise<SyncResult> {
     // Query 1: fetch connection
     const connection = await pool.query(
-      `SELECT * FROM crm_connections
+      `SELECT id, user_id, platform_type, status, api_key, last_sync_at, created_at, updated_at FROM crm_connections
        WHERE user_id = $1 AND platform_type = $2 AND status = 'active'`,
       [userId, PLATFORM_TYPE],
     );
@@ -155,7 +155,7 @@ export class SalesforceService {
   static async syncLeads(userId: string): Promise<SyncResult> {
     // Query 1: fetch connection
     const connection = await pool.query(
-      `SELECT * FROM crm_connections
+      `SELECT id, user_id, platform_type, status, api_key, last_sync_at, created_at, updated_at FROM crm_connections
        WHERE user_id = $1 AND platform_type = $2 AND status = 'active'`,
       [userId, PLATFORM_TYPE],
     );
@@ -165,7 +165,7 @@ export class SalesforceService {
 
     // Query 2: fetch leads
     const leadsResult = await pool.query(
-      `SELECT * FROM crm_leads
+      `SELECT id, user_id, platform_type, external_id, name, email, company, status, source, created_at, updated_at FROM crm_leads
        WHERE user_id = $1 AND platform_type = $2`,
       [userId, PLATFORM_TYPE],
     );
@@ -200,7 +200,7 @@ export class SalesforceService {
 
     // Query 1: fetch connection
     const connection = await pool.query(
-      `SELECT * FROM crm_connections
+      `SELECT id, user_id, platform_type, status, api_key, last_sync_at, created_at, updated_at FROM crm_connections
        WHERE user_id = $1 AND platform_type = $2 AND status = 'active'`,
       [userId, PLATFORM_TYPE],
     );
@@ -253,7 +253,7 @@ export class SalesforceService {
   static async updateContact(userId: string, contactId: string, data: UpdateContactData): Promise<SalesforceContact> {
     // Query 1: fetch connection
     const connection = await pool.query(
-      `SELECT * FROM crm_connections
+      `SELECT id, user_id, platform_type, status, api_key, last_sync_at, created_at, updated_at FROM crm_connections
        WHERE user_id = $1 AND platform_type = $2 AND status = 'active'`,
       [userId, PLATFORM_TYPE],
     );
@@ -325,7 +325,7 @@ export class SalesforceService {
     }
 
     const result = await pool.query<SalesforceContact>(
-      `SELECT * FROM crm_contact_mappings WHERE id = $1 AND platform_type = $2`,
+      `SELECT id, user_id, platform_type, email, external_id, local_id, metadata, created_at, updated_at FROM crm_contact_mappings WHERE id = $1 AND platform_type = $2`,
       [contactId, PLATFORM_TYPE],
     );
     if (result.rows.length === 0) return null;
@@ -368,7 +368,7 @@ export class SalesforceService {
 
     // Query 1: data
     const dataResult = await pool.query<SalesforceContact>(
-      `SELECT * FROM crm_contact_mappings ${where}
+      `SELECT id, user_id, platform_type, email, external_id, local_id, metadata, created_at, updated_at FROM crm_contact_mappings ${where}
        ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
       [...params, limit, offset],
     );
@@ -389,7 +389,7 @@ export class SalesforceService {
   static async syncOpportunities(userId: string): Promise<SyncResult> {
     // Query 1: fetch connection
     const connection = await pool.query(
-      `SELECT * FROM crm_connections
+      `SELECT id, user_id, platform_type, status, api_key, last_sync_at, created_at, updated_at FROM crm_connections
        WHERE user_id = $1 AND platform_type = $2 AND status = 'active'`,
       [userId, PLATFORM_TYPE],
     );
@@ -399,7 +399,7 @@ export class SalesforceService {
 
     // Query 2: fetch opportunities
     const oppResult = await pool.query(
-      `SELECT * FROM crm_opportunities
+      `SELECT id, user_id, platform_type, external_id, name, amount, stage, close_date, created_at, updated_at FROM crm_opportunities
        WHERE user_id = $1 AND platform_type = $2`,
       [userId, PLATFORM_TYPE],
     );
@@ -453,7 +453,7 @@ export class SalesforceService {
    */
   static async getConnectionStatus(userId: string): Promise<ConnectionStatus> {
     const result = await pool.query(
-      `SELECT * FROM crm_connections
+      `SELECT id, user_id, platform_type, status, api_key, last_sync_at, created_at, updated_at FROM crm_connections
        WHERE user_id = $1 AND platform_type = $2
        ORDER BY created_at DESC LIMIT 1`,
       [userId, PLATFORM_TYPE],
@@ -489,7 +489,7 @@ export class SalesforceService {
     try {
       // 1. Read credentials from DB
       const connResult = await pool.query(
-        `SELECT * FROM crm_connections WHERE id = $1 AND platform_type = $2 LIMIT 1`,
+        `SELECT id, user_id, platform_type, status, api_key, last_sync_at, created_at, updated_at FROM crm_connections WHERE id = $1 AND platform_type = $2 LIMIT 1`,
         [integrationId, PLATFORM_TYPE],
       );
       if (connResult.rows.length === 0) {
