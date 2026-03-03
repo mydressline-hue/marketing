@@ -145,15 +145,17 @@ export class AIProductPickerService {
   }
 
   private static async pickRandom(where: string, params: unknown[], count: number): Promise<PickedProduct[]> {
-    const result = await query<Record<string, unknown>>(`SELECT p.* FROM products p ${where} ORDER BY RANDOM() LIMIT ${count}`, params);
+    const limitParams = [...params, count];
+    const result = await query<Record<string, unknown>>(`SELECT p.* FROM products p ${where} ORDER BY RANDOM() LIMIT $${limitParams.length}`, limitParams);
     return result.rows.map((r) => AIProductPickerService.toProduct(r, 'Randomly selected from pool', 50));
   }
 
   private static async pickMostViewed(where: string, params: unknown[], count: number): Promise<PickedProduct[]> {
+    const limitParams = [...params, count];
     const result = await query<Record<string, unknown>>(
       `SELECT p.*, COALESCE(v.vc, 0) AS view_count FROM products p
        LEFT JOIN (SELECT product_id, COUNT(*) AS vc FROM product_views GROUP BY product_id) v ON v.product_id = p.id
-       ${where} ORDER BY COALESCE(v.vc, 0) DESC LIMIT ${count}`, params);
+       ${where} ORDER BY COALESCE(v.vc, 0) DESC LIMIT $${limitParams.length}`, limitParams);
     return result.rows.map((r, i) => {
       const views = Number(r.view_count) || 0;
       return AIProductPickerService.toProduct(r, `Ranked #${i + 1} with ${views} views`, Math.max(30, 95 - i * 5));
@@ -161,10 +163,11 @@ export class AIProductPickerService {
   }
 
   private static async pickMostSold(where: string, params: unknown[], count: number): Promise<PickedProduct[]> {
+    const limitParams = [...params, count];
     const result = await query<Record<string, unknown>>(
       `SELECT p.*, COALESCE(s.ts, 0) AS total_sold, COALESCE(s.tr, 0) AS total_revenue FROM products p
        LEFT JOIN (SELECT product_id, SUM(quantity) AS ts, SUM(revenue) AS tr FROM product_sales GROUP BY product_id) s ON s.product_id = p.id
-       ${where} ORDER BY COALESCE(s.ts, 0) DESC LIMIT ${count}`, params);
+       ${where} ORDER BY COALESCE(s.ts, 0) DESC LIMIT $${limitParams.length}`, limitParams);
     return result.rows.map((r, i) => {
       const sold = Number(r.total_sold) || 0;
       const rev = Number(r.total_revenue) || 0;
@@ -173,11 +176,12 @@ export class AIProductPickerService {
   }
 
   private static async pickTrending(where: string, params: unknown[], count: number): Promise<PickedProduct[]> {
+    const limitParams = [...params, count];
     const result = await query<Record<string, unknown>>(
       `SELECT p.*, COALESCE(r.rs, 0) AS recent_sales, COALESCE(o.os, 0) AS older_sales FROM products p
        LEFT JOIN (SELECT product_id, SUM(quantity) AS rs FROM product_sales WHERE sold_at >= NOW() - INTERVAL '7 days' GROUP BY product_id) r ON r.product_id = p.id
        LEFT JOIN (SELECT product_id, SUM(quantity) AS os FROM product_sales WHERE sold_at >= NOW() - INTERVAL '30 days' AND sold_at < NOW() - INTERVAL '7 days' GROUP BY product_id) o ON o.product_id = p.id
-       ${where} ORDER BY COALESCE(r.rs, 0) DESC LIMIT ${count}`, params);
+       ${where} ORDER BY COALESCE(r.rs, 0) DESC LIMIT $${limitParams.length}`, limitParams);
     return result.rows.map((r, i) => {
       const recent = Number(r.recent_sales) || 0;
       const older = Number(r.older_sales) || 0;
@@ -187,6 +191,7 @@ export class AIProductPickerService {
   }
 
   private static async pickAIRecommended(where: string, params: unknown[], count: number): Promise<PickedProduct[]> {
+    const limitParams = [...params, count];
     const result = await query<Record<string, unknown>>(
       `SELECT p.*, COALESCE(v.vc, 0) AS view_count, COALESCE(s.ts, 0) AS total_sold, COALESCE(s.tr, 0) AS total_revenue,
               COALESCE(rs.rsc, 0) AS recent_sales
@@ -197,7 +202,7 @@ export class AIProductPickerService {
        ${where} ORDER BY (COALESCE(v.vc, 0) * 0.2 + COALESCE(s.ts, 0) * 10 * 0.3 +
          CASE WHEN COALESCE(v.vc, 0) > 0 THEN (COALESCE(s.ts, 0)::float / v.vc) * 100 ELSE 0 END * 0.2 +
          COALESCE(rs.rsc, 0) * 20 * 0.15 + LEAST(p.inventory_level, 100) * 0.15) DESC
-       LIMIT ${count}`, params);
+       LIMIT $${limitParams.length}`, limitParams);
 
     return result.rows.map((r, i) => {
       const views = Number(r.view_count) || 0;

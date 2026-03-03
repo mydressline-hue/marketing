@@ -71,6 +71,19 @@ function mapRow(row: Record<string, unknown>): Content {
 }
 
 // ---------------------------------------------------------------------------
+// Allowed sort columns (whitelist to prevent SQL injection)
+// ---------------------------------------------------------------------------
+
+const ALLOWED_SORT_COLUMNS: Record<string, string> = {
+  created_at: 'created_at',
+  updated_at: 'updated_at',
+  title: 'title',
+  status: 'status',
+  language: 'language',
+  published_at: 'published_at',
+};
+
+// ---------------------------------------------------------------------------
 // Service
 // ---------------------------------------------------------------------------
 
@@ -105,8 +118,8 @@ export class ContentService {
       ? `WHERE ${conditions.join(' AND ')}`
       : '';
 
-    const sortBy = pagination.sortBy ?? 'created_at';
-    const sortOrder = pagination.sortOrder ?? 'desc';
+    const sortBy = ALLOWED_SORT_COLUMNS[pagination.sortBy ?? 'created_at'] ?? 'created_at';
+    const sortOrder = pagination.sortOrder === 'asc' ? 'ASC' : 'DESC';
     const offset = (pagination.page - 1) * pagination.limit;
 
     // Count query

@@ -91,7 +91,16 @@ export class ProductsService {
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    const sortColumn = pagination.sortBy ?? 'created_at';
+    // Whitelist sort columns to prevent SQL injection
+    const ALLOWED_SORT_COLUMNS: Record<string, string> = {
+      created_at: 'created_at',
+      updated_at: 'updated_at',
+      title: 'title',
+      inventory_level: 'inventory_level',
+      is_active: 'is_active',
+      synced_at: 'synced_at',
+    };
+    const sortColumn = ALLOWED_SORT_COLUMNS[pagination.sortBy ?? 'created_at'] ?? 'created_at';
     const sortDirection = pagination.sortOrder === 'asc' ? 'ASC' : 'DESC';
     const offset = (pagination.page - 1) * pagination.limit;
 
