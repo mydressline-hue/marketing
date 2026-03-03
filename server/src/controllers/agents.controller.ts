@@ -18,7 +18,7 @@ import { generateId } from '../utils/helpers';
  * GET /agents
  * List all agents and their current statuses.
  */
-export const listAgents = asyncHandler(async (req: Request, res: Response) => {
+export const listAgents = asyncHandler(async (_req: Request, res: Response) => {
   const agents = await AgentsService.listAgents();
 
   res.json({
@@ -113,7 +113,7 @@ export const runChallengeRound = asyncHandler(async (req: Request, res: Response
  * POST /agents/orchestrate
  * Trigger a master orchestrator cycle.
  */
-export const runOrchestration = asyncHandler(async (req: Request, res: Response) => {
+export const runOrchestration = asyncHandler(async (_req: Request, res: Response) => {
   const requestId = generateId();
 
   const result = await AgentsService.runOrchestration(requestId);

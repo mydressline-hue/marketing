@@ -750,7 +750,7 @@ Provide a concise entry strategy recommendation (2-3 sentences) as plain text, n
    * @returns Array of opportunity descriptions.
    */
   private identifyOpportunities(
-    country: Country,
+    _country: Country,
     factors: CountryOpportunityScore['factors'],
   ): string[] {
     const opportunities: string[] = [];

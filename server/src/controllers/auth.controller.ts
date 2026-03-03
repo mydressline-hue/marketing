@@ -185,7 +185,7 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
  * The generated CSRF `state` token is set as a secure, HTTP-only cookie
  * so it can be verified when the callback is received.
  */
-export const googleAuth = asyncHandler(async (req: Request, res: Response) => {
+export const googleAuth = asyncHandler(async (_req: Request, res: Response) => {
   const { url, state } = GoogleOAuthService.getAuthorizationUrl();
 
   // Store the state in a short-lived cookie for CSRF verification

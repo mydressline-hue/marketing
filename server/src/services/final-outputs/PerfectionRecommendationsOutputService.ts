@@ -539,7 +539,7 @@ export class PerfectionRecommendationsOutputService {
   static generateRecommendations(
     agentDecisions: Map<string, Record<string, unknown>>,
     crossChallengeFindings: Array<Record<string, unknown>>,
-    orchestratorResult: Record<string, unknown> | null,
+    _orchestratorResult: Record<string, unknown> | null,
     maturityAssessment: MaturityAssessment,
   ): PerfectionRecommendation[] {
     const recommendations: PerfectionRecommendation[] = [];
