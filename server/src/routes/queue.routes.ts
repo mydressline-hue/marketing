@@ -8,8 +8,8 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
-import { validateBody, validateQuery } from '../middleware/validation';
-import { enqueueJobSchema, listJobsQuerySchema } from '../validators/schemas';
+import { validateBody, validateQuery, validateParams } from '../middleware/validation';
+import { enqueueJobSchema, listJobsQuerySchema, jobIdParamSchema, idParamSchema, cleanupJobsSchema } from '../validators/schemas';
 import {
   enqueueJob,
   getJob,
@@ -41,18 +41,18 @@ router.get('/stats', authenticate, requirePermission('read:infrastructure'), get
 router.get('/workers', authenticate, requirePermission('read:infrastructure'), getWorkerStatus);
 
 // GET /queue/jobs/:jobId – get a single job by ID
-router.get('/jobs/:jobId', authenticate, requirePermission('read:infrastructure'), getJob);
+router.get('/jobs/:jobId', authenticate, requirePermission('read:infrastructure'), validateParams(jobIdParamSchema), getJob);
 
 // POST /queue/jobs/:jobId/retry – retry a failed job (requires write:infrastructure)
-router.post('/jobs/:jobId/retry', authenticate, requirePermission('write:infrastructure'), retryJob);
+router.post('/jobs/:jobId/retry', authenticate, requirePermission('write:infrastructure'), validateParams(jobIdParamSchema), retryJob);
 
 // POST /queue/cleanup – cleanup old jobs (requires write:infrastructure)
-router.post('/cleanup', authenticate, requirePermission('write:infrastructure'), cleanupJobs);
+router.post('/cleanup', authenticate, requirePermission('write:infrastructure'), validateBody(cleanupJobsSchema), cleanupJobs);
 
 // GET /queue/dead-letter – list dead letter jobs
 router.get('/dead-letter', authenticate, requirePermission('read:infrastructure'), listDeadLetterJobs);
 
 // POST /queue/dead-letter/:id/retry – retry a dead letter job (requires write:infrastructure)
-router.post('/dead-letter/:id/retry', authenticate, requirePermission('write:infrastructure'), retryDeadLetterJob);
+router.post('/dead-letter/:id/retry', authenticate, requirePermission('write:infrastructure'), validateParams(idParamSchema), retryDeadLetterJob);
 
 export default router;

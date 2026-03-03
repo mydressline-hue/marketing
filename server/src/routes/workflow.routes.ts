@@ -8,6 +8,8 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
+import { validateBody, validateParams } from '../middleware/validation';
+import { createWorkflowSchema, idParamSchema } from '../validators/schemas';
 import {
   createWorkflow,
   executeWorkflow,
@@ -26,6 +28,7 @@ router.post(
   '/',
   authenticate,
   requirePermission('write:infrastructure'),
+  validateBody(createWorkflowSchema),
   createWorkflow,
 );
 
@@ -34,6 +37,7 @@ router.post(
   '/:id/execute',
   authenticate,
   requirePermission('write:infrastructure'),
+  validateParams(idParamSchema),
   executeWorkflow,
 );
 
@@ -42,6 +46,7 @@ router.get(
   '/:id',
   authenticate,
   requirePermission('read:infrastructure'),
+  validateParams(idParamSchema),
   getWorkflowStatus,
 );
 
@@ -50,6 +55,7 @@ router.delete(
   '/:id',
   authenticate,
   requirePermission('write:infrastructure'),
+  validateParams(idParamSchema),
   cancelWorkflow,
 );
 

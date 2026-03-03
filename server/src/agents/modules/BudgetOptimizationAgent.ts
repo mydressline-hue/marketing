@@ -1252,7 +1252,6 @@ When making recommendations:
         const now = Date.now();
 
         if (periodEnd > periodStart) {
-          const _elapsed = (now - periodStart) / (periodEnd - periodStart);
           const expectedSpendRate = totalBudget / ((periodEnd - periodStart) / 86400000);
           // On track if daily spend is within 20% of expected rate
           onTrack = Math.abs(daily - expectedSpendRate) / Math.max(expectedSpendRate, 0.01) < 0.20;

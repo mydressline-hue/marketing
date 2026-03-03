@@ -296,6 +296,13 @@ export class ProductsService {
     }
 
     logger.info('Product soft-deleted', { productId: id });
+
+    await AuditService.log({
+      action: 'product.delete',
+      resourceType: 'product',
+      resourceId: id,
+      details: { softDelete: true },
+    });
   }
 
   /**
@@ -315,6 +322,14 @@ export class ProductsService {
     }
 
     logger.info('Product inventory synced', { productId: id, inventoryLevel: level });
+
+    await AuditService.log({
+      action: 'product.syncInventory',
+      resourceType: 'product',
+      resourceId: id,
+      details: { inventoryLevel: level },
+    });
+
     return result.rows[0];
   }
 
@@ -381,6 +396,13 @@ export class ProductsService {
     });
 
     logger.info('Bulk product sync completed', { created: result.created, updated: result.updated });
+
+    await AuditService.log({
+      action: 'product.bulkSync',
+      resourceType: 'product',
+      details: { created: result.created, updated: result.updated, totalItems: products.length },
+    });
+
     return result;
   }
 }

@@ -248,7 +248,7 @@ export class QueueService {
 
     // Fetch the full job from PostgreSQL
     const result = await pool.query(
-      `SELECT * FROM job_queue WHERE id = $1`,
+      `SELECT id, queue_name, job_type, payload, status, priority, attempts, max_retries, result, error_message, scheduled_at, started_at, completed_at, created_at, updated_at FROM job_queue WHERE id = $1`,
       [jobId],
     );
 
@@ -362,7 +362,7 @@ export class QueueService {
    */
   static async getJobStatus(jobId: string): Promise<Job> {
     const result = await pool.query(
-      `SELECT * FROM job_queue WHERE id = $1`,
+      `SELECT id, queue_name, job_type, payload, status, priority, attempts, max_retries, result, error_message, scheduled_at, started_at, completed_at, created_at, updated_at FROM job_queue WHERE id = $1`,
       [jobId],
     );
 
@@ -417,7 +417,7 @@ export class QueueService {
     const totalPages = Math.ceil(total / limit);
 
     const dataResult = await pool.query(
-      `SELECT * FROM job_queue ${whereClause}
+      `SELECT id, queue_name, job_type, payload, status, priority, attempts, max_retries, result, error_message, scheduled_at, started_at, completed_at, created_at, updated_at FROM job_queue ${whereClause}
        ORDER BY priority ASC, created_at DESC
        LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, limit, offset],
@@ -440,7 +440,7 @@ export class QueueService {
    */
   static async retryJob(jobId: string): Promise<Job> {
     const result = await pool.query(
-      `SELECT * FROM job_queue WHERE id = $1`,
+      `SELECT id, queue_name, job_type, payload, status, priority, attempts, max_retries, result, error_message, scheduled_at, started_at, completed_at, created_at, updated_at FROM job_queue WHERE id = $1`,
       [jobId],
     );
 
@@ -624,7 +624,7 @@ export class QueueService {
     const totalPages = Math.ceil(total / limit);
 
     const dataResult = await pool.query(
-      `SELECT * FROM dead_letter_jobs
+      `SELECT id, original_job_id, type, payload, error, attempts, failed_at, created_at FROM dead_letter_jobs
        ORDER BY failed_at DESC
        LIMIT $1 OFFSET $2`,
       [limit, offset],
@@ -648,7 +648,7 @@ export class QueueService {
    */
   static async retryDeadLetterJob(deadLetterId: string): Promise<string> {
     const result = await pool.query(
-      `SELECT * FROM dead_letter_jobs WHERE id = $1`,
+      `SELECT id, original_job_id, type, payload, error, attempts, failed_at, created_at FROM dead_letter_jobs WHERE id = $1`,
       [deadLetterId],
     );
 

@@ -17,6 +17,7 @@ import { cacheGet, cacheSet, cacheDel } from '../../config/redis';
 import { generateId } from '../../utils/helpers';
 import { logger } from '../../utils/logger';
 import { ValidationError, NotFoundError } from '../../utils/errors';
+import { AuditService } from '../audit.service';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -174,6 +175,14 @@ export class WebhookService {
       registrationId: id,
       platformType,
       userId,
+    });
+
+    await AuditService.log({
+      userId,
+      action: 'webhook.register',
+      resourceType: 'webhook_registration',
+      resourceId: id,
+      details: { platformType, events: config.events },
     });
 
     return rowToRegistration(result.rows[0]);
@@ -501,6 +510,13 @@ export class WebhookService {
     logger.info('Webhook registration deactivated', {
       registrationId,
       userId,
+    });
+
+    await AuditService.log({
+      userId,
+      action: 'webhook.deactivate',
+      resourceType: 'webhook_registration',
+      resourceId: registrationId,
     });
   }
 }

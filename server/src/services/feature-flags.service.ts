@@ -12,6 +12,7 @@ import { pool } from '../config/database';
 import { generateId } from '../utils/helpers';
 import { logger } from '../utils/logger';
 import { NotFoundError, ConflictError } from '../utils/errors';
+import { AuditService } from './audit.service';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -243,6 +244,15 @@ export class FeatureFlagsService {
     cacheFlag(flag);
 
     logger.info('Feature flag created', { name, id });
+
+    await AuditService.log({
+      userId: created_by ?? undefined,
+      action: 'featureFlag.create',
+      resourceType: 'feature_flag',
+      resourceId: id,
+      details: { name, is_enabled, rollout_percentage },
+    });
+
     return flag;
   }
 
@@ -292,6 +302,14 @@ export class FeatureFlagsService {
     cacheFlag(flag);
 
     logger.info('Feature flag updated', { name, updates });
+
+    await AuditService.log({
+      action: 'featureFlag.update',
+      resourceType: 'feature_flag',
+      resourceId: flag.id,
+      details: { name, updates },
+    });
+
     return flag;
   }
 
@@ -308,9 +326,18 @@ export class FeatureFlagsService {
       throw new NotFoundError(`Feature flag '${name}' not found`);
     }
 
+    const deletedId = result.rows[0].id;
+
     invalidateCache(name);
 
     logger.info('Feature flag deleted', { name });
+
+    await AuditService.log({
+      action: 'featureFlag.delete',
+      resourceType: 'feature_flag',
+      resourceId: deletedId,
+      details: { name },
+    });
   }
 
   /**

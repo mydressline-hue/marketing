@@ -1153,7 +1153,6 @@ Respond with JSON matching this exact schema:
     }
 
     // Check for voice attribute presence (simple heuristic)
-    const _contentLower = content.toLowerCase();
     for (const voiceAttr of guidelines.voice) {
       // Simple presence check — not a full NLP analysis
       if (voiceAttr.toLowerCase() === 'formal' && /\b(gonna|wanna|kinda|lol|omg)\b/i.test(content)) {

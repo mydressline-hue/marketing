@@ -73,6 +73,7 @@ router.get(
 router.post(
   '/decay',
   requirePermission('write:agents'),
+  validateBody(triggerDecaySchema),
   triggerDecay,
 );
 

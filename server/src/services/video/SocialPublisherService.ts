@@ -83,7 +83,7 @@ async function getConnectionCredentials(
   platform: SocialPlatform,
 ): Promise<Record<string, unknown> | null> {
   const result = await pool.query(
-    `SELECT * FROM platform_connections
+    `SELECT id, user_id, platform_type, status, credentials, access_token, refresh_token, expires_at, created_at, updated_at FROM platform_connections
      WHERE user_id = $1 AND platform_type = $2 AND status = 'active'
      LIMIT 1`,
     [userId, platform],

@@ -49,13 +49,13 @@ router.get('/:id', authenticate, validateParams(idParamSchema), getAlertById);
 // POST /alerts – create a new fraud alert (requires write:campaigns)
 router.post('/', authenticate, requirePermission('write:campaigns'), validateBody(createAlertSchema), createAlert);
 
-// PATCH /alerts/:id/acknowledge – acknowledge an alert
-router.patch('/:id/acknowledge', authenticate, validateParams(idParamSchema), validateBody(acknowledgeAlertSchema), acknowledgeAlert);
+// PATCH /alerts/:id/acknowledge – acknowledge an alert (requires write:campaigns)
+router.patch('/:id/acknowledge', authenticate, requirePermission('write:campaigns'), validateParams(idParamSchema), validateBody(acknowledgeAlertSchema), acknowledgeAlert);
 
-// PATCH /alerts/:id/resolve – resolve an alert
-router.patch('/:id/resolve', authenticate, validateParams(idParamSchema), validateBody(resolveAlertSchema), resolveAlert);
+// PATCH /alerts/:id/resolve – resolve an alert (requires write:campaigns)
+router.patch('/:id/resolve', authenticate, requirePermission('write:campaigns'), validateParams(idParamSchema), validateBody(resolveAlertSchema), resolveAlert);
 
-// PATCH /alerts/:id/dismiss – dismiss an alert
-router.patch('/:id/dismiss', authenticate, validateParams(idParamSchema), validateBody(dismissAlertSchema), dismissAlert);
+// PATCH /alerts/:id/dismiss – dismiss an alert (requires write:campaigns)
+router.patch('/:id/dismiss', authenticate, requirePermission('write:campaigns'), validateParams(idParamSchema), validateBody(dismissAlertSchema), dismissAlert);
 
 export default router;
