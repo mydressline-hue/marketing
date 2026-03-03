@@ -219,8 +219,8 @@ export default function FraudDetection() {
     [rulesData, localRuleOverrides],
   );
 
-  const activeAlerts = useMemo(() => fraudAlerts.filter((a) => a.status === 'active').length, [fraudAlerts]);
-  const resolvedAlerts = useMemo(() => fraudAlerts.filter((a) => a.status === 'resolved').length, [fraudAlerts]);
+  const activeAlerts = useMemo(() => (alertsData?.alerts ?? []).filter((a) => a.status === 'active').length, [alertsData?.alerts]);
+  const resolvedAlerts = useMemo(() => (alertsData?.alerts ?? []).filter((a) => a.status === 'resolved').length, [alertsData?.alerts]);
 
   // ------ Handlers ------
   const handleRunAgent = useCallback(async () => {
