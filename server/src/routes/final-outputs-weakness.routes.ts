@@ -16,6 +16,20 @@ import {
   getWeaknessByCategory,
 } from '../controllers/final-outputs-weakness.controller';
 import { authenticate } from '../middleware/auth';
+import { validateParams } from '../middleware/validation';
+import { z } from 'zod';
+
+// ---------------------------------------------------------------------------
+// Validation Schemas
+// ---------------------------------------------------------------------------
+
+/** Params schema for the :category route – non-empty lowercase kebab-case string. */
+const categoryParamsSchema = z.object({
+  category: z
+    .string()
+    .min(1, 'category is required.')
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'category must be a lowercase kebab-case string.'),
+});
 
 // ---------------------------------------------------------------------------
 // Router
@@ -34,6 +48,6 @@ router.get('/', getWeaknessReport);
 router.get('/priorities', getImprovementPriorities);
 
 // GET /weakness-report/:category - weaknesses by category
-router.get('/:category', getWeaknessByCategory);
+router.get('/:category', validateParams(categoryParamsSchema), getWeaknessByCategory);
 
 export default router;

@@ -12,6 +12,19 @@ import {
   getStrategyByCountryCode,
 } from '../controllers/final-outputs-strategy.controller';
 import { authenticate } from '../middleware/auth';
+import { validateParams } from '../middleware/validation';
+import { z } from 'zod';
+
+// ---------------------------------------------------------------------------
+// Validation Schemas
+// ---------------------------------------------------------------------------
+
+/** Params schema for the :countryCode route – 2-letter uppercase ISO code. */
+const countryCodeParamsSchema = z.object({
+  countryCode: z
+    .string()
+    .regex(/^[A-Z]{2}$/, 'countryCode must be a 2-letter uppercase ISO country code.'),
+});
 
 // ---------------------------------------------------------------------------
 // Router
@@ -28,6 +41,6 @@ router.get('/strategies/summary', authenticate, getStrategySummary);
 router.get('/strategies', authenticate, getAllStrategies);
 
 // GET /final-outputs/strategies/:countryCode - strategy for specific country
-router.get('/strategies/:countryCode', authenticate, getStrategyByCountryCode);
+router.get('/strategies/:countryCode', authenticate, validateParams(countryCodeParamsSchema), getStrategyByCountryCode);
 
 export default router;

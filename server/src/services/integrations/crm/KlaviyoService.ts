@@ -493,6 +493,111 @@ export class KlaviyoService {
   }
 
   /**
+   * Sync profiles from the real Klaviyo API.
+   *
+   * Reads the API key from the crm_connections table, calls the Klaviyo
+   * Profiles endpoint with the appropriate Klaviyo-API-Key auth header
+   * and revision header, logs the sync operation, and returns the parsed
+   * profile records.
+   *
+   * @param integrationId - The ID of the crm_connections row to use.
+   * @returns The parsed Klaviyo profile records from the API.
+   */
+  static async syncFromKlaviyo(integrationId: string): Promise<Record<string, unknown>> {
+    try {
+      // 1. Read credentials from DB
+      const connResult = await pool.query(
+        `SELECT * FROM crm_connections WHERE id = $1 AND platform_type = $2 LIMIT 1`,
+        [integrationId, PLATFORM_TYPE],
+      );
+      if (connResult.rows.length === 0) {
+        throw new NotFoundError(`Klaviyo connection "${integrationId}" not found`);
+      }
+
+      const connection = connResult.rows[0];
+      const credentials = typeof connection.credentials === 'string'
+        ? JSON.parse(connection.credentials)
+        : connection.credentials;
+
+      const apiKey = credentials?.api_key;
+
+      if (!apiKey) {
+        throw new ValidationError('Klaviyo connection is missing api_key');
+      }
+
+      // 2. Call the real Klaviyo API
+      const apiUrl = 'https://a.klaviyo.com/api/profiles/';
+
+      logger.info('Calling Klaviyo API', { integrationId, apiUrl });
+
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Klaviyo-API-Key ${apiKey}`,
+          'revision': '2024-02-15',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        logger.error('Klaviyo API request failed', {
+          integrationId,
+          status: response.status,
+          statusText: response.statusText,
+          body: errorBody,
+        });
+        throw new Error(`Klaviyo API error: ${response.status} ${response.statusText}`);
+      }
+
+      // 3. Parse response
+      const data = await response.json();
+
+      // 4. Log the sync operation
+      const syncId = generateId();
+      try {
+        await pool.query(
+          `INSERT INTO crm_sync_logs (id, connection_id, platform_type, sync_type, status, records_synced, records_failed, started_at, completed_at)
+           VALUES ($1, $2, $3, 'profiles', 'completed', $4, 0, NOW(), NOW())`,
+          [syncId, integrationId, PLATFORM_TYPE, data.data?.length || 0],
+        );
+      } catch (logErr) {
+        logger.warn('Failed to insert Klaviyo sync log', {
+          error: logErr instanceof Error ? logErr.message : String(logErr),
+        });
+      }
+
+      await pool.query(
+        `UPDATE crm_connections SET last_sync_at = NOW() WHERE id = $1`,
+        [integrationId],
+      );
+
+      await AuditService.log({
+        userId: connection.user_id,
+        action: 'klaviyo.api_sync',
+        resourceType: 'crm_sync',
+        resourceId: integrationId,
+        details: { recordCount: data.data?.length },
+      });
+
+      logger.info('Klaviyo API sync completed', {
+        integrationId,
+        recordCount: data.data?.length,
+      });
+
+      // 5. Return the data
+      return data;
+    } catch (error) {
+      logger.error('Klaviyo API sync failed', {
+        integrationId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Get sync status. Returns last sync time and record counts.
    * Returns defaults when no sync has occurred.
    */

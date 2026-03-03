@@ -442,3 +442,226 @@ export type GenerateVideoInput = z.infer<typeof generateVideoSchema>;
 export type RunPipelineInput = z.infer<typeof runPipelineSchema>;
 export type GenerateEnhancementsInput = z.infer<typeof generateEnhancementsSchema>;
 export type PublishVideoInput = z.infer<typeof publishVideoSchema>;
+
+// ---------------------------------------------------------------------------
+// Infrastructure schemas
+// ---------------------------------------------------------------------------
+
+export const spendMonitoringQuerySchema = z.object({
+  startDate: isoDateString.optional(),
+  endDate: isoDateString.optional(),
+  country: z.string().optional(),
+  channel: z.string().optional(),
+});
+
+export const alertsQuerySchema = z.object({
+  severity: z.string().optional(),
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().positive().max(100).optional(),
+});
+
+export const resolveAlertBodySchema = z.object({
+  resolution: z.string().min(1, 'Resolution is required'),
+});
+
+export const updateAlertConfigBodySchema = z.object({
+  spendThreshold: z.number().nonnegative().optional(),
+  anomalyThreshold: z.number().min(0).max(1).optional(),
+  recipients: z.array(z.string().email()).optional(),
+  enabled: z.boolean().optional(),
+}).passthrough();
+
+export const tableParamSchema = z.object({
+  table: z.string().min(1, 'Table name is required'),
+});
+
+export const anonymizePiiBodySchema = z.object({
+  table: z.string().min(1, 'Table name is required'),
+  columns: z.array(z.string().min(1)).min(1, 'At least one column is required'),
+});
+
+export const userIdParamSchema = z.object({
+  userId: uuidString,
+});
+
+export const manageConsentBodySchema = z.object({
+  userId: uuidString,
+  consentType: z.string().min(1, 'Consent type is required'),
+  granted: z.boolean({ required_error: 'Granted flag is required' }),
+  regulation: z.string().min(1, 'Regulation is required'),
+});
+
+export const rotateKeysBodySchema = z.object({
+  services: z.array(z.string().min(1)).min(1, 'At least one service is required'),
+  reason: z.string().min(1, 'Reason is required'),
+});
+
+export const addToIpWhitelistBodySchema = z.object({
+  ip: z.string().min(1, 'IP address is required'),
+  description: z.string().optional(),
+});
+
+export const runThreatScanBodySchema = z.object({
+  scanType: z.string().min(1, 'Scan type is required'),
+  targets: z.array(z.string().min(1)).optional(),
+});
+
+export const securityReportQuerySchema = z.object({
+  startDate: isoDateString.optional(),
+  endDate: isoDateString.optional(),
+});
+
+export const traceIdParamSchema = z.object({
+  traceId: z.string().min(1, 'Trace ID is required'),
+});
+
+export const errorDashboardQuerySchema = z.object({
+  startDate: isoDateString.optional(),
+  endDate: isoDateString.optional(),
+  severity: z.string().optional(),
+});
+
+export const confidenceDriftQuerySchema = z.object({
+  agentType: z.string().optional(),
+  startDate: isoDateString.optional(),
+  endDate: isoDateString.optional(),
+});
+
+export const updateLogRetentionBodySchema = z.object({
+  logType: z.string().min(1, 'Log type is required'),
+  retentionDays: z.number().int().positive('Retention days must be a positive integer'),
+  archiveEnabled: z.boolean().optional(),
+}).passthrough();
+
+export const enterDegradedModeBodySchema = z.object({
+  reason: z.string().min(1, 'Reason is required'),
+  services: z.array(z.string().min(1)).min(1, 'At least one service is required'),
+});
+
+export const attemptRecoveryBodySchema = z.object({
+  services: z.array(z.string().min(1)).optional(),
+});
+
+export const initiateBackupBodySchema = z.object({
+  type: z.string().min(1, 'Backup type is required'),
+  tables: z.array(z.string().min(1)).optional(),
+});
+
+export const backupHistoryQuerySchema = z.object({
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().positive().max(100).optional(),
+});
+
+// ---------------------------------------------------------------------------
+// Product Features schemas
+// ---------------------------------------------------------------------------
+
+export const pickProductsBodySchema = z.object({
+  collectionId: uuidString,
+  strategy: z.string().min(1, 'Strategy is required'),
+  count: z.number().int().positive('Count must be a positive integer'),
+  filters: z.record(z.unknown()).optional(),
+});
+
+export const filterProductsQuerySchema = z.object({
+  category: z.string().optional(),
+  minPrice: z.coerce.number().nonnegative().optional(),
+  maxPrice: z.coerce.number().nonnegative().optional(),
+  tags: z.string().optional(),
+  vendor: z.string().optional(),
+  status: z.string().optional(),
+  inventoryMin: z.coerce.number().int().nonnegative().optional(),
+  inventoryMax: z.coerce.number().int().nonnegative().optional(),
+  createdAfter: isoDateString.optional(),
+  createdBefore: isoDateString.optional(),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().positive().max(100).optional(),
+});
+
+export const filterAggregationsQuerySchema = z.object({
+  category: z.string().optional(),
+  vendor: z.string().optional(),
+  status: z.string().optional(),
+});
+
+export const searchProductsQuerySchema = z.object({
+  q: z.string().min(1, 'Search query is required'),
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().positive().max(100).optional(),
+});
+
+export const similarProductsQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(100).optional(),
+});
+
+export const listCollectionsQuerySchema = z.object({
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().positive().max(100).optional(),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+});
+
+export const createCollectionBodySchema = z.object({
+  title: z.string().min(1, 'Collection title is required'),
+  description: z.string().optional(),
+  rules: z.record(z.unknown()).optional(),
+}).passthrough();
+
+export const updateCollectionBodySchema = z.object({
+  title: z.string().min(1).optional(),
+  description: z.string().optional(),
+  rules: z.record(z.unknown()).optional(),
+}).passthrough();
+
+export const collectionProductsBodySchema = z.object({
+  productIds: z.array(uuidString).min(1, 'At least one product ID is required'),
+});
+
+export const collectionProductsQuerySchema = z.object({
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().positive().max(100).optional(),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+});
+
+export const recordProductViewBodySchema = z.object({
+  productId: uuidString,
+  source: z.string().min(1, 'Source is required'),
+  sessionId: z.string().min(1, 'Session ID is required'),
+});
+
+export const recordProductSaleBodySchema = z.object({
+  productId: uuidString,
+  quantity: z.number().int().positive('Quantity must be a positive integer'),
+  revenue: z.number().nonnegative('Revenue must be non-negative'),
+  orderId: z.string().min(1, 'Order ID is required'),
+});
+
+export const topProductsQuerySchema = z.object({
+  metric: z.string().optional(),
+  period: z.string().optional(),
+  limit: z.coerce.number().int().positive().max(100).optional(),
+});
+
+export const analyticsSummaryQuerySchema = z.object({
+  startDate: isoDateString.optional(),
+  endDate: isoDateString.optional(),
+});
+
+export const analyticsTrendsQuerySchema = z.object({
+  startDate: isoDateString.optional(),
+  endDate: isoDateString.optional(),
+  granularity: z.string().optional(),
+});
+
+export const collectionAnalyticsQuerySchema = z.object({
+  startDate: isoDateString.optional(),
+  endDate: isoDateString.optional(),
+});
+
+export const productAnalyticsQuerySchema = z.object({
+  startDate: isoDateString.optional(),
+  endDate: isoDateString.optional(),
+});
